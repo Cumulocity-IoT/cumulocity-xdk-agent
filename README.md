@@ -1,6 +1,7 @@
 # cumulocity_xdk_agent
 
-Device agent for Bosch XDK to connect to Cumulocity (C8Y Agent for XDK)
+Device agent for Bosch XDK to connect to Cumulocity (C8Y Agent for XDK).
+In order to connect the XDK to Cumuloxity a tenant is required: https://cumulocity.com/try-for-free/
 
 ## Features
 
@@ -101,3 +102,9 @@ When the following error occusrs after building and flashing the project please 
  INFO | XDK DEVICE 1: Application Firmware Corrupted
  INFO | XDK DEVICE 1:  Invalid application
 ```
+
+## Sample dashboard
+
+A sample dashboard can be build using the resources/Container_V01.svg. Please see: https://www.cumulocity.com/guides/users-guide/optional-services/ for a documentation on how to use the svg in a SCADA widget.
+
+![Sample Dashboard](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/master/resources/Container_V01.jpg)
