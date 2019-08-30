@@ -1,0 +1,25 @@
+##
+# Important note: value sto the right side can't be blank, instead type EMPTY if not used, otherwise bootstrap fails
+# Variables need not be added manually
+# IMPORTANT: Length of file must not excceed 512 bytes
+##
+WIFISSID=<SSID>
+WIFIPASSWORD=<PASSWORD OF WIFI>
+MQTTBROKERNAME=<BROKER NAME>| defaultmqtt.cumulocity.com
+MQTTBROKERPORT=<PORT OF MQTT CUMULOCITY BROKER, 8883 FOR TLS, 1883 NO TLS>| default 8883
+MQTTSECURE=<TRUE FOR TLS, FALSE OTHERWISE>| default TRUE
+MQTTANONYMOUS=<this property is lony meant to test the agent with other mqtt brokers, cumulocity always requires username password>| default FALSE
+STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default 5000
+ACCELENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+GYROENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+MAGENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+ENVENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+LIGHTENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+SNTPNAME=<NAME/IP OF SNTP SERVER>| default 0.de.pool.ntp.org
+SNTPPORT=<PORT SNTP SEVER>| default 123
+##
+# Important note: MQTTUSER and MQTTPASSWORD are added as part of the bootstrap mechanism during device registration
+# Variables need not be added manually
+##
+MQTTUSER=<USESNAME IN THE FORM TENANT/USER, RECEIVED IN REGISTRATION>
+MQTTPASSWORD=<PASSWORD, RECEIVED IN REGISTRATION>
