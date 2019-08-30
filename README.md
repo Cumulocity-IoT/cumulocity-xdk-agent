@@ -89,3 +89,15 @@ NOTE: connect your XDK using USB cable to get debug messages.
 1. Delete entries MQTTUSER und MQTTPASSWORD löschen from the file "config.txt"
 2. Delete XDK from Cumulocity Tenant
 3. Restart XDK and register XDKs again
+
+## Troubleshooting
+
+When the following error occusrs after building and flashing the project please clean,rebuild and flash project again:
+
+```
+ INFO | Transmission successfully completed!
+ INFO | Booting application...
+ INFO | XDK DEVICE 1:  Performing application CRC validation (this will take a couple of seconds)
+ INFO | XDK DEVICE 1: Application Firmware Corrupted
+ INFO | XDK DEVICE 1:  Invalid application
+```
