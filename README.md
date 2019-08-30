@@ -68,6 +68,9 @@ The macro MBEDTLS_SSL_MAX_CONTENT_LEN determines the size of both the incoming a
 ## 4. Prepare project 
 
 1. Clone git repository
+```
+git clone https://github.com/SoftwareAG/cumulocity-xdk-agent.git
+```
 2. In XDK Workbench import project into workspace
 3. In XDK Workbench: project clean and project build
 4. Connect XDK over USB cable
