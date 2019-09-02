@@ -93,7 +93,7 @@ NOTE: connect your XDK using USB cable to get debug messages.
 
 ## Troubleshooting
 
-When the following error occusrs after building and flashing the project please clean,rebuild and flash project again:
+# When the following error occusrs after building and flashing the project please clean, rebuild and flash project again:
 
 ```
  INFO | Transmission successfully completed!
@@ -102,6 +102,35 @@ When the following error occusrs after building and flashing the project please 
  INFO | XDK DEVICE 1: Application Firmware Corrupted
  INFO | XDK DEVICE 1:  Invalid application
 ```
+
+# The following error indicates, that the workspace path contains spaces. PLEASE remove spaces from the workspace:
+
+```
+mingw32-make -j 2 -j8 clean 
+C:\XDK-Workbench\XDK\make\mingw32-make.exe -C C:\XDK-Workbench\XDK\SDK/xdk110/Common -f application.mk clean
+new_bootloader
+mingw32-make[1]: Entering directory 'C:/XDK-Workbench/XDK/SDK/xdk110/Common'
+application.mk:368: *** mixed implicit and normal rules. Stop.
+mingw32-make[1]: Leaving directory 'C:/XDK-Workbench/XDK/SDK/xdk110/Common'
+mingw32-make: *** [clean] Error 2
+Makefile:53: recipe for target 'clean' failed
+```
+
+# When th efollowing error occurs, please right-click project cumulocity-xdk-projectConfigure -> Add  XDK nature
+
+Connection to port 'COM9' established
+ INFO | Flashing file 'C:/Users/jroem/cumulocity/cumulocity-xdk-agent/debug/cumulocity-xdk-agent.bin'...
+ INFO | XDK DEVICE 1: Ready
+ INFO | XDK DEVICE 1: C
+ INFO | XDK DEVICE 1: XMODEM Download Success
+ INFO | XDK DEVICE 1: c
+ INFO | XDK DEVICE 1:  CRC of application area
+ INFO | XDK DEVICE 1:  CRC0000B4E4
+ INFO | Application checksum 'b4e4' successfully verified.
+ INFO | Transmission successfully completed!
+ INFO | Booting application...
+ INFO | XDK DEVICE 1: b
+ INFO | XDK DEVICE 1:  Invalid application
 
 ## Sample dashboard
 

@@ -18,7 +18,7 @@
 					<folderInfo id="cdt.managedbuild.toolchain.gnu.mingw.base.2085283633.823056962" name="/" resourcePath="">
 						<toolChain id="com.bosch.cds.xdk.toolchain.299555137" name="BCDS XDK Toolchain" superClass="com.bosch.cds.xdk.toolchain">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="com.bosch.cds.xdk.toolchain.targetplatform.1469877962" isAbstract="false" osList="all" superClass="com.bosch.cds.xdk.toolchain.targetplatform"/>
-							<builder buildPath="${workspace_loc:\sag-d-iot.xdk_v4_mqtt_serval}" id="com.bosch.cds.xdk.toolchain.builder.509924666" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.bosch.cds.xdk.toolchain.builder"/>
+							<builder buildPath="${workspace_loc:/cumulocity-xdk-agent}" id="com.bosch.cds.xdk.toolchain.builder.509924666" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.bosch.cds.xdk.toolchain.builder"/>
 							<tool id="com.bosch.cds.xdk.toolchain.c.16501066" name="BCDS C Compiler" superClass="com.bosch.cds.xdk.toolchain.c">
 								<option id="gnu.c.compiler.option.include.paths.968628265" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${ARM_GCC}/arm-none-eabi/include&quot;"/>
@@ -234,9 +234,7 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
-		<configuration configurationName="XDK Default">
-			<resource resourceType="PROJECT" workspacePath="/SendDataOverMQTT"/>
-		</configuration>
+		<configuration configurationName="XDK Default"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -245,4 +243,5 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
