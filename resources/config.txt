@@ -5,7 +5,7 @@
 ##
 WIFISSID=<SSID>
 WIFIPASSWORD=<PASSWORD OF WIFI>
-MQTTBROKERNAME=<BROKER NAME>| defaultmqtt.cumulocity.com
+MQTTBROKERNAME=<BROKER NAME>| default mqtt.cumulocity.com
 MQTTBROKERPORT=<PORT OF MQTT CUMULOCITY BROKER, 8883 FOR TLS, 1883 NO TLS>| default 8883
 MQTTSECURE=<TRUE FOR TLS, FALSE OTHERWISE>| default TRUE
 MQTTANONYMOUS=<this property is lony meant to test the agent with other mqtt brokers, cumulocity always requires username password>| default FALSE
