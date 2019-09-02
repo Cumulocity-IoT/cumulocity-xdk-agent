@@ -12,6 +12,7 @@ The C8Y Agent for XDK sends following sensor measurements to C8Y :
 - MAGENABLED=<TRUE TO SEND,FALSE OTHERWISE>
 - ENVENABLED=<TRUE TO SEND,FALSE OTHERWISE>
 - LIGHTENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+- NOISEENABLED=<TRUE TO SEND,FALSE OTHERWISE>
 
 If a measurement is sent can be configured in config.txt. In addition the rate  (every XX ms) at which measurementes are sent can be configured.
 

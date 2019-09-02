@@ -272,6 +272,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		SensorSetup.Enable.Mag = MQTTCfgParser_IsMagnetEnabled();
 		SensorSetup.Enable.Pressure = MQTTCfgParser_IsEnvEnabled();
 		SensorSetup.Enable.Temp = MQTTCfgParser_IsEnvEnabled();
+		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();;
 		retcode = Sensor_Setup(&SensorSetup);
 	}
 	if (RETCODE_OK == retcode) {

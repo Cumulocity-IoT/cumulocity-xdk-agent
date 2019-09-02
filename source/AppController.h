@@ -208,6 +208,7 @@ typedef enum
 #define MAG_EN              true               /**< Magnetometer Data Enable */
 #define ENV_EN              true               /**< Environmental Data Enable */
 #define LIGHT_EN            true               /**< Ambient Light Data Enable */
+#define NOISE_EN            false               /**< Noise Data Enable */
 
 
 /* Sensor type and macro definitions */

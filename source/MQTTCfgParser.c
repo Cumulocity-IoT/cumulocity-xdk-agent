@@ -93,7 +93,7 @@
 #define CFG_FORCE_MOUNT                 UINT8_C(1)      /**< Macro to define force mount */
 #define CFG_SEEK_FIRST_LOCATION         UINT8_C(0)      /**< File seek to the first location */
 #define CFG_MAX_LINE_SIZE               UINT8_C(65)
-#define ATT_IDX_SIZE					UINT8_C(16)
+#define ATT_IDX_SIZE					UINT8_C(17)
 
 #define CFG_NUMBER_UINT8_ZERO           UINT8_C(0)    /**< Zero value */
 
@@ -126,8 +126,9 @@ static ConfigLine_T ConfigStructure[ATT_IDX_SIZE] = {
 		{ A12Name, BOOL_TO_STR(MAG_EN), CFG_FALSE, CFG_FALSE, AttValues[11] },
 		{ A13Name, BOOL_TO_STR(ENV_EN), CFG_FALSE, CFG_FALSE, AttValues[12] },
 		{ A14Name, BOOL_TO_STR(LIGHT_EN), CFG_FALSE, CFG_FALSE, AttValues[13]},
-		{ A15Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[14]},
-		{ A16Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[15]},
+		{ A15Name, BOOL_TO_STR(NOISE_EN), CFG_FALSE, CFG_FALSE, AttValues[14]},
+		{ A16Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
+		{ A17Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
 };
 
 
@@ -488,6 +489,14 @@ bool MQTTCfgParser_IsLightEnabled(void) {
 		res = false;
 	//printf("MQTTCfgParser: MQTTCfgParser_IsLightEnabled : %s %d!\n\r", value, res );
 	return res;
+}
+
+bool MQTTCfgParser_IsNoiseEnabled(void) {
+	const char* value = getAttValue(ATT_IDX_NOISEENABLED);
+	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
+		return true;
+	else
+		return false;
 }
 
 

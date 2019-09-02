@@ -435,7 +435,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 			MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 			if (RETCODE_OK != retcode) {
-				printf("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \n\r", connectAttemps );
+				printf("MQTTOperation: MQTT connection to the broker failed  [%hu] time, try again ... \n\r", connectAttemps );
 				connectAttemps ++;
 			}
 		} while (RETCODE_OK != retcode && connectAttemps < 10 );
@@ -458,6 +458,8 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		//reboot to recover
 		printf("MQTTOperation: Now calling SoftReset and reboot to recover\n\r");
 		//MQTTOperation_DeInit();
+		// wait one minute before reboot
+		vTaskDelay(pdMS_TO_TICKS(60000));
 		BSP_Board_SoftReset();
 		//assert(0);
 	}
@@ -539,6 +541,8 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 	if (connectAttemps > 10) {
 		printf("MQTTOperation: Now calling SoftReset and reboot to recover\n\r");
 		//MQTTOperation_DeInit();
+		// wait one minute before reboot
+		vTaskDelay(pdMS_TO_TICKS(60000));
 		BSP_Board_SoftReset();
 	}
 
@@ -641,6 +645,11 @@ static void MQTTOperation_SensorUpdate(void) {
 				sensorStreamBuffer.data + sensorStreamBuffer.length,
 				"997,,%ld\n\r", sensorValue.Pressure);
 		//sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "998,,%.2f\n", sensorValue.Noise);
+	}
+
+	if (SensorSetup.Enable.Noise) {
+
+		sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "998,,%.2f\n", sensorValue.Noise);
 	}
 
 	if (commandProgress == DEVICE_OPERATION_BEFORE_EXECUTING) {

@@ -68,8 +68,9 @@ static const char A11Name[] = "GYROENABLED";
 static const char A12Name[] = "MAGENABLED";
 static const char A13Name[] = "ENVENABLED";
 static const char A14Name[] = "LIGHTENABLED";
-static const char A15Name[] = "SNTPNAME";
-static const char A16Name[] = "SNTPPORT";
+static const char A15Name[] = "NOISEENABLED";
+static const char A16Name[] = "SNTPNAME";
+static const char A17Name[] = "SNTPPORT";
 enum AttributesIndex_E
 {
     ATT_IDX_WIFISSID,
@@ -86,6 +87,7 @@ enum AttributesIndex_E
     ATT_IDX_MAGENABLED,
     ATT_IDX_ENVENABLED,
     ATT_IDX_LIGHTENABLED,
+    ATT_IDX_NOISEENABLED,
 	ATT_IDX_SNTPNAME,
 	ATT_IDX_SNTPPORT,
 };
@@ -204,6 +206,8 @@ bool MQTTCfgParser_IsMagnetEnabled(void);
 bool MQTTCfgParser_IsEnvEnabled(void);
 
 bool MQTTCfgParser_IsLightEnabled(void);
+
+bool MQTTCfgParser_IsNoiseEnabled(void);
 
 const char *MQTTCfgParser_GetSntpName(void);
 
