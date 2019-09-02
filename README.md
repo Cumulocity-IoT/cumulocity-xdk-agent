@@ -93,7 +93,7 @@ NOTE: connect your XDK using USB cable to get debug messages.
 
 ## Troubleshooting
 
-# When the following error occusrs after building and flashing the project please clean, rebuild and flash project again:
+### When the following error occusrs after building and flashing the project please clean, rebuild and flash project again:
 
 ```
  INFO | Transmission successfully completed!
@@ -103,7 +103,7 @@ NOTE: connect your XDK using USB cable to get debug messages.
  INFO | XDK DEVICE 1:  Invalid application
 ```
 
-# The following error indicates, that the workspace path contains spaces. PLEASE remove spaces from the workspace:
+### The following error indicates, that the workspace path contains spaces. PLEASE remove spaces from the workspace:
 
 ```
 mingw32-make -j 2 -j8 clean 
@@ -116,8 +116,9 @@ mingw32-make: *** [clean] Error 2
 Makefile:53: recipe for target 'clean' failed
 ```
 
-# When th efollowing error occurs, please right-click project cumulocity-xdk-projectConfigure -> Add  XDK nature
+### When th efollowing error occurs, please right-click project cumulocity-xdk-projectConfigure -> Add  XDK nature
 
+```
 Connection to port 'COM9' established
  INFO | Flashing file 'C:/Users/jroem/cumulocity/cumulocity-xdk-agent/debug/cumulocity-xdk-agent.bin'...
  INFO | XDK DEVICE 1: Ready
@@ -131,7 +132,7 @@ Connection to port 'COM9' established
  INFO | Booting application...
  INFO | XDK DEVICE 1: b
  INFO | XDK DEVICE 1:  Invalid application
-
+```
 ## Sample dashboard
 
 A sample dashboard can be build using the resources/Container_V01.svg. Please see: https://www.cumulocity.com/guides/users-guide/optional-services/ for a documentation on how to use the svg in a SCADA widget.
