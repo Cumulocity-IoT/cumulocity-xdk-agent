@@ -50,14 +50,14 @@ The buttons have following on the XDK have the following functions:
 
 1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant. Pls. see https://www.cumulocity.com/guides/users-guide/device-management.
 2. The agent uses the MAC of the WLAN chip. Pls. check on sticker on the bottom side of your XDK under "WLAN: 7C_7C_7C_7C_7C_7C" , e.g. XDK_7C_7C_7C_7C_7C_7C
-NOTE: prepend XDK_ before WLAN MAC adress
+> NOTE: prepend XDK_ before WLAN MAC adress
 3. Upload SMART Rest Template "XDK_Template_Collection.json" from folder resources/XDK_Template_Collection.json to your C8Y tenant. Pls see https://www.cumulocity.com/guides/users-guide/device-management for required steps
 
 ## 3. Install XDK Workbench 
 
 Install  XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
 > NOTE: Installationpath must not not contains blanks 
-> NOTE: The current version of the Workbench 3.6.0 hat eine Buffer Beschränkung. Diese muss wie folgt erhöht werden:
+> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificat being used for Cumulocity.
 
 In order to avoid a buffer overflow, as seen in the following error message:
 
@@ -73,7 +73,7 @@ The macro MBEDTLS_SSL_MAX_CONTENT_LEN determines the size of both the incoming a
 ```
 git clone https://github.com/SoftwareAG/cumulocity-xdk-agent.git
 ```
-2. In XDK Workbench import project into workspace
+2. In XDK Workbench import project into your workspace
 3. In XDK Workbench: project clean and project build
 4. Connect XDK over USB cable
 
@@ -88,9 +88,9 @@ NOTE: connect your XDK using USB cable to get debug messages.
 
 ## Procedure when re-registering device in Cumulocity tenant
 
-1. Delete entries MQTTUSER und MQTTPASSWORD löschen from the file "config.txt"
-2. Delete XDK from Cumulocity Tenant
-3. Restart XDK and register XDKs again
+1. Delete entries MQTTUSER und MQTTPASSWORD from the file "config.txt" stored on the SD card
+2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
+3. Restart XDK and register XDKs again as before
 
 ## Troubleshooting
 
@@ -139,3 +139,7 @@ Connection to port 'COM9' established
 A sample dashboard can be build using the resources/Container_V01.svg. Please see: https://www.cumulocity.com/guides/users-guide/optional-services/ for a documentation on how to use the svg in a SCADA widget.
 
 ![Sample Dashboard](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/master/resources/Container_V01.jpg)
+
+## TLS Certificate
+
+The header file: source\ServerCA.h contains the root certificate im PEM format. The certificate from "Go Daddy Class 2 Certification Authority" is used. If yout CA is different this needs to be changed.
