@@ -1,4 +1,4 @@
-# cumulocity_xdk_agent?
+# cumulocity_xdk_agent
 
 Device agent for Bosch XDK to connect to Cumulocity (C8Y Agent for XDK).
 In order to connect the XDK to Cumuloxity a tenant is required: https://cumulocity.com/try-for-free/
@@ -120,7 +120,7 @@ Makefile:53: recipe for target 'clean' failed
 
 ```
 Connection to port 'COM9' established
- INFO | Flashing file 'C:/Users/jroem/cumulocity/cumulocity-xdk-agent/debug/cumulocity-xdk-agent.bin'...
+ INFO | Flashing file 'C:/Users/XXX/cumulocity/cumulocity-xdk-agent/debug/cumulocity-xdk-agent.bin'...
  INFO | XDK DEVICE 1: Ready
  INFO | XDK DEVICE 1: C
  INFO | XDK DEVICE 1: XMODEM Download Success
