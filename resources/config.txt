@@ -1,25 +1,27 @@
 ##
-# Important note: value sto the right side can't be blank, instead type EMPTY if not used, otherwise bootstrap fails
-# Variables need not be added manually
-# IMPORTANT: Length of file must not excceed 512 bytes
+# IMPORTANT: 
+# * values to the right side can't be blank, instead type EMPTY if not used, otherwise bootstrap fails
+# * variables not defined explcitly  their default-value is used
+# * length of file must not excceed 512 bytes
 ##
-WIFISSID=<SSID>
-WIFIPASSWORD=<PASSWORD OF WIFI>
-MQTTBROKERNAME=<BROKER NAME>| default mqtt.cumulocity.com
-MQTTBROKERPORT=<PORT OF MQTT CUMULOCITY BROKER, 8883 FOR TLS, 1883 NO TLS>| default 8883
-MQTTSECURE=<TRUE FOR TLS, FALSE OTHERWISE>| default TRUE
-MQTTANONYMOUS=<this property is lony meant to test the agent with other mqtt brokers, cumulocity always requires username password>| default FALSE
-STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default 5000
-ACCELENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-GYROENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-MAGENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-ENVENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-LIGHTENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-NOISEENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-SNTPNAME=<NAME/IP OF SNTP SERVER>| default 0.de.pool.ntp.org
-SNTPPORT=<PORT SNTP SEVER>| default 123
+WIFISSID=<SSID> | must be defined
+WIFIPASSWORD=<PASSWORD OF WIFI> | must be defined
+MQTTBROKERNAME=<BROKER NAME>| default-value mqtt.cumulocity.com
+MQTTBROKERPORT=<PORT OF MQTT CUMULOCITY BROKER, 8883 FOR TLS, 1883 NO TLS>| default-value 8883
+MQTTSECURE=<TRUE FOR TLS, FALSE OTHERWISE> | default-value TRUE
+MQTTANONYMOUS=<this property is lony meant to test the agent with other mqtt brokers, cumulocity always requires username password>| default-value FALSE
+STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default-value 5000
+ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
+SNTPNAME=<NAME/IP OF SNTP SERVER>| default-value 0.de.pool.ntp.org
+SNTPPORT=<PORT SNTP SEVER>| default-value 123
 ##
-# Important note: MQTTUSER and MQTTPASSWORD are added as part of the bootstrap mechanism during device registration
+# IMPORTANT: 
+# * MQTTUSER and MQTTPASSWORD are added as part of the bootstrap mechanism during device registration
 # Variables need not be added manually
 ##
 MQTTUSER=<USESNAME IN THE FORM TENANT/USER, RECEIVED IN REGISTRATION>

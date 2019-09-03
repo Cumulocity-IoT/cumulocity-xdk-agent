@@ -59,15 +59,36 @@ false, .SSID = WLAN_SSID, .Username = WLAN_PSK, .Password = WLAN_PSK,
 		.IsStatic = WLAN_STATIC_IP, .IpAddr = WLAN_IP_ADDR, .GwAddr =
 		WLAN_GW_ADDR, .DnsAddr = WLAN_DNS_ADDR, .Mask = WLAN_MASK, };/**< WLAN setup parameters */
 
-static Sensor_Setup_T SensorSetup = { .CmdProcessorHandle = NULL, .Enable = {
-		.Accel = false, .Mag = false, .Gyro = false, .Humidity = true, .Temp =
-		true, .Pressure = true, .Light = false, .Noise = false, }, .Config = {
-		.Accel = { .Type = SENSOR_ACCEL_BMA280, .IsRawData = false,
-				.IsInteruptEnabled = false, .Callback = NULL, }, .Gyro = {
-				.Type = SENSOR_GYRO_BMG160, .IsRawData = false, }, .Mag = {
-				.IsRawData = false }, .Light = { .IsInteruptEnabled = false,
-				.Callback = NULL, }, .Temp = { .OffsetCorrection =
-		APP_TEMPERATURE_OFFSET_CORRECTION, }, }, };/**< Sensor setup parameters */
+static Sensor_Setup_T SensorSetup = {
+		.CmdProcessorHandle = NULL,
+		.Enable = {
+				.Accel = false,
+				.Mag = false,
+				.Gyro = false,
+				.Humidity = false,
+				.Temp =	false,
+				.Pressure = false,
+				.Light = false,
+				.Noise = false, },
+		.Config = {
+				.Accel = {
+						.Type = SENSOR_ACCEL_BMA280,
+						.IsRawData = false,
+						.IsInteruptEnabled = false,
+						.Callback = NULL, },
+				.Gyro = {
+						.Type = SENSOR_GYRO_BMG160,
+						.IsRawData = false, },
+				.Mag = {
+						.IsRawData = false },
+				.Light = {
+						.IsInteruptEnabled = false,
+						.Callback = NULL, },
+				.Temp = {
+						.OffsetCorrection =	APP_TEMPERATURE_OFFSET_CORRECTION,
+						},
+				},
+		};/**< Sensor setup parameters */
 
 static SNTP_Setup_T SNTPSetupInfo = { .ServerUrl = SNTP_SERVER_URL,
 		.ServerPort = SNTP_SERVER_PORT, };/**< SNTP setup parameters */
@@ -272,7 +293,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		SensorSetup.Enable.Mag = MQTTCfgParser_IsMagnetEnabled();
 		SensorSetup.Enable.Pressure = MQTTCfgParser_IsEnvEnabled();
 		SensorSetup.Enable.Temp = MQTTCfgParser_IsEnvEnabled();
-		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();;
+		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();
 		retcode = Sensor_Setup(&SensorSetup);
 	}
 	if (RETCODE_OK == retcode) {

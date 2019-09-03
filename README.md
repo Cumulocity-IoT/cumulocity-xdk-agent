@@ -3,19 +3,29 @@
 Device agent for Bosch XDK to connect to Cumulocity (C8Y Agent for XDK).
 In order to connect the XDK to Cumuloxity a tenant is required: https://cumulocity.com/try-for-free/
 
-## Features
+## Overview of features XDK device agent
 
+The agent runs in either of two modes: REGISTRATION or OPERATION mode.
+When the device agent starts the fist time it is in REGISTRATION modes (this mode is recognized when no MQTTUSER, MQTTPASSWORD is defined in config.txt).
+The XDK agents supports device registration as described here: https://cumulocity.com/guides/rest/device-integration/
+After successful registration - vales for MQTTUSER, MQTTPASSWORD are received and saved in config.txt - the XDK restarts automatically.
+After restarting the agent uses values for MQTTUSER, MQTTPASSWORD to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
+
+### Configuration
 The C8Y Agent for XDK sends following sensor measurements to C8Y :
+- ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+- GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+- MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+- ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+- LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+- NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
 
-- ACCELENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-- GYROENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-- MAGENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-- ENVENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-- LIGHTENABLED=<TRUE TO SEND,FALSE OTHERWISE>
-- NOISEENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+with the defined streamrate:
+- STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default-value 5000
 
-If a measurement is sent can be configured in config.txt. In addition the rate  (every XX ms) at which measurementes are sent can be configured.
+Measurements types can be switched on/off in config.txt by setting the value to true/false. 
 
+### Operations
 The XDK can receive operations and messages initiated in your C8Y tenant. So you can :
 - change streaming rate: 
 -- send shell command from C8Y (publish any 1000 ms): "speed 1000" 
@@ -26,14 +36,13 @@ The XDK can receive operations and messages initiated in your C8Y tenant. So you
 - toggle yellow light:
 -- send shell command: "toggle"
 
-The XDK agents supports registration as described: https://cumulocity.com/guides/rest/device-integration/
-
+### Buttons
 The buttons have following on the XDK have the following functions:
 
  	* Button one dot: stop/start sending measurements to Cumulocity
 	* Button two dots: reset boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
 		
-## Overview
+## Steps required to register and operate XDK device in C8Y tenant
 
 1. Prepare SD card
 2. Register XDK in Cumulocity & Upload SMART Rest Template
@@ -44,9 +53,9 @@ The buttons have following on the XDK have the following functions:
 ## 1. Prepare SD card
 		
 1. Format SD in FAT format
-2. Adapt settings in config.txt and copy to SD card. A template for config.txt exists in the project "sag-d-iot.xdk_v4_mqtt_serval/resources"
+2. Adapt settings in config.txt and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
 
-## 2. Register XDK in Cumulocity & Upload SMART Rest Template
+## 2. Register XDK in Cumulocity & upload SMART Rest Template
 
 1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant. Pls. see https://www.cumulocity.com/guides/users-guide/device-management.
 2. The agent uses the MAC of the WLAN chip. Pls. check on sticker on the bottom side of your XDK under "WLAN: 7C_7C_7C_7C_7C_7C" , e.g. XDK_7C_7C_7C_7C_7C_7C
@@ -121,7 +130,7 @@ Makefile:53: recipe for target 'clean' failed
 
 ```
 Connection to port 'COM9' established
- INFO | Flashing file 'C:/Users/jroem/cumulocity/cumulocity-xdk-agent/debug/cumulocity-xdk-agent.bin'...
+ INFO | Flashing file 'C:/Users/XXX/cumulocity/cumulocity-xdk-agent/debug/cumulocity-xdk-agent.bin'...
  INFO | XDK DEVICE 1: Ready
  INFO | XDK DEVICE 1: C
  INFO | XDK DEVICE 1: XMODEM Download Success
