@@ -40,7 +40,7 @@
 #include "XDK_WLAN.h"
 
 /* constant definitions ***************************************************** */
-
+const float aku340ConversionRatio = pow(10,(-38/20));
 /* local variables ********************************************************** */
 // Buffers
 static char appIncomingMsgTopicBuffer[SENSOR_SMALL_BUF_SIZE];/**< Incoming message topic buffer */
@@ -72,6 +72,7 @@ static void MQTTOperation_ToogleLEDCallback(xTimerHandle xTimer);
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer);
 static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force);
 static void MQTTOperation_SensorUpdate(void);
+static float MQTTOperation_CalcSoundPressure(float acousticRawValue);
 
 static MQTT_Subscribe_TZ MqttSubscribeCommandInfo = { .Topic = TOPIC_DOWNSTREAM_CUSTOM,
 		.QoS = MQTT_QOS_AT_MOST_ONE, .IncomingPublishNotificationCB =
@@ -583,7 +584,7 @@ static void MQTTOperation_AssetUpdate(void) {
 			"114,c8y_Restart,c8y_Message,c8y_Command\n\r");
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length,
-			"113,\"%s = %ld ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n\"\n\r",
+			"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n\"\n\r",
 			A9Name, tickRateMS,
 			A10Name, MQTTCfgParser_IsAccelEnabled(),
 			A11Name, MQTTCfgParser_IsGyroEnabled(),
@@ -644,12 +645,10 @@ static void MQTTOperation_SensorUpdate(void) {
 		sensorStreamBuffer.length += sprintf(
 				sensorStreamBuffer.data + sensorStreamBuffer.length,
 				"997,,%ld\n\r", sensorValue.Pressure);
-		//sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "998,,%.2f\n", sensorValue.Noise);
 	}
 
 	if (SensorSetup.Enable.Noise) {
-
-		sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "998,,%.2f\n", sensorValue.Noise);
+		sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "998,,%.4f\n", MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 	}
 
 	if (commandProgress == DEVICE_OPERATION_BEFORE_EXECUTING) {
@@ -670,4 +669,8 @@ static void MQTTOperation_SensorUpdate(void) {
 			assetStreamBuffer.data + assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commandType);
 	}
 
+}
+
+static float MQTTOperation_CalcSoundPressure(float acousticRawValue){
+    return (acousticRawValue/aku340ConversionRatio);
 }
