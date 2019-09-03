@@ -1,13 +1,16 @@
 # cumulocity_xdk_agent
 
 Device agent for Bosch XDK to connect to Cumulocity (C8Y Agent for XDK).
+
 In order to connect the XDK to Cumuloxity a tenant is required: https://cumulocity.com/try-for-free/
 
 ## Overview of features XDK device agent
 
 The agent runs in either of two modes: REGISTRATION or OPERATION mode.
 When the device agent starts the fist time it is in REGISTRATION modes (this mode is recognized when no MQTTUSER, MQTTPASSWORD is defined in config.txt).
+
 The XDK agents supports device registration as described here: https://cumulocity.com/guides/rest/device-integration/
+
 After successful registration - vales for MQTTUSER, MQTTPASSWORD are received and saved in config.txt - the XDK restarts automatically.
 After restarting the agent uses values for MQTTUSER, MQTTPASSWORD to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
 
