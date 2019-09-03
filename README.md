@@ -154,4 +154,8 @@ A sample dashboard can be build using the resources/Container_V01.svg. Please se
 
 ## TLS Certificate
 
-The header file: source\ServerCA.h contains the root certificate im PEM format. The certificate from "Go Daddy Class 2 Certification Authority" is used. If yout CA is different this needs to be changed.
+FOR TLS certification the certificate of the CA has to be flashed to the XDK.
+
+This certificate in included  in the header file source\ServerCA.h  in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com. 
+
+If your CA is different this needs to be changed.
