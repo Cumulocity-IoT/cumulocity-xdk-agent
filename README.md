@@ -148,14 +148,20 @@ Connection to port 'COM9' established
 ```
 ## Sample dashboard
 
-A sample dashboard can be build using the resources/Container_V01.svg. Please see: https://www.cumulocity.com/guides/users-guide/optional-services/ for a documentation on how to use the svg in a SCADA widget.
+A sample dashboard can be build using the resources/Container_V01.svg.   
+Please see: https://www.cumulocity.com/guides/users-guide/optional-services/ for a documentation on how to use the svg in a SCADA widget.
 
-![Sample Dashboard](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/master/resources/Container_V01.jpg)
+![Sample Dashboard](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/master/resources/Container_V01.jpg)  
+
+Dashboard from above is build using the following components:
+1. SCADA widget on the basis of SVG Container_V01.svg
+2. Rotation widget to show the position of he XDK
+3. Alarm widget to show recent alarms. This requires to define a smart rule "Container open": https://cumulocity.com/guides/users-guide/cockpit/#smart-rules  
+The rule "On measurement explicit threshold create alarm" is using the measurement "c8y_Light" with min 50000 and max 100000
+4. Data point widget with data points "c8y_acceleration=>accelerationX", "c8y_acceleration=>accelerationY" and "c8y_acceleration=>accelerationZ"
 
 ## TLS Certificate
 
-FOR TLS certification the certificate of the CA has to be flashed to the XDK.
-
-This certificate in included  in the header file source\ServerCA.h  in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com. 
-
+For TLS the certificate of the CA has to be flashed to the XDK.  
+This certificate in included in the header file source\ServerCA.h in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com.  
 If your CA is different this needs to be changed.
