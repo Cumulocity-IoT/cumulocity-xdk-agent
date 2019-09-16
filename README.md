@@ -1,8 +1,15 @@
-# cumulocity_xdk_agent
+# Cumulocity agent for Bosch XDK rapid prototype device
 
-Device agent for Bosch XDK to connect to Cumulocity (C8Y Agent for XDK).
+This project is a device agent to connect the Bosch XDK https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit/ to Cumulocity (C8Y Agent for XDK).
 
-In order to connect the XDK to Cumuloxity a tenant is required: https://cumulocity.com/try-for-free/
+For this demo a Cumulocity tenant: https://cumulocity.com/try-for-free/ and an XDK device is required.  
+The XDK is a quick and professional prototyping platform for prototyping IoT use cases.
+
+When the XDK is registered to the Cumulocity tenant environmental sensor readings are sent to the Cumulocity IoT cloud. Potential use cases are:
+- Control & monitor heating -> tempmerature sensor, acoustic sensor
+- Control & monitor lighting in building -> digital light sensor
+- Control & monitor machine -> acceleration sensor
+
 
 ## Overview of features XDK device agent
 
