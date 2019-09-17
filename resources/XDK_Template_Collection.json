@@ -45,17 +45,17 @@
         "byId": true,
         "customValues": [
           {
-            "path": "c8y_Gyroscope.gyroscopeX.value",
+            "path": "c8y_Gyroscope.gyroX.value",
             "type": "NUMBER",
             "value": null
           },
           {
-            "path": "c8y_Gyroscope.gyroscopeY.value",
+            "path": "c8y_Gyroscope.gyroY.value",
             "type": "NUMBER",
             "value": null
           },
           {
-            "path": "c8y_Gyroscope.gyroscopeZ.value",
+            "path": "c8y_Gyroscope.gyroZ.value",
             "type": "NUMBER",
             "value": null
           }
