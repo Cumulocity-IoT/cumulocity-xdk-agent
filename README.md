@@ -75,8 +75,9 @@ The buttons have following on the XDK have the following functions:
 ## 3. Install XDK Workbench 
 
 Install  XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
-> NOTE: Installationpath must not not contains blanks 
-> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificat being used for Cumulocity.
+> NOTE: Installation path must not contains blanks 
+
+> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificate being used for Cumulocity.
 
 In order to avoid a buffer overflow, as seen in the following error message:
 
