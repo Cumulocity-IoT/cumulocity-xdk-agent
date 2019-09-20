@@ -76,15 +76,16 @@ The buttons have following on the XDK have the following functions:
 ## 3. Install XDK Workbench 
 
 Install  XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
-> NOTE: Installationpath must not not contains blanks 
-> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificat being used for Cumulocity.
+> NOTE: Installation path must not contains blanks 
+
+> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificate being used for Cumulocity.
 
 In order to avoid a buffer overflow, as seen in the following error message:
 
 INFO | XDK DEVICE 1: MQTT_ConnectToBroker_Z: connecting secure
 INFO | XDK DEVICE 1:         11 [SSL:1] Sec_receiveCB: HORRIBLE Buffer full state=1 (0x200023fc)
 
-Increase MBEDTLS_SSL_MAX_CONTENT_LEN macro value from 4850 to 5950 in Common/config/MbedTLS/ MbedtlsConfigTLS.h in line 2923.
+Increase MBEDTLS_SSL_MAX_CONTENT_LEN macro value from 4850 to 5950 in Common/config/MbedTLS/ MbedtlsConfigTLS.h in line 2921.
 The macro MBEDTLS_SSL_MAX_CONTENT_LEN determines the size of both the incoming and outgoing TLS I/O buffer used by MbedTLS library.
 
 ## 4. Prepare project 
