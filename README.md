@@ -34,6 +34,7 @@ with the defined streamrate:
 - STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default-value 5000
 
 Measurements types can be switched on/off in config.txt by setting the value to true/false. 
+> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.
 
 ### Operations
 The XDK can receive operations and messages initiated in your C8Y tenant. So you can :
@@ -136,7 +137,7 @@ mingw32-make: *** [clean] Error 2
 Makefile:53: recipe for target 'clean' failed
 ```
 
-### When th efollowing error occurs, please right-click project cumulocity-xdk-projectConfigure -> Add  XDK nature
+### When the following error occurs, please right-click project cumulocity-xdk-projectConfigure -> Add  XDK nature
 
 ```
 Connection to port 'COM9' established
@@ -153,6 +154,10 @@ Connection to port 'COM9' established
  INFO | XDK DEVICE 1: b
  INFO | XDK DEVICE 1:  Invalid application
 ```
+
+### Config file cannot be pared
+Please verify if you used Linux line endings ("\n")  
+
 ## Sample dashboard
 
 A sample dashboard can be build using the resources/Container_V01.svg.   

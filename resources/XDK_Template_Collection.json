@@ -173,7 +173,7 @@
         "byId": true,
         "customValues": [
           {
-            "path": "c8y_Temperature.temperature.value",
+            "path": "c8y_Temperature.T.value",
             "type": "NUMBER",
             "value": null
           }
