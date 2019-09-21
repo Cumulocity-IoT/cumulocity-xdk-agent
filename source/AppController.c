@@ -396,15 +396,15 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 		case APP_STATUS_REGISTERED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_ON);
-			printf("STATUS APP_STATUS_REGISTERED\n");
+			//printf("STATUS APP_STATUS_REGISTERED\n");
 			break;
 		case APP_STATUS_REGISTERING:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			printf("STATUS APP_STATUS_REGISTERING\n");
+			//printf("STATUS APP_STATUS_REGISTERING\n");
 			break;
 		default:
-			printf("a ist irgendwas\n");
+			printf("Unknown status\n");
 			break;
 
 	}
