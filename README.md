@@ -52,6 +52,18 @@ The buttons have following on the XDK have the following functions:
 
  	* Button one dot: stop/start sending measurements to Cumulocity
 	* Button two dots: reset boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
+
+### Status indicated by LEDs
+| Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
+| -------- | -------- |--------- |------------------------- |------------------------------------ |--------------------------------- |
+| Blinking | Off      | Off      | Operation & Registration | Starting                            |                                  |
+| On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access     |
+| Off      | Blinking | Off      | Operation                | Running - Publishing                |                                  |
+| Off      | On	      | Off      | Operation                | Running - Publishing stopped        |                                  |
+| Blinking | Blinking | Off      | Operation                | Restarting                          |                                  |   
+| Off      | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
+| Off      | Off      | On       | Registration             | Running - Registration successful   |                                  |
+
 		
 ## Steps required to register and operate XDK device in C8Y tenant
 
