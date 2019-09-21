@@ -193,6 +193,18 @@ typedef enum
 	APP_OPERATION_OK = INT8_C(4),
 } APP_RESULT;
 
+typedef enum
+{
+	APP_STATUS_ERROR= INT8_C(-2),
+	APP_STATUS_STARTED = INT8_C(1),
+	APP_STATUS_OPERATEING= INT8_C(2),
+	APP_STATUS_REBOOT= INT8_C(3),
+	APP_STATUS_STOPPED = INT8_C(4),
+	APP_STATUS_REGISTERING = INT8_C(5),
+	APP_STATUS_REGISTERED = INT8_C(6),
+
+} APP_STATUS;
+
 
 /* MQTT C8Y Configuration */
 #define MQTT_SECURE         true 						/**use MQTT over TLS */
@@ -238,6 +250,7 @@ typedef struct {
  * Unused
  */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
+extern APP_STATUS app_status;
 
 #endif /* APPCONTROLLER_H_ */
 

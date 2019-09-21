@@ -116,7 +116,10 @@ static CmdProcessor_T * AppCmdProcessor;/**< Handle to store the main Command pr
 /* initalize boot progress */
 static APP_RESULT rc_Boot_Mode = APP_OPERATION_MODE;
 
+static void AppController_Enable(void *, uint32_t);
+static void AppController_Fire(void *);
 static void AppController_SetClientId(void);
+static void AppController_StartLEDBlinkTimer(int);
 
 static char clientId[] = WIFI_DEFAULT_MAC_CLIENTID;
 char deviceId[] = DEVICE_ID;
@@ -126,105 +129,10 @@ static xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Applicat
 
 
 /* global variables ********************************************************* */
-
+APP_STATUS app_status;
 /* inline functions ********************************************************* */
 
 /* local functions ********************************************************** */
-
-/**
- * @brief Responsible for controlling the send data over MQTT application control flow.
- *
- * - Synchronize SNTP time stamp for the system if MQTT communication is secure
- * - Connect to MQTT broker
- * - Subscribe to MQTT topic
- * - Read environmental sensor data
- * - Publish data periodically for a MQTT topic
- *
- * @param[in] pvParameters
- * Unused
- */
-
-static void AppController_Fire(void* pvParameters)
-{
-    BCDS_UNUSED(pvParameters);
-	int rc = APP_OPERATION_MODE;
-
-	AppController_SetClientId();
-	printf("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
-			deviceId);
-	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
-	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
-	MqttConnectInfo.CleanSession = true;
-	MqttConnectInfo.KeepAliveInterval = 100;
-
-	if (rc_Boot_Mode == APP_OPERATION_MODE) {
-		CmdProcessor_Enqueue(AppCmdProcessor, MQTTOperation_StartTimer, NULL, UINT32_C(0));
-
-		/* Initialize Buttons */
-		rc = MQTTButton_Init(AppCmdProcessor);
-		if (rc == APP_ERROR) {
-			printf("AppController_Fire: Boot error\r\n");
-			assert(0);
-		} else {
-			MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
-			MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
-			MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
-			MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
-		}
-	} else {
-		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
-	}
-}
-
-/**
- * @brief To enable the necessary modules for the application
- * - WLAN
- * - ServalPAL
- * - SNTP (if secure communication)
- * - MQTT
- * - Sensor
- *
- * @param[in] param1
- * Unused
- *
- * @param[in] param2
- * Unused
- */
-static void AppController_Enable(void * param1, uint32_t param2) {
-	BCDS_UNUSED(param1);
-	BCDS_UNUSED(param2);
-
-
-	Retcode_T retcode = WLAN_Enable();
-	if (RETCODE_OK == retcode) {
-		retcode = ServalPAL_Enable();
-	}
-
-	if (MqttSetupInfo.IsSecure == true) {
-		if (RETCODE_OK == retcode) {
-			retcode = SNTP_Enable();
-		}
-	}
-	if (RETCODE_OK == retcode) {
-		retcode = MQTT_Enable_Z();
-	}
-	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_OPERATION_MODE) {
-		retcode = Sensor_Enable();
-	}
-	if (RETCODE_OK == retcode) {
-        if (pdPASS != xTaskCreate(AppController_Fire, (const char * const ) "AppController", TASK_STACK_SIZE_APP_CONTROLLER, NULL, TASK_PRIO_APP_CONTROLLER, &AppControllerHandle))
-        {
-            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-        }
-	}
-	if (RETCODE_OK != retcode) {
-		printf("AppController_Enable: Now calling SoftReset and reboot to recover\n\r");
-		Retcode_RaiseError(retcode);
-		BSP_Board_SoftReset();
-		// assert(0);
-	}
-	Utils_PrintResetCause();
-}
 
 /**
  * @brief To setup the necessary modules for the application
@@ -306,6 +214,106 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 	}
 }
 
+/**
+ * @brief To enable the necessary modules for the application
+ * - WLAN
+ * - ServalPAL
+ * - SNTP (if secure communication)
+ * - MQTT
+ * - Sensor
+ *
+ * @param[in] param1
+ * Unused
+ *
+ * @param[in] param2
+ * Unused
+ */
+static void AppController_Enable(void * param1, uint32_t param2) {
+	BCDS_UNUSED(param1);
+	BCDS_UNUSED(param2);
+
+
+	Retcode_T retcode = WLAN_Enable();
+	if (RETCODE_OK == retcode) {
+		retcode = ServalPAL_Enable();
+	}
+
+	if (MqttSetupInfo.IsSecure == true) {
+		if (RETCODE_OK == retcode) {
+			retcode = SNTP_Enable();
+		}
+	}
+	if (RETCODE_OK == retcode) {
+		retcode = MQTT_Enable_Z();
+	}
+	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_OPERATION_MODE) {
+		retcode = Sensor_Enable();
+	}
+	if (RETCODE_OK == retcode) {
+        if (pdPASS != xTaskCreate(AppController_Fire, (const char * const ) "AppController", TASK_STACK_SIZE_APP_CONTROLLER, NULL, TASK_PRIO_APP_CONTROLLER, &AppControllerHandle))
+        {
+            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+        }
+	}
+	if (RETCODE_OK != retcode) {
+		printf("AppController_Enable: Now calling SoftReset and reboot to recover\n\r");
+		Retcode_RaiseError(retcode);
+		BSP_Board_SoftReset();
+		// assert(0);
+	}
+	Utils_PrintResetCause();
+}
+
+
+
+
+
+/**
+ * @brief Responsible for controlling the send data over MQTT application control flow.
+ *
+ * - Synchronize SNTP time stamp for the system if MQTT communication is secure
+ * - Connect to MQTT broker
+ * - Subscribe to MQTT topic
+ * - Read environmental sensor data
+ * - Publish data periodically for a MQTT topic
+ *
+ * @param[in] pvParameters
+ * Unused
+ */
+
+static void AppController_Fire(void* pvParameters)
+{
+    BCDS_UNUSED(pvParameters);
+	int rc = APP_OPERATION_MODE;
+
+	AppController_SetClientId();
+	printf("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
+			deviceId);
+	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
+	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
+	MqttConnectInfo.CleanSession = true;
+	MqttConnectInfo.KeepAliveInterval = 100;
+
+	if (rc_Boot_Mode == APP_OPERATION_MODE) {
+		CmdProcessor_Enqueue(AppCmdProcessor, MQTTOperation_StartTimer, NULL, UINT32_C(0));
+
+		/* Initialize Buttons */
+		rc = MQTTButton_Init(AppCmdProcessor);
+		if (rc == APP_ERROR) {
+			printf("AppController_Fire: Boot error\r\n");
+			assert(0);
+		} else {
+			MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
+			MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
+			MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
+			MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
+		}
+	} else {
+		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
+	}
+}
+
+
 /* global functions ********************************************************* */
 
 /** Refer interface header for description */
@@ -315,6 +323,10 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 
 	vTaskDelay(pdMS_TO_TICKS(3000));
 	printf("AppController_Init: XDK System Startup\r\n");
+
+	// start status LED indicator
+	app_status = APP_STATUS_STARTED;
+	AppController_StartLEDBlinkTimer (500);
 
 	if (cmdProcessorHandle == NULL) {
 		printf("AppController_Init: Command processor handle is NULL \r\n");
@@ -350,6 +362,62 @@ static void AppController_SetClientId(void) {
 
 	MqttConnectInfo.ClientId = clientId;
 	printf("AppController: Client id of the device: %s \n\r", clientId);
+}
+
+static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
+	(void) xTimer;
+	//APP_STATUS l_app_status;
+
+	switch(app_status) {
+		case APP_STATUS_STARTED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			//printf("STATUS APP_STATUS_STARTED\n");
+			break;
+		case APP_STATUS_OPERATEING:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			//printf("STATUS APP_STATUS_RUNNING\n");
+			break;
+		case APP_STATUS_STOPPED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
+			//printf("STATUS APP_STATUS_STOPPED\n");
+			break;
+		case APP_STATUS_ERROR:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_ON);
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
+			//printf("STATUS APP_STATUS_ERROR\n");
+			break;
+		case APP_STATUS_REBOOT:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			//printf("STATUS APP_STATUS_REBOOT\n");
+			break;
+		case APP_STATUS_REGISTERED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_ON);
+			printf("STATUS APP_STATUS_REGISTERED\n");
+			break;
+		case APP_STATUS_REGISTERING:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			printf("STATUS APP_STATUS_REGISTERING\n");
+			break;
+		default:
+			printf("a ist irgendwas\n");
+			break;
+
+	}
+}
+
+static void AppController_StartLEDBlinkTimer(int period) {
+	xTimerHandle timerHandle = xTimerCreate((const char * const ) "LED Timer", // used only for debugging purposes
+			MILLISECONDS(period), // timer period
+			pdTRUE, //Autoreload pdTRUE or pdFALSE - should the timer start again after it expired?
+			NULL, // optional identifier
+			AppController_ToogleLEDCallback // static callback function
+			);
+	xTimerStart(timerHandle, UINT32_C(0xffff));
 }
 
 

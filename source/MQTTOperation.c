@@ -67,8 +67,6 @@ static void MQTTOperation_ClientPublish(void);
 static void MQTTOperation_AssetUpdate(void);
 static Retcode_T MQTTOperation_SubscribeTopics(void);
 static void MQTTOperation_StartRestartTimer(int period);
-static void MQTTOperation_StartLEDBlinkTimer(int period);
-static void MQTTOperation_ToogleLEDCallback(xTimerHandle xTimer);
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer);
 static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force);
 static void MQTTOperation_SensorUpdate(void);
@@ -138,8 +136,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		    case 0:
 				if (strcmp(token, "510") == 0) {
 						printf("MQTTOperation: Starting restart \n\r");
-						MQTTOperation_StartLEDBlinkTimer(2000);
-						MQTTOperation_StartLEDBlinkTimer(4000);
+
+						app_status = APP_STATUS_REBOOT;
 						// set flag so that XDK acknowledges reboot command
 						if (rebootProgress == DEVICE_OPERATION_WAITING) {
 							rebootProgress = DEVICE_OPERATION_EXECUTING;
@@ -205,16 +203,6 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 
 }
 
-static void MQTTOperation_StartLEDBlinkTimer(int period) {
-	xTimerHandle timerHandle = xTimerCreate((const char * const ) "LED Timer", // used only for debugging purposes
-			MILLISECONDS(period), // timer period
-			pdFALSE, //Autoreload pdTRUE or pdFALSE - should the timer start again after it expired?
-			NULL, // optional identifier
-			MQTTOperation_ToogleLEDCallback // static callback function
-			);
-	xTimerStart(timerHandle, MILLISECONDS(10));
-}
-
 static void MQTTOperation_StartRestartTimer(int period) {
 	xTimerHandle timerHandle = xTimerCreate(
 			(const char * const ) "Restart Timer", // used only for debugging purposes
@@ -226,10 +214,6 @@ static void MQTTOperation_StartRestartTimer(int period) {
 	xTimerStart(timerHandle, MILLISECONDS(10));
 }
 
-static void MQTTOperation_ToogleLEDCallback(xTimerHandle xTimer) {
-	(void) xTimer;
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-}
 
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
 	(void) xTimer;
@@ -264,6 +248,9 @@ static void MQTTOperation_ClientPublish(void) {
 	 its caller function as there is nothing to return to. */
 	while (1) {
 		if (deviceRunning) {
+			if (app_status != APP_STATUS_REBOOT) {
+				app_status = APP_STATUS_OPERATEING;
+			}
 			MQTTOperation_SensorUpdate();
 			/* Check whether the WLAN network connection is available */
 			retcode = MQTTOperation_ValidateWLANConnectivity(false);
@@ -346,7 +333,7 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Start publishing ...\n\r");
 	deviceRunning = true;
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
+	app_status = APP_STATUS_OPERATEING;
 	return;
 }
 /**
@@ -361,7 +348,7 @@ void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Stop publishing!\n\r");
 	deviceRunning = false;
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
+	app_status = APP_STATUS_STOPPED;
 	return;
 }
 
@@ -447,18 +434,12 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	if (RETCODE_OK == retcode) {
 		printf("MQTTOperation: Successfully connected to [%s:%d]\n\r",
 					MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort);
-		/* Turn ON Orange LED to indicate Initialization Complete */
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
-		vTaskDelay(pdMS_TO_TICKS(xDelayMS));
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O,
-				(uint32_t) BSP_LED_COMMAND_OFF);
-		vTaskDelay(pdMS_TO_TICKS(xDelayMS));
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
 		MQTTOperation_ClientPublish();
 	} else {
 		//reboot to recover
 		printf("MQTTOperation: Now calling SoftReset and reboot to recover\n\r");
 		//MQTTOperation_DeInit();
+		app_status = APP_STATUS_ERROR;
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(60000));
 		BSP_Board_SoftReset();
@@ -473,7 +454,6 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
  */
 void MQTTOperation_DeInit(void) {
 	Retcode_T retcode = RETCODE_OK;
-
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Calling DeInit\n\r");
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeCommandInfo,
@@ -495,9 +475,10 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 	Retcode_T retcode = RETCODE_OK;
 	WlanNetworkConnect_IpStatus_T nwStatus;
 
+
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
-
+		app_status = APP_STATUS_ERROR;
 		// increase connect attemps
 		connectAttemps = connectAttemps + 1;
 		// before resetting connection try to disconnect

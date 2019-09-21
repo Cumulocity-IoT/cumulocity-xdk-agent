@@ -101,7 +101,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	printf("MQTTRegistration: Received new message on topic: %s from upstream: [%s]\n\r",
 			appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer);
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+		app_status = APP_STATUS_REGISTERED;
 
 		char stringBuffer[128];
 		strcpy(stringBuffer, "\nMQTTUSER=");
@@ -215,20 +215,7 @@ void MQTTRegistration_StartTimer(void){
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTRegistration: Start publishing ...\n\r");
 	xTimerStart(clientRegistrationTimerHandle, UINT32_MAX);
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
-	return;
-}
-/**
- * @brief stops the data streaming timer
- *
- * @return NONE
- */
-void MQTTRegistration_StopTimer (void){
-	/* Stop the timers */
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTRegistration: Stop publishing!\n\r");
-	xTimerStop(clientRegistrationTimerHandle, UINT32_MAX);
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
+	app_status = APP_STATUS_REGISTERING;
 	return;
 }
 
@@ -300,11 +287,6 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 			pdTRUE,
 			NULL, MQTTRegistration_PrepareNextRegistrationMsg);
 
-	/* Turn ON Orange LED to indicate Initialization Complete */
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
-	vTaskDelay( pdMS_TO_TICKS(xDelayMS));
-	BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
-	vTaskDelay( pdMS_TO_TICKS(xDelayMS));
 
 	MQTTRegistration_StartTimer();
 	MQTTRegistration_ClientPublish();
