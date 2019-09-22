@@ -31,7 +31,7 @@ The C8Y Agent for XDK sends following sensor measurements to C8Y :
 - NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
 
 with the defined streamrate:
-- STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default-value 5000
+- STREAMRATE = <RATE TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000
 
 Measurements types can be switched on/off in config.txt by setting the value to true/false. 
 > NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.
@@ -55,9 +55,9 @@ The buttons have following on the XDK have the following functions:
 
 ### Status indicated by LEDs
 | Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
-| -------- | -------- |--------- |------------------------- |------------------------------------ |--------------------------------- |
+| :------: | :------: | :------: |------------------------- |------------------------------------ |--------------------------------- |
 | Blinking | Off      | Off      | Operation & Registration | Starting                            |                                  |
-| On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access     |
+| On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access, SNTP server not reachable |
 | Off      | Blinking | Off      | Operation                | Running - Publishing                |                                  |
 | Off      | On	      | Off      | Operation                | Running - Publishing stopped        |                                  |
 | Blinking | Blinking | Off      | Operation                | Restarting                          |                                  |   
