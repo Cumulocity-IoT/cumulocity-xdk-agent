@@ -250,7 +250,7 @@ typedef struct {
  * Unused
  */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
-extern APP_STATUS app_status;
+void AppController_SetStatus( uint8_t status);
 
 #endif /* APPCONTROLLER_H_ */
 

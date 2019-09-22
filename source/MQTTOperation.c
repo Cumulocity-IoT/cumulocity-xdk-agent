@@ -137,7 +137,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				if (strcmp(token, "510") == 0) {
 						printf("MQTTOperation: Starting restart \n\r");
 
-						app_status = APP_STATUS_REBOOT;
+						AppController_SetStatus(APP_STATUS_REBOOT);
 						// set flag so that XDK acknowledges reboot command
 						if (rebootProgress == DEVICE_OPERATION_WAITING) {
 							rebootProgress = DEVICE_OPERATION_EXECUTING;
@@ -248,9 +248,7 @@ static void MQTTOperation_ClientPublish(void) {
 	 its caller function as there is nothing to return to. */
 	while (1) {
 		if (deviceRunning) {
-			if (app_status != APP_STATUS_REBOOT) {
-				app_status = APP_STATUS_OPERATEING;
-			}
+			AppController_SetStatus(APP_STATUS_OPERATEING);
 			MQTTOperation_SensorUpdate();
 			/* Check whether the WLAN network connection is available */
 			retcode = MQTTOperation_ValidateWLANConnectivity(false);
@@ -333,7 +331,7 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Start publishing ...\n\r");
 	deviceRunning = true;
-	app_status = APP_STATUS_OPERATEING;
+	AppController_SetStatus(APP_STATUS_OPERATEING);
 	return;
 }
 /**
@@ -346,9 +344,9 @@ void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param2);
 	/* Stop the timers */
 	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTOperation: Stop publishing!\n\r");
+		printf("MQTTOperation: Stopped publishing!\n\r");
 	deviceRunning = false;
-	app_status = APP_STATUS_STOPPED;
+	AppController_SetStatus(APP_STATUS_STOPPED);
 	return;
 }
 
@@ -356,21 +354,21 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
 	Retcode_T retcode;
 	retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeCommandInfo,
 	MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+
 	if (RETCODE_OK != retcode) {
 		printf("MQTTOperation: MQTT subscribe command topic failed\n\r");
 	} else {
 		printf("MQTTOperation: MQTT subscribe command topic successful\n\r");
-	}
 
-	if (RETCODE_OK == retcode) {
 		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeRestartInfo,
 		MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 		if (RETCODE_OK != retcode) {
-			printf("MQTTOperation: MQTT subscribe restart failed \n\r");
+			printf("MQTTOperation: MQTT subscribe restart topic failed \n\r");
 		} else {
-			printf("MQTTOperation: MQTT subscribe command successful\n\r");
+			printf("MQTTOperation: MQTT subscribe restart topic successful\n\r");
 		}
 	}
+
 	return retcode;
 }
 
@@ -382,8 +380,6 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
 void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		MQTT_Connect_TZ MqttConnectInfo_P,
 		MQTT_Credentials_TZ MqttCredentials_P, Sensor_Setup_T SensorSetup_P) {
-
-	const TickType_t xDelayMS = 2000;
 
 	/* Initialize Variables */
 	MqttSetupInfo = MqttSetupInfo_P;
@@ -439,7 +435,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		//reboot to recover
 		printf("MQTTOperation: Now calling SoftReset and reboot to recover\n\r");
 		//MQTTOperation_DeInit();
-		app_status = APP_STATUS_ERROR;
+		AppController_SetStatus(APP_STATUS_ERROR);
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(60000));
 		BSP_Board_SoftReset();
@@ -478,7 +474,8 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
-		app_status = APP_STATUS_ERROR;
+		AppController_SetStatus(APP_STATUS_ERROR);
+
 		// increase connect attemps
 		connectAttemps = connectAttemps + 1;
 		// before resetting connection try to disconnect
@@ -565,13 +562,14 @@ static void MQTTOperation_AssetUpdate(void) {
 			"114,c8y_Restart,c8y_Message,c8y_Command\n\r");
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length,
-			"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n\"\n\r",
+			"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\n\r",
 			A9Name, tickRateMS,
 			A10Name, MQTTCfgParser_IsAccelEnabled(),
 			A11Name, MQTTCfgParser_IsGyroEnabled(),
 			A12Name, MQTTCfgParser_IsMagnetEnabled(),
 			A13Name, MQTTCfgParser_IsEnvEnabled(),
-			A14Name, MQTTCfgParser_IsLightEnabled());
+			A14Name, MQTTCfgParser_IsLightEnabled(),
+			A15Name, MQTTCfgParser_IsNoiseEnabled());
 
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length, "117,5\n\r");

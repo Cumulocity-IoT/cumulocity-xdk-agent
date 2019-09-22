@@ -313,35 +313,6 @@ static void AppController_Fire(void* pvParameters)
 	}
 }
 
-
-/* global functions ********************************************************* */
-
-/** Refer interface header for description */
-void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
-	Retcode_T retcode = RETCODE_OK;
-	BCDS_UNUSED(param2);
-
-	vTaskDelay(pdMS_TO_TICKS(3000));
-	printf("AppController_Init: XDK System Startup\r\n");
-
-	// start status LED indicator
-	app_status = APP_STATUS_STARTED;
-	AppController_StartLEDBlinkTimer (500);
-
-	if (cmdProcessorHandle == NULL) {
-		printf("AppController_Init: Command processor handle is NULL \r\n");
-		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
-	} else if (RETCODE_OK == retcode) {
-		AppCmdProcessor = (CmdProcessor_T *) cmdProcessorHandle;
-		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Setup,NULL, UINT32_C(0));
-	}
-
-	if (RETCODE_OK != retcode) {
-		Retcode_RaiseError(retcode);
-		assert(0); /* To provide LED indication for the user */
-	}
-}
-
 static void AppController_SetClientId(void) {
 	/* Initialize Variables */
 	uint8_t _macVal[WIFI_MAC_ADDR_LEN];
@@ -419,5 +390,42 @@ static void AppController_StartLEDBlinkTimer(int period) {
 			);
 	xTimerStart(timerHandle, UINT32_C(0xffff));
 }
+
+
+
+/* global functions ********************************************************* */
+
+/** Refer interface header for description */
+void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
+	Retcode_T retcode = RETCODE_OK;
+	BCDS_UNUSED(param2);
+
+	vTaskDelay(pdMS_TO_TICKS(3000));
+	printf("AppController_Init: XDK System Startup\r\n");
+
+	// start status LED indicator
+	app_status = APP_STATUS_STARTED;
+	AppController_StartLEDBlinkTimer (500);
+
+	if (cmdProcessorHandle == NULL) {
+		printf("AppController_Init: Command processor handle is NULL \r\n");
+		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
+	} else if (RETCODE_OK == retcode) {
+		AppCmdProcessor = (CmdProcessor_T *) cmdProcessorHandle;
+		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Setup,NULL, UINT32_C(0));
+	}
+
+	if (RETCODE_OK != retcode) {
+		Retcode_RaiseError(retcode);
+		assert(0); /* To provide LED indication for the user */
+	}
+}
+
+void AppController_SetStatus( uint8_t status) {
+	if (app_status != APP_STATUS_REBOOT) {
+		app_status = status;
+	}
+}
+
 
 

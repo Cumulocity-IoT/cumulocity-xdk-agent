@@ -101,7 +101,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	printf("MQTTRegistration: Received new message on topic: %s from upstream: [%s]\n\r",
 			appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer);
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
-		app_status = APP_STATUS_REGISTERED;
+		AppController_SetStatus(APP_STATUS_REGISTERED);
 
 		char stringBuffer[128];
 		strcpy(stringBuffer, "\nMQTTUSER=");
@@ -215,7 +215,7 @@ void MQTTRegistration_StartTimer(void){
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTRegistration: Start publishing ...\n\r");
 	xTimerStart(clientRegistrationTimerHandle, UINT32_MAX);
-	app_status = APP_STATUS_REGISTERING;
+	AppController_SetStatus(APP_STATUS_REGISTERING);
 	return;
 }
 
@@ -226,8 +226,6 @@ void MQTTRegistration_StartTimer(void){
  */
 void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		MQTT_Connect_TZ MqttConnectInfo_P) {
-
-	const TickType_t xDelayMS = 2000;
 
 	/* Initialize Variables */
 	MqttSetupInfo = MqttSetupInfo_P;
