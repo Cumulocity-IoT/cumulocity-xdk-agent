@@ -82,25 +82,26 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
     BCDS_UNUSED(param1);
 	if (BSP_XDK_BUTTON_PRESSED == buttonstatus ) {
 		time_start = xTaskGetTickCountFromISR();
-		MQTTFlash_FLWriteBootStatus(NO_BOOT_PENDING);
 
-		ConfigDataBuffer localbuffer;
-		localbuffer.length = NUMBER_UINT32_ZERO;
-		memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
-		MQTTFlash_FLReadConfig(&localbuffer);
-		printf("MQTTButton: Current configuration in flash:\n\r%s\n\r", localbuffer.data);
-
-		localbuffer.length = NUMBER_UINT32_ZERO;
-		memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
-		MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-		printf("MQTTButton: Currently used configuration:\n\r%s\n\r", localbuffer.data);
 	} else if (BSP_XDK_BUTTON_RELEASED == buttonstatus){
 		TickType_t time_passed = xTaskGetTickCountFromISR() - time_start;
 		if (time_passed > pdMS_TO_TICKS(3000)) {
 			MQTTFlash_FLDeleteConfig();
-			printf("MQTTButton: Button pressed long: %i\n\r", time_passed);
+			printf("MQTTButton: Button pressed long: %lu\n\r", time_passed);
 		} else {
-			printf("MQTTButton: Button pressed for: %i\n\r", time_passed);
+			MQTTFlash_FLWriteBootStatus((uint8_t*) NO_BOOT_PENDING);
+
+			ConfigDataBuffer localbuffer;
+			localbuffer.length = NUMBER_UINT32_ZERO;
+			memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+			MQTTFlash_FLReadConfig(&localbuffer);
+			printf("MQTTButton: Current configuration in flash:\n\r%s\n\r", localbuffer.data);
+
+			localbuffer.length = NUMBER_UINT32_ZERO;
+			memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+			MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
+			printf("MQTTButton: Currently used configuration:\n\r%s\n\r", localbuffer.data);
+			printf("MQTTButton: Button pressed for: %lu\n\r", time_passed);
 		}
 	}
 
