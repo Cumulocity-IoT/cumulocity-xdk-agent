@@ -280,7 +280,7 @@ static TokensType_T GetToken(const char *buffer, uint16_t *idxAtBuffer,
  * @return CFG_TRUE if configuration file is correct and contains necessary attribute/values
  *
  */
-static uint8_t MQTTCfgParser_Config(const char *buffer, uint16_t bufSize) {
+static uint8_t MQTTCfgParser_Config(const char *buffer, uint16_t bufSize, uint8_t overwrite) {
 	uint16_t IndexAtBuffer = UINT16_C(0);
 	uint8_t Result = CFG_TRUE;
 	States_T State = STAT_EXP_ATT_NAME;
@@ -332,14 +332,14 @@ static uint8_t MQTTCfgParser_Config(const char *buffer, uint16_t bufSize) {
 
 			strcpy(ConfigStructure[CurrentConfigToSet].attValue, Token);
 
-			if (ConfigStructure[CurrentConfigToSet].defined == 0) {
+			if (ConfigStructure[CurrentConfigToSet].defined == 0 || overwrite) {
 
 				ConfigStructure[CurrentConfigToSet].defined = 1;
 				State = STAT_EXP_ATT_NAME;
 
 			} else {
 				Result = CFG_FALSE;
-				printf("MQTTCfgParser: Twice definition of  attribute %s! \n\r",
+				printf("MQTTCfgParser: Twice definition of attribute %s!\n\r",
 						ConfigStructure[CurrentConfigToSet].attName);
 			}
 			break;
@@ -419,8 +419,8 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	if (RetVal != APP_RESULT_FILE_MISSING) {
 		//config on flash exists an is
 		if (CFG_TRUE
-				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
-						fileReadBuffer.length)) {
+				== MQTTCfgParser_Config((const char*) fileReadBuffer.data,
+						fileReadBuffer.length, CFG_FALSE)) {
 			RetVal = APP_RESULT_OPERATION_OK;
 		}
 	}
@@ -433,7 +433,7 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	if (RetVal == APP_RESULT_OPERATION_OK ) {
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
-						fileReadBuffer.length)) {
+						fileReadBuffer.length, CFG_TRUE)) {
 			RetVal = APP_RESULT_OPERATION_OK;
 		}
 	} else {
