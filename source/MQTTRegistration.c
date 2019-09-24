@@ -123,11 +123,13 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			} else if (phase == 1 && pos == 2) {
 				strcat(stringBuffer, token);
 				strcat(stringBuffer, "\n");
+				MQTTCfgParser_SetMqttUser(token);
 				printf("MQTTRegistration: Found username: [%s]\n\r", token);
 			} else if (phase == 1 && pos == 3) {
 				strcat(stringBuffer, "MQTTPASSWORD=");
 				strcat(stringBuffer, token);
 				strcat(stringBuffer, "\n");
+				MQTTCfgParser_SetMqttPassword(token);
 				printf("MQTTRegistration: Found password: [%s]\n\r", token);
 			} else {
 				printf("MQTTRegistration: Wrong message format\n\r");

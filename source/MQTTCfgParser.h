@@ -157,7 +157,16 @@ APP_RESULT MQTTCfgParser_Init(void);
  * @param[in] Title title for list
  * @param[in] defaultsOnly list only default values
  */
-void CfgParser_List(const char* Title, uint8_t defaultsOnly);
+void MQTTCfgParser_List(const char* Title, uint8_t defaultsOnly);
+
+
+/**
+ * @brief   Print list of configured values.
+ * @param[in] config buffer where current values are added
+ * @param[in] defaultsOnly list only default values
+ */
+void MQTTCfgParser_GetConfig(ConfigDataBuffer *config, uint8_t defaultsOnly);
+
 
 /**
  * @brief   Function parses the Configuration file if present Typedef to represent the Conditional Value of the token
@@ -195,7 +204,13 @@ const char *MQTTCfgParser_GetMqttUser(void);
 
 const char *MQTTCfgParser_GetMqttPassword(void);
 
+void MQTTCfgParser_SetMqttUser(char * user);
+
+void MQTTCfgParser_SetMqttPassword(char * password);
+
 int32_t MQTTCfgParser_GetStreamRate(void);
+
+void MQTTCfgParser_SetStreamRate(int32_t rate);
 
 bool MQTTCfgParser_IsAccelEnabled(void);
 

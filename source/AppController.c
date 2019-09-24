@@ -114,7 +114,7 @@ static Storage_Setup_T StorageSetup =
 static CmdProcessor_T * AppCmdProcessor;/**< Handle to store the main Command processor handle to be used by run-time event driven threads */
 
 /* initalize boot progress */
-static APP_RESULT rc_Boot_Mode = APP_OPERATION_MODE;
+static APP_RESULT rc_Boot_Mode = APP_RESULT_OPERATION_MODE;
 
 static void AppController_Enable(void *, uint32_t);
 static void AppController_Fire(void *);
@@ -160,11 +160,20 @@ static void AppController_Setup(void * param1, uint32_t param2) {
         Retcode_RaiseError(retcode);
     }
 	/* Initialize variables from flash */
-	if (MQTTFlash_Init() == APP_ERROR) {
+	if (MQTTFlash_Init() == APP_RESULT_ERROR) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
 	}
+
+
+	/* Initialize Buttons */
+	rc_Boot_Mode = MQTTButton_Init(AppCmdProcessor);
+	if (rc_Boot_Mode == APP_RESULT_ERROR) {
+		printf("AppController_Setup: Boot error\r\n");
+		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
+	}
+
 	rc_Boot_Mode = MQTTCfgParser_Init();
-	if (rc_Boot_Mode == APP_ERROR) {
+	if (rc_Boot_Mode == APP_RESULT_ERROR) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
 	}
 
@@ -192,7 +201,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_Setup_Z(&MqttSetupInfo);
 	}
-	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_OPERATION_MODE) {
+	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		SensorSetup.CmdProcessorHandle = AppCmdProcessor;
 		SensorSetup.Enable.Accel = MQTTCfgParser_IsAccelEnabled();
 		SensorSetup.Enable.Gyro = MQTTCfgParser_IsGyroEnabled();
@@ -246,7 +255,7 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_Enable_Z();
 	}
-	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_OPERATION_MODE) {
+	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		retcode = Sensor_Enable();
 	}
 	if (RETCODE_OK == retcode) {
@@ -284,7 +293,7 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 static void AppController_Fire(void* pvParameters)
 {
     BCDS_UNUSED(pvParameters);
-	int rc = APP_OPERATION_MODE;
+	int rc = APP_RESULT_OPERATION_MODE;
 
 	AppController_SetClientId();
 	printf("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
@@ -294,20 +303,20 @@ static void AppController_Fire(void* pvParameters)
 	MqttConnectInfo.CleanSession = true;
 	MqttConnectInfo.KeepAliveInterval = 100;
 
-	if (rc_Boot_Mode == APP_OPERATION_MODE) {
+	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		CmdProcessor_Enqueue(AppCmdProcessor, MQTTOperation_StartTimer, NULL, UINT32_C(0));
 
-		/* Initialize Buttons */
-		rc = MQTTButton_Init(AppCmdProcessor);
-		if (rc == APP_ERROR) {
-			printf("AppController_Fire: Boot error\r\n");
-			assert(0);
-		} else {
+//		/* Initialize Buttons */
+//		rc = MQTTButton_Init(AppCmdProcessor);
+//		if (rc == APP_RESULT_ERROR) {
+//			printf("AppController_Fire: Boot error\r\n");
+//			assert(0);
+//		} else {
 			MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
 			MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
 			MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
 			MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
-		}
+//		}
 	} else {
 		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
 	}
@@ -412,7 +421,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 	} else if (RETCODE_OK == retcode) {
 		AppCmdProcessor = (CmdProcessor_T *) cmdProcessorHandle;
-		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Setup,NULL, UINT32_C(0));
+		retcode = CmdProcessor_EnqueueFromIsr(AppCmdProcessor, AppController_Setup,NULL, UINT32_C(0));
 	}
 
 	if (RETCODE_OK != retcode) {
@@ -425,6 +434,10 @@ void AppController_SetStatus( uint8_t status) {
 	if (app_status != APP_STATUS_REBOOT) {
 		app_status = status;
 	}
+}
+
+uint8_t AppController_GetStatus(void) {
+	return app_status;
 }
 
 

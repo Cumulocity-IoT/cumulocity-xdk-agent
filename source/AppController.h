@@ -182,15 +182,15 @@
 
 typedef enum
 {
-	APP_INIT_FILE_MISSING = INT8_C(-4),
-	APP_SDCARD_BUFFER_OVERFLOW_ERROR= INT8_C(-3),
-	APP_SDCARD_ERROR = INT8_C(-2),
-	APP_ERROR= INT8_C(-1),
-	APP_OPERATION_MODE = INT8_C(0),
-	APP_REGISTRATION_MODE = INT8_C(1),
-	APP_OK = INT8_C(2),
-	APP_SDCARD_NO_ERROR = INT8_C(3),
-	APP_OPERATION_OK = INT8_C(4),
+	APP_RESULT_FILE_MISSING = INT8_C(-4),
+	APP_RESULT_SDCARD_BUFFER_OVERFLOW_ERROR= INT8_C(-3),
+	APP_RESULT_SDCARD_ERROR = INT8_C(-2),
+	APP_RESULT_ERROR= INT8_C(-1),
+	APP_RESULT_OPERATION_MODE = INT8_C(0),
+	APP_RESULT_REGISTRATION_MODE = INT8_C(1),
+	APP_RESULT_OK = INT8_C(2),
+	APP_RESULT_SDCARD_NO_ERROR = INT8_C(3),
+	APP_RESULT_OPERATION_OK = INT8_C(4),
 } APP_RESULT;
 
 typedef enum
@@ -224,6 +224,8 @@ typedef enum
 
 
 /* Sensor type and macro definitions */
+#define SENSOR_XLARGE_BUF_SIZE    512
+/* Sensor type and macro definitions */
 #define SENSOR_LARGE_BUF_SIZE    256
 /* Sensor type and macro definitions */
 #define SENSOR_SMALL_BUF_SIZE    128
@@ -238,6 +240,11 @@ typedef struct {
 	char data[SENSOR_LARGE_BUF_SIZE];
 } AssetDataBuffer;
 
+typedef struct {
+	uint32_t length;
+	char data[SENSOR_XLARGE_BUF_SIZE];
+} ConfigDataBuffer;
+
 /* local inline function definitions */
 
 /**
@@ -251,6 +258,7 @@ typedef struct {
  */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
 void AppController_SetStatus( uint8_t status);
+uint8_t AppController_GetStatus(void);
 
 #endif /* APPCONTROLLER_H_ */
 

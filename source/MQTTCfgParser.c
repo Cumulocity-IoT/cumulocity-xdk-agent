@@ -104,7 +104,7 @@
 
 /** Variable containers for configuration values */
 static char AttValues[ATT_IDX_SIZE][UINT8_C(50)];
-static uint8_t FileReadBuffer[FILE_LARGE_BUFFER_SIZE];
+static ConfigDataBuffer fileReadBuffer;
 void MQTTCfgParser_List(const char* Title, uint8_t defaultsOnly);
 static char *itoa (int value, char *result, int base);
 
@@ -149,6 +149,16 @@ static const char* getAttValue(int index) {
 	}
 	return "";
 }
+
+static void setAttValue(int index, char* value) {
+	if (0 <= index && index < ATT_IDX_SIZE) {
+		if (DEBUG_LEVEL <= FINEST ) printf("MQTTCfgParser: Debugging attribute set: %i / %s \n\r",
+				ConfigStructure[index].defined, ConfigStructure[index].attValue );
+		//ConfigStructure[index].attValue = value;
+		strcpy(ConfigStructure[index].attValue, value);
+	}
+}
+
 
 /**
  * @brief extracts tokens from the input buffer , copy into the token buffer and returns its
@@ -271,6 +281,7 @@ static TokensType_T GetToken(const char *buffer, uint16_t *idxAtBuffer,
  *
  */
 static uint8_t MQTTCfgParser_Config(const char *buffer, uint16_t bufSize) {
+	printf("MQTTCfgParser_ParseConfigFile: XXXXXXXXXXXXXXX %s and size %i!\r\n",buffer, bufSize );
 	uint16_t IndexAtBuffer = UINT16_C(0);
 	uint8_t Result = CFG_TRUE;
 	States_T State = STAT_EXP_ATT_NAME;
@@ -340,8 +351,7 @@ static uint8_t MQTTCfgParser_Config(const char *buffer, uint16_t bufSize) {
 		}
 	}
 
-	MQTTCfgParser_List("MQTTCfgParser: Parsing content from config file [config.txt]:", CFG_FALSE);
-
+	MQTTCfgParser_List("MQTTCfgParser: Parsing content from config file [config.txt]:", CFG_TRUE);
 	return Result;
 }
 
@@ -371,20 +381,54 @@ void MQTTCfgParser_List(const char* Title, uint8_t defaultsOnly) {
 	}
 }
 
+void MQTTCfgParser_GetConfig(ConfigDataBuffer *configBuffer, uint8_t defaultsOnly) {
+	for (uint8_t i = UINT8_C(0); i < ATT_IDX_SIZE; i++) {
+		if (CFG_FALSE == ConfigStructure[i].ignore) {
+			if (CFG_TRUE == ConfigStructure[i].defined) {
+				configBuffer->length += sprintf(configBuffer->data + configBuffer->length,"%s = %s\n", ConfigStructure[i].attName,
+						ConfigStructure[i].attValue);
+				//printf("Added: %s = %s, %i|%s\n\r",
+				//		ConfigStructure[i].attName, ConfigStructure[i].attValue, configBuffer->length,configBuffer->data );
+			} else {
+				if (CFG_TRUE == defaultsOnly) {
+					if (0 != *ConfigStructure[i].defaultValue) {
+						configBuffer->length += sprintf(configBuffer->data + configBuffer->length, "%s = %s\n", ConfigStructure[i].attName,
+								ConfigStructure[i].defaultValue);
+
+					}
+				} else {
+					configBuffer->length += sprintf(configBuffer->data + configBuffer->length, "%s = %s\n",
+							ConfigStructure[i].attName,
+							ConfigStructure[i].defaultValue);
+				}
+			}
+		} else if (CFG_TRUE == ConfigStructure[i].defined) {
+			printf("[%19s] is deprecated and should be removed\n\r",
+					ConfigStructure[i].attName);
+		}
+	}
+}
+
+
 /** @brief For description of the function please refer interface header MQTTCfgParser.h  */
 APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
-	APP_RESULT RetVal = APP_ERROR;
+	APP_RESULT RetVal = APP_RESULT_ERROR;
 	UINT BytesRead = 0;
 
-	memset(FileReadBuffer, CFG_NUMBER_UINT8_ZERO, FILE_LARGE_BUFFER_SIZE);
+	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
 
-	RetVal = MQTTFlash_SDCardRead((int8_t*)CONFIG_FILENAME, (int8_t*) FileReadBuffer, FILE_LARGE_BUFFER_SIZE, &BytesRead);
+	RetVal = MQTTFlash_FLReadConfig(&fileReadBuffer);
+	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%i]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
+	if (RetVal == APP_RESULT_FILE_MISSING) {
+		printf("MQTTCfgParser_ParseConfigFile: Read again!");
+		RetVal = MQTTFlash_SDRead((int8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
+	}
 
-	if (RetVal == APP_SDCARD_NO_ERROR) {
+	if (RetVal == APP_RESULT_OPERATION_OK) {
 		if (CFG_TRUE
-				== MQTTCfgParser_Config((const char*) FileReadBuffer,
-						BytesRead)) {
-			RetVal = APP_OPERATION_OK;
+				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
+						fileReadBuffer.length)) {
+			RetVal = APP_RESULT_OPERATION_OK;
 		}
 	} else {
 		printf("MQTTCfgParser: Error read configuration file!\n\r");
@@ -442,10 +486,35 @@ const char *MQTTCfgParser_GetMqttPassword(void) {
 	return getAttValue(ATT_IDX_MQTTPASSWORD);
 }
 
+void MQTTCfgParser_SetMqttUser(char * user) {
+	return setAttValue(ATT_IDX_MQTTUSER, user);
+}
+
+void MQTTCfgParser_SetMqttPassword(char * password) {
+	return setAttValue(ATT_IDX_MQTTPASSWORD, password);
+}
+
+
 int32_t MQTTCfgParser_GetStreamRate(void) {
 	int32_t s = (int32_t) atol(getAttValue(ATT_IDX_STREAMRATE));
 	//printf("MQTTCfgParser: Streamrate : %lu\n\r", s );
 	return s ;
+}
+
+void MQTTCfgParser_SetStreamRate(int32_t rate) {
+	char token[CFG_MAX_LINE_SIZE] = { 0 };
+	itoa (rate, &token , 10);
+	setAttValue(ATT_IDX_STREAMRATE, token);
+
+	// update config in flash memory
+	ConfigDataBuffer localbuffer;
+	localbuffer.length = NUMBER_UINT32_ZERO;
+	memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
+	MQTTFlash_FLWriteConfig(&localbuffer);
+	//strcpy(ConfigStructure[ATT_IDX_STREAMRATE].attValue, token);
+	//printf("MQTTCfgParser: Streamrate : %lu\n\r", s );
+
 }
 
 bool MQTTCfgParser_IsAccelEnabled(void) {
@@ -530,16 +599,16 @@ APP_RESULT MQTTCfgParser_Init(void) {
 		}
 	}
 
-    if (APP_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
+    if (APP_RESULT_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
     {
         printf("MQTTFlash: Config file is not correct. Please give a proper Config file and reboot the device!\n\r");
-		return APP_ERROR;
+		return APP_RESULT_ERROR;
     }
 
     if (strcmp(MQTTCfgParser_GetMqttUser(), MQTT_USERNAME) == UINT8_C(0)) {
-    	return APP_REGISTRATION_MODE;
+    	return APP_RESULT_REGISTRATION_MODE;
     } else {
-    	return APP_OPERATION_MODE;
+    	return APP_RESULT_OPERATION_MODE;
     }
 }
 

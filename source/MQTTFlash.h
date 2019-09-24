@@ -70,7 +70,6 @@ typedef enum {
  */
 #define FILE_TINY_BUFFER_SIZE          UINT16_C(128)
 #define FILE_SMALL_BUFFER_SIZE         UINT16_C(256)
-#define FILE_LARGE_BUFFER_SIZE 		   UINT16_C(512)
 #define FILE_EQUAL 		     UINT8_C(0)
 #define FILE_NOT_EQUAL 	     UINT8_C(1)
 
@@ -92,11 +91,14 @@ typedef enum {
  *      APP_ERR_INIT_FAILED - disk has not been initialized
  */
 APP_RESULT MQTTFlash_Init(void);
-APP_RESULT MQTTFlash_ReadBootStatus(uint8_t* status);
-void MQTTFlash_WriteBootStatus(uint8_t* status);
+APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* status);
+void MQTTFlash_FLWriteBootStatus(uint8_t* status);
+void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
+APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
+void MQTTFlash_FLDeleteConfig(void);
 void MQTTFlash_AppendCredentials(char* stringBuffer);
-APP_RESULT MQTTFlash_SDCardWrite(int8_t* stringBuffer, int8_t* fileName, BYTE mode);
-APP_RESULT MQTTFlash_SDCardRead(int8_t* fileName, int8_t* ramBufferRead, uint16_t maxBufferSize, UINT* bytesRead);
+APP_RESULT MQTTFlash_SDWrite(int8_t* stringBuffer, int8_t* fileName, BYTE mode);
+APP_RESULT MQTTFlash_SDRead(int8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize);
 
 /* local inline function definitions */
 

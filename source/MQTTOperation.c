@@ -186,6 +186,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						int speed = strtol(token, (char **) NULL, 10);
 						printf("MQTTOperation: New speed: %i\n\r", speed);
 						tickRateMS = (int) pdMS_TO_TICKS(speed);
+						MQTTCfgParser_SetStreamRate(speed);
 						MQTTOperation_AssetUpdate();
 
 					}
@@ -218,7 +219,7 @@ static void MQTTOperation_StartRestartTimer(int period) {
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
 	(void) xTimer;
 	printf("MQTTOperation: Now calling SoftReset\n\r");
-	MQTTFlash_WriteBootStatus(BOOT_PENDING);
+	MQTTFlash_FLWriteBootStatus(BOOT_PENDING);
 	MQTTOperation_DeInit();
 	deviceRunning = false;
 	BSP_Board_SoftReset();
@@ -543,7 +544,7 @@ static void MQTTOperation_AssetUpdate(void) {
 	/* Initialize Variables */
 	char readbuffer[FILE_TINY_BUFFER_SIZE]; /* Temporary buffer for write file */
 
-	MQTTFlash_ReadBootStatus(readbuffer);
+	MQTTFlash_FLReadBootStatus(readbuffer);
 	printf("MQTTOperation: Reading boot status: [%s]\n\r", readbuffer);
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
@@ -551,7 +552,7 @@ static void MQTTOperation_AssetUpdate(void) {
 		assetStreamBuffer.length += sprintf(
 				assetStreamBuffer.data + assetStreamBuffer.length,
 				"503,c8y_Restart\n\r");
-		MQTTFlash_WriteBootStatus(NO_BOOT_PENDING);
+		MQTTFlash_FLWriteBootStatus(NO_BOOT_PENDING);
 	}
 
 	assetStreamBuffer.length += sprintf(
