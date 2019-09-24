@@ -18,7 +18,7 @@ When the device agent starts the fist time it is in REGISTRATION modes (this mod
 
 The XDK agents supports device registration as described here: https://cumulocity.com/guides/rest/device-integration/
 
-After successful registration - vales for MQTTUSER, MQTTPASSWORD are received and saved in config.txt - the XDK restarts automatically.
+After successful registration - vales for MQTTUSER, MQTTPASSWORD are received and saved in `config.txt` - the XDK restarts automatically.
 After restarting the agent uses values for MQTTUSER, MQTTPASSWORD to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
 
 Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see https://www.cumulocity.com/guides/users-guide/device-management/#shell
@@ -53,7 +53,7 @@ The XDK can receive operations and messages initiated in your C8Y tenant. So you
 * change streaming rate: 
 	* send shell command from C8Y (publish any 1000 ms): `speed 1000`. Changing the speed is written to the config file on the WIFI chip
 * toggle yellow light upon receiving any message:
-	* for this define device dashboard and use message" widget
+	* for this define device dashboard and use "message" widget
 * restart XDK from C8Y:
 	* select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"
 * toggle yellow light:
@@ -67,7 +67,7 @@ The buttons have following on the XDK have the following functions:
 * Button one dot: stop/start sending measurements to Cumulocity
 * Button two dots: 
 	* if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
-	* if pressed only shortly print the configuration currently stored in the "config.txt" file on the filesystem of the WIFI chip
+	* if pressed only shortly print the configuration currently stored in the `config.txt` file on the filesystem of the WIFI chip
 	* if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
 
 ### Status indicated by LEDs
@@ -93,13 +93,13 @@ The buttons have following on the XDK have the following functions:
 ## 1. Prepare SD card
 		
 1. Format SD in FAT format
-2. Adapt settings in config.txt and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
+2. Adapt settings in `config.tx`t and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
 
 ## 2. Register XDK in Cumulocity & upload SMART Rest Template
 
 1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant. Pls. see https://www.cumulocity.com/guides/users-guide/device-management.
-2. The agent uses the MAC of the WLAN chip. Pls. check on sticker on the bottom side of your XDK under "WLAN: 7C_7C_7C_7C_7C_7C" , e.g. XDK_7C_7C_7C_7C_7C_7C
-> NOTE: prepend XDK_ before WLAN MAC adress
+2. The agent uses the MAC of the WLAN chip. Pls. check on sticker on the bottom side of your XDK under `WLAN: 7C_7C_7C_7C_7C_7C` , e.g. `XDK_7C_7C_7C_7C_7C_7C`
+> NOTE: prepend `XDK_` before WLAN MAC adress
 3. Upload SMART Rest Template "XDK_Template_Collection.json" from folder resources/XDK_Template_Collection.json to your C8Y tenant. Pls see https://www.cumulocity.com/guides/users-guide/device-management for required steps
 
 ## 3. Install XDK Workbench 
@@ -138,7 +138,7 @@ NOTE: connect your XDK using USB cable to get debug messages.
 
 ## Procedure when re-registering device in Cumulocity tenant
 
-1. Delete entries MQTTUSER und MQTTPASSWORD from the file "config.txt" stored on the SD card
+1. Delete entries MQTTUSER und MQTTPASSWORD from the file `config.txt` stored on the SD card
 2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
 3. Restart XDK and register XDKs again as before
 
