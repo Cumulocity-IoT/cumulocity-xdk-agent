@@ -18,8 +18,8 @@ When the device agent starts the fist time it is in REGISTRATION modes (this mod
 
 The XDK agents supports device registration as described here: https://cumulocity.com/guides/rest/device-integration/
 
-After successful registration - vales for MQTTUSER, MQTTPASSWORD are received and saved in `config.txt` - the XDK restarts automatically.
-After restarting the agent uses values for MQTTUSER, MQTTPASSWORD to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
+After successful registration - vales for `MQTTUSER`, `MQTTPASSWORD` are received and saved in `config.txt` - the XDK restarts automatically.
+After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
 
 Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see https://www.cumulocity.com/guides/users-guide/device-management/#shell
 
@@ -44,8 +44,8 @@ The configuration for the XDK uses two sources:
 * file `config.txt` on the SDCard
 * file `config.txt`on the filesystem of the WIFI chip  
 
-When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the MQTTUSER, MQTTPASSWORD are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
-Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one only needs to define WIFISSID, WIFIPASSWORD.  
+When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the`MQTTUSER`, `MQTTPASSWORD` are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
+Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one only needs to define `WIFISSID`,`WIFIPASSWORD`.  
 The values defined in the config on the SDCard always take precedence.
 
 ### Operations
