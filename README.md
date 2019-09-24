@@ -26,17 +26,17 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 ### Configuration
 
 The C8Y Agent for XDK sends following sensor measurements to C8Y:
-* ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-* GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-* MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-* ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-* LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-* NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
+* `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `MAGENATBLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false`
 
 with the defined streamrate:
 * `STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000`
 
-Measurements types can be switched on/off in config.txt by setting the value to true/false. 
+Measurements types can be switched on/off in `config.txt` by setting the value to true/false. 
 > NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.  
 > NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required  
 
@@ -51,7 +51,7 @@ The values defined in the config on the SDCard always take precedence.
 ### Operations
 The XDK can receive operations and messages initiated in your C8Y tenant. So you can:
 * change streaming rate: 
-	* send shell command from C8Y (publish any 1000 ms): `speed 1000". Changing the speed is written to the config file on the WIFI chip
+	* send shell command from C8Y (publish any 1000 ms): `speed 1000`. Changing the speed is written to the config file on the WIFI chip
 * toggle yellow light upon receiving any message:
 	* for this define device dashboard and use message" widget
 * restart XDK from C8Y:
