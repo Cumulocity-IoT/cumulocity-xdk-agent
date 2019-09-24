@@ -42,7 +42,8 @@ Measurements types can be switched on/off in config.txt by setting the value to 
 
 The configuration for the XDK uses two sources:
 - file "config.txt" on the SDCard
-- file "config.txt" on the filesystem of the WIFI chip
+- file "config.txt" on the filesystem of the WIFI chip  
+
 When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the MQTTUSER, MQTTPASSWORD are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
 Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one only needs to define WIFISSID, WIFIPASSWORD.  
 The values defined in the config on the SDCard always take precedence.
