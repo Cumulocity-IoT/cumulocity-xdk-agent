@@ -22,6 +22,7 @@ After successful registration - vales for MQTTUSER, MQTTPASSWORD are received an
 After restarting the agent uses values for MQTTUSER, MQTTPASSWORD to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
 
 ### Configuration
+
 The C8Y Agent for XDK sends following sensor measurements to C8Y :
 - ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
 - GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
@@ -34,24 +35,30 @@ with the defined streamrate:
 - STREAMRATE = <RATE TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000
 
 Measurements types can be switched on/off in config.txt by setting the value to true/false. 
-> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.
+> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.  
+> NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required
 
 ### Operations
 The XDK can receive operations and messages initiated in your C8Y tenant. So you can :
 - change streaming rate: 
--- send shell command from C8Y (publish any 1000 ms): "speed 1000" 
+-- send shell command from C8Y (publish any 1000 ms): "speed 1000". Changing the speed is written to the config file on the WIFI chip
 - toggle yellow light upon receiving any message:
 -- for this define device dashboard and use "message" widget
 - restart XDK from C8Y:
 -- select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"
 - toggle yellow light:
 -- send shell command: "toggle"
+- enable/disable sensor:
+-- send shell command: "sensor NOISEENABELED TRUE" or "sensor NOISEENABELED TRUE". Enabling/disabling the sensor is written to the config file on the WIFI chip
 
 ### Buttons
 The buttons have following on the XDK have the following functions:
 
  	* Button one dot: stop/start sending measurements to Cumulocity
-	* Button two dots: reset boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
+	* Button two dots: 
+	** if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
+	** if pressed only shortly print the configuration currently stored in the "config.txt" file on the filesystem of the WIFI chip
+	** if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
 
 ### Status indicated by LEDs
 | Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
