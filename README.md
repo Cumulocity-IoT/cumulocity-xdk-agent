@@ -26,49 +26,49 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 ### Configuration
 
 The C8Y Agent for XDK sends following sensor measurements to C8Y :
-- ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-- GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-- MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-- ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-- LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-- NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
+* ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+* GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+* MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+* ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+* LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
+* NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
 
 with the defined streamrate:
-- STREAMRATE = <RATE TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000
+* STREAMRATE = <RATE TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000
 
 Measurements types can be switched on/off in config.txt by setting the value to true/false. 
 > NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.  
 > NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required  
 
 The configuration for the XDK uses two sources:
-- file "config.txt" on the SDCard
-- file "config.txt" on the filesystem of the WIFI chip  
+* file "config.txt" on the SDCard
+* file "config.txt" on the filesystem of the WIFI chip  
 
 When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the MQTTUSER, MQTTPASSWORD are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
 Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one only needs to define WIFISSID, WIFIPASSWORD.  
 The values defined in the config on the SDCard always take precedence.
 
 ### Operations
-The XDK can receive operations and messages initiated in your C8Y tenant. So you can :
-- change streaming rate: 
--- send shell command from C8Y (publish any 1000 ms): "speed 1000". Changing the speed is written to the config file on the WIFI chip
-- toggle yellow light upon receiving any message:
--- for this define device dashboard and use "message" widget
-- restart XDK from C8Y:
--- select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"
-- toggle yellow light:
--- send shell command: "toggle"
-- enable/disable sensor:
--- send shell command: "sensor NOISEENABELED TRUE" or "sensor NOISEENABELED TRUE". Enabling/disabling the sensor is written to the config file on the WIFI chip
+The XDK can receive operations and messages initiated in your C8Y tenant. So you can:
+* change streaming rate: 
+	* send shell command from C8Y (publish any 1000 ms): "speed 1000". Changing the speed is written to the config file on the WIFI chip
+* toggle yellow light upon receiving any message:
+	* for this define device dashboard and use "message" widget
+* restart XDK from C8Y:
+	* select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"
+* toggle yellow light:
+	* send shell command: "toggle"
+* enable/disable sensor:
+	*send shell command: "sensor NOISEENABELED TRUE" or "sensor NOISEENABELED TRUE". Enabling/disabling the sensor is written to the config file on the WIFI chip
 
 ### Buttons
 The buttons have following on the XDK have the following functions:
 
- 	* Button one dot: stop/start sending measurements to Cumulocity
-	* Button two dots: 
-	** if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
-	** if pressed only shortly print the configuration currently stored in the "config.txt" file on the filesystem of the WIFI chip
-	** if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
+* Button one dot: stop/start sending measurements to Cumulocity
+* Button two dots: 
+	* if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
+	* if pressed only shortly print the configuration currently stored in the "config.txt" file on the filesystem of the WIFI chip
+	* if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
 
 ### Status indicated by LEDs
 | Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
