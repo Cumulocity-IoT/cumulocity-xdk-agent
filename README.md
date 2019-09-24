@@ -25,7 +25,7 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 
 ### Configuration
 
-The C8Y Agent for XDK sends following sensor measurements to C8Y :
+The C8Y Agent for XDK sends following sensor measurements to C8Y:
 * ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
 * GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
 * MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
@@ -34,7 +34,7 @@ The C8Y Agent for XDK sends following sensor measurements to C8Y :
 * NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
 
 with the defined streamrate:
-* STREAMRATE = <RATE TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000
+* STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000
 
 Measurements types can be switched on/off in config.txt by setting the value to true/false. 
 > NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.  
@@ -59,7 +59,7 @@ The XDK can receive operations and messages initiated in your C8Y tenant. So you
 * toggle yellow light:
 	* send shell command: "toggle"
 * enable/disable sensor:
-	*send shell command: "sensor NOISEENABELED TRUE" or "sensor NOISEENABELED TRUE". Enabling/disabling the sensor is written to the config file on the WIFI chip
+	* send shell command: "sensor NOISEENABELED TRUE" or "sensor NOISEENABELED TRUE". Enabling/disabling the sensor is written to the config file on the WIFI chip
 
 ### Buttons
 The buttons have following on the XDK have the following functions:
