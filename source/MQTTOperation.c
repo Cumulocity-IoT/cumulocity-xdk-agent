@@ -187,6 +187,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						printf("MQTTOperation: New speed: %i\n\r", speed);
 						tickRateMS = (int) pdMS_TO_TICKS(speed);
 						MQTTCfgParser_SetStreamRate(speed);
+						MQTTCfgParser_FLWriteConfig();
 						MQTTOperation_AssetUpdate();
 
 					}
@@ -249,7 +250,7 @@ static void MQTTOperation_ClientPublish(void) {
 	 its caller function as there is nothing to return to. */
 	while (1) {
 		if (deviceRunning) {
-			AppController_SetStatus(APP_STATUS_OPERATEING);
+			AppController_SetStatus(APP_STATUS_OPERATEING_STARTED);
 			MQTTOperation_SensorUpdate();
 			/* Check whether the WLAN network connection is available */
 			retcode = MQTTOperation_ValidateWLANConnectivity(false);
@@ -332,7 +333,7 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Start publishing ...\n\r");
 	deviceRunning = true;
-	AppController_SetStatus(APP_STATUS_OPERATEING);
+	AppController_SetStatus(APP_STATUS_OPERATEING_STARTED);
 	return;
 }
 /**
@@ -347,7 +348,7 @@ void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Stopped publishing!\n\r");
 	deviceRunning = false;
-	AppController_SetStatus(APP_STATUS_STOPPED);
+	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
 	return;
 }
 

@@ -62,7 +62,7 @@ static void processbuttonCallback1 (void * param1, uint32_t buttonstatus)
     if (DEBUG_LEVEL <= FINEST ) printf("MQTTButton: Status button %d %lu %i\n\r", toogleButton_1, buttonstatus, BSP_XDK_BUTTON_PRESS);
 
     // only use button 1 when in operation mode
-	if (AppController_GetStatus == APP_STATUS_OPERATEING) {
+	if (AppController_GetStatus() == APP_STATUS_OPERATEING_STARTED || AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
 		if (BSP_XDK_BUTTON_PRESSED == buttonstatus ) {
 			if (toogleButton_1 == 0) {
 				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StopTimer, NULL, buttonstatus);
@@ -80,24 +80,23 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
 {
 	static TickType_t time_start = 0;
     BCDS_UNUSED(param1);
-	printf("MQTTButton: STATUS:\n\r%i\n\r", buttonstatus);
 	if (BSP_XDK_BUTTON_PRESSED == buttonstatus ) {
 		time_start = xTaskGetTickCountFromISR();
 		MQTTFlash_FLWriteBootStatus(NO_BOOT_PENDING);
-//		ConfigDataBuffer localbuffer;
-//		localbuffer.length = NUMBER_UINT32_ZERO;
-//		memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
-//		MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-//		printf("MQTTButton: Current configuration:\n\r%s\n\r", localbuffer.data);
 
 		ConfigDataBuffer localbuffer;
 		localbuffer.length = NUMBER_UINT32_ZERO;
 		memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
 		MQTTFlash_FLReadConfig(&localbuffer);
-		printf("MQTTButton: Current configuration:\n\r%s\n\r", localbuffer.data);
+		printf("MQTTButton: Current configuration in flash:\n\r%s\n\r", localbuffer.data);
+
+		localbuffer.length = NUMBER_UINT32_ZERO;
+		memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+		MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
+		printf("MQTTButton: Currently used configuration:\n\r%s\n\r", localbuffer.data);
 	} else if (BSP_XDK_BUTTON_RELEASED == buttonstatus){
 		TickType_t time_passed = xTaskGetTickCountFromISR() - time_start;
-		if (time_passed > pdMS_TO_TICKS(5000)) {
+		if (time_passed > pdMS_TO_TICKS(3000)) {
 			MQTTFlash_FLDeleteConfig();
 			printf("MQTTButton: Button pressed long: %i\n\r", time_passed);
 		} else {

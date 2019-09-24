@@ -159,8 +159,7 @@ APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer *configBuffer) {
 		}
 
     }
-	printf("MQTTFlash: Read config from flash failed!\n\r");
-	Retcode_RaiseError(retcode);
+	printf("MQTTFlash: Read config from flash not successful, maybe config isn't written to flash yet!\n\r");
 	return APP_RESULT_FILE_MISSING;
 }
 
@@ -199,20 +198,26 @@ void MQTTFlash_FLDeleteConfig(void) {
 
     Retcode_T retcode = RETCODE_OK;
     bool status = false;
-
+    uint32_t bytesToRead = 0;
     /* Validating if wifi storage medium is available */
     retcode = Storage_IsAvailable(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &status);
     if ((RETCODE_OK == retcode) && (true == status))
     {
-		/* Since WIFI_CONFIG_FILE_NAME is available, copying it to the WiFi file system */
-		retcode = Storage_Delete(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &CONFIG_FILENAME);
-		if (RETCODE_OK == retcode)
-		{
-			printf("MQTTFlash: Deleted config\n\r");
+    	retcode = WifiStorage_GetFileStatus((const uint8_t*) (CONFIG_FILENAME), &bytesToRead);
+		if (retcode == RETCODE_OK) {
+			printf("MQTTFlash: File config exists: [%s], length: [%lu]\n\r", CONFIG_FILENAME, bytesToRead );
+			int32_t fileHandle = INT32_C(-1);
+			retcode = WifiStorage_FileDelete((const uint8_t *) CONFIG_FILENAME, &fileHandle);
+			if (RETCODE_OK == retcode)
+			{
+				printf("MQTTFlash: Deleted config\n\r");
 
+			} else {
+				printf("MQTTFlash: Deleted config failed:[%lu] \n\r", Retcode_GetCode(retcode));
+				//assert(0);
+			}
 		} else {
-			printf("MQTTFlash: Write config failed!\n\r");
-			//assert(0);
+			printf("MQTTFlash: Something is wrong with: [%s], length: [%lu], error_code [%lu]\n\r", CONFIG_FILENAME, bytesToRead,  Retcode_GetCode(retcode) );
 		}
     }
 

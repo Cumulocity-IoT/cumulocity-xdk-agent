@@ -281,7 +281,6 @@ static TokensType_T GetToken(const char *buffer, uint16_t *idxAtBuffer,
  *
  */
 static uint8_t MQTTCfgParser_Config(const char *buffer, uint16_t bufSize) {
-	printf("MQTTCfgParser_ParseConfigFile: XXXXXXXXXXXXXXX %s and size %i!\r\n",buffer, bufSize );
 	uint16_t IndexAtBuffer = UINT16_C(0);
 	uint8_t Result = CFG_TRUE;
 	States_T State = STAT_EXP_ATT_NAME;
@@ -385,19 +384,19 @@ void MQTTCfgParser_GetConfig(ConfigDataBuffer *configBuffer, uint8_t defaultsOnl
 	for (uint8_t i = UINT8_C(0); i < ATT_IDX_SIZE; i++) {
 		if (CFG_FALSE == ConfigStructure[i].ignore) {
 			if (CFG_TRUE == ConfigStructure[i].defined) {
-				configBuffer->length += sprintf(configBuffer->data + configBuffer->length,"%s = %s\n", ConfigStructure[i].attName,
+				configBuffer->length += sprintf(configBuffer->data + configBuffer->length,"%s=%s\n", ConfigStructure[i].attName,
 						ConfigStructure[i].attValue);
-				//printf("Added: %s = %s, %i|%s\n\r",
+				//printf("Added: %s=%s, %i|%s\n\r",
 				//		ConfigStructure[i].attName, ConfigStructure[i].attValue, configBuffer->length,configBuffer->data );
 			} else {
 				if (CFG_TRUE == defaultsOnly) {
 					if (0 != *ConfigStructure[i].defaultValue) {
-						configBuffer->length += sprintf(configBuffer->data + configBuffer->length, "%s = %s\n", ConfigStructure[i].attName,
+						configBuffer->length += sprintf(configBuffer->data + configBuffer->length, "%s=%s\n", ConfigStructure[i].attName,
 								ConfigStructure[i].defaultValue);
 
 					}
 				} else {
-					configBuffer->length += sprintf(configBuffer->data + configBuffer->length, "%s = %s\n",
+					configBuffer->length += sprintf(configBuffer->data + configBuffer->length, "%s=%s\n",
 							ConfigStructure[i].attName,
 							ConfigStructure[i].defaultValue);
 				}
@@ -413,25 +412,32 @@ void MQTTCfgParser_GetConfig(ConfigDataBuffer *configBuffer, uint8_t defaultsOnl
 /** @brief For description of the function please refer interface header MQTTCfgParser.h  */
 APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	APP_RESULT RetVal = APP_RESULT_ERROR;
-	UINT BytesRead = 0;
 
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
 
 	RetVal = MQTTFlash_FLReadConfig(&fileReadBuffer);
-	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%i]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
-	if (RetVal == APP_RESULT_FILE_MISSING) {
-		printf("MQTTCfgParser_ParseConfigFile: Read again!");
-		RetVal = MQTTFlash_SDRead((int8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
+	if (RetVal != APP_RESULT_FILE_MISSING) {
+		//config on flash exists an is
+		if (CFG_TRUE
+				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
+						fileReadBuffer.length)) {
+			RetVal = APP_RESULT_OPERATION_OK;
+		}
 	}
+	printf("MQTTCfgParser_ParseConfigFile: Read from SDCard!");
+	RetVal = MQTTFlash_SDRead((int8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
 
-	if (RetVal == APP_RESULT_OPERATION_OK) {
+
+	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%lu]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
+
+	if (RetVal == APP_RESULT_OPERATION_OK ) {
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
 						fileReadBuffer.length)) {
 			RetVal = APP_RESULT_OPERATION_OK;
 		}
 	} else {
-		printf("MQTTCfgParser: Error read configuration file!\n\r");
+		printf("MQTTCfgParser: Config from SD not read!\n\r");
 	}
 	return RetVal;
 }
@@ -503,15 +509,9 @@ int32_t MQTTCfgParser_GetStreamRate(void) {
 
 void MQTTCfgParser_SetStreamRate(int32_t rate) {
 	char token[CFG_MAX_LINE_SIZE] = { 0 };
-	itoa (rate, &token , 10);
+	itoa (rate, token , 10);
 	setAttValue(ATT_IDX_STREAMRATE, token);
 
-	// update config in flash memory
-	ConfigDataBuffer localbuffer;
-	localbuffer.length = NUMBER_UINT32_ZERO;
-	memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
-	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-	MQTTFlash_FLWriteConfig(&localbuffer);
 	//strcpy(ConfigStructure[ATT_IDX_STREAMRATE].attValue, token);
 	//printf("MQTTCfgParser: Streamrate : %lu\n\r", s );
 
@@ -568,6 +568,14 @@ bool MQTTCfgParser_IsNoiseEnabled(void) {
 		return false;
 }
 
+void MQTTCfgParser_FLWriteConfig(void) {
+	// update config in flash memory
+	ConfigDataBuffer localbuffer;
+	localbuffer.length = NUMBER_UINT32_ZERO;
+	memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
+	MQTTFlash_FLWriteConfig(&localbuffer);
+}
 
 /**
  * @brief returns the Server name for SNTP defined at the configuration file
@@ -601,7 +609,7 @@ APP_RESULT MQTTCfgParser_Init(void) {
 
     if (APP_RESULT_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
     {
-        printf("MQTTFlash: Config file is not correct. Please give a proper Config file and reboot the device!\n\r");
+        printf("MQTTCfgParser: Config file is not correct. Please give a proper config file and reboot the device!\n\r");
 		return APP_RESULT_ERROR;
     }
 

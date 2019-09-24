@@ -154,16 +154,18 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 
 	Retcode_T  retcode = Storage_Setup(&StorageSetup);
     retcode = Storage_Enable();
-    if (RETCODE_OK != retcode)
+
+    if ((Retcode_T) RETCODE_STORAGE_SDCARD_NOT_AVAILABLE == Retcode_GetCode((retcode)))
     {
-        /* Raise the error and proceed */
-        Retcode_RaiseError(retcode);
+        /* This is only a warning error. So we will raise and proceed */
+        printf("AppController_Setup: SD card missing trying to use config from WIFI flash!\r\n");
+        //Retcode_RaiseError(retcode);
+        retcode = RETCODE_OK; /* SD card was not inserted */
     }
 	/* Initialize variables from flash */
 	if (MQTTFlash_Init() == APP_RESULT_ERROR) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
 	}
-
 
 	/* Initialize Buttons */
 	rc_Boot_Mode = MQTTButton_Init(AppCmdProcessor);
@@ -213,6 +215,10 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();
 		retcode = Sensor_Setup(&SensorSetup);
 	}
+	//delay start
+	vTaskDelay(pdMS_TO_TICKS(10000));
+
+
 	if (RETCODE_OK == retcode) {
 		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Enable, NULL, UINT32_C(0));
 	}
@@ -353,12 +359,12 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			//printf("STATUS APP_STATUS_STARTED\n");
 			break;
-		case APP_STATUS_OPERATEING:
+		case APP_STATUS_OPERATEING_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			//printf("STATUS APP_STATUS_RUNNING\n");
 			break;
-		case APP_STATUS_STOPPED:
+		case APP_STATUS_OPERATING_STOPPED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
 			//printf("STATUS APP_STATUS_STOPPED\n");
@@ -409,7 +415,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	Retcode_T retcode = RETCODE_OK;
 	BCDS_UNUSED(param2);
 
-	vTaskDelay(pdMS_TO_TICKS(3000));
+	vTaskDelay(pdMS_TO_TICKS(2000));
 	printf("AppController_Init: XDK System Startup\r\n");
 
 	// start status LED indicator

@@ -141,6 +141,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 
 		// append credentials at the end of CONFIG.TXT
 		MQTTFlash_AppendCredentials(stringBuffer);
+		MQTTCfgParser_FLWriteConfig();
 		MQTTRegistration_StartRestartTimer(REBOOT_DELAY);
 	}
 

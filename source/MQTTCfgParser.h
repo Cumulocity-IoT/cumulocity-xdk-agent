@@ -224,6 +224,8 @@ bool MQTTCfgParser_IsLightEnabled(void);
 
 bool MQTTCfgParser_IsNoiseEnabled(void);
 
+void MQTTCfgParser_FLWriteConfig(void);
+
 const char *MQTTCfgParser_GetSntpName(void);
 
 int32_t MQTTCfgParser_GetSntpPort(void);
