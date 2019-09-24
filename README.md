@@ -53,7 +53,7 @@ The XDK can receive operations and messages initiated in your C8Y tenant. So you
 * change streaming rate: 
 	* send shell command from C8Y (publish any 1000 ms): `speed 1000`. Changing the speed is written to the config file on the WIFI chip
 * toggle yellow light upon receiving any message:
-	* for this define device dashboard and use "message" widget
+	* for this define device dashboard and use "message" widget, see https://www.cumulocity.com/guides/users-guide/cockpit/#widgets
 * restart XDK from C8Y:
 	* select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"
 * toggle yellow light:
