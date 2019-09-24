@@ -527,6 +527,13 @@ void MQTTCfgParser_SetStreamRate(int32_t rate) {
 
 }
 
+void MQTTCfgParser_SetSensor(const char* value, int index) {
+	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
+		setAttValue(index, "TRUE");
+	else
+		setAttValue(index, "FALSE");
+}
+
 bool MQTTCfgParser_IsAccelEnabled(void) {
 	const char* value = getAttValue(ATT_IDX_ACCELENABLED);
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )

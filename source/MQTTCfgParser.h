@@ -212,6 +212,8 @@ int32_t MQTTCfgParser_GetStreamRate(void);
 
 void MQTTCfgParser_SetStreamRate(int32_t rate);
 
+void MQTTCfgParser_SetSensor(const char* value, int index);
+
 bool MQTTCfgParser_IsAccelEnabled(void);
 
 bool MQTTCfgParser_IsGyroEnabled(void);

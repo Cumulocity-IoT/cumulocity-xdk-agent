@@ -126,6 +126,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		int pos = 0;
 		int phase = 0;
 		C8Y_COMMAND command;
+		int sensor_index = 0;
+		int command_complete = 0;
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
@@ -151,6 +153,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						}
 						commandType = "c8y_Restart";
 						command = CMD_RESTART;
+						command_complete = 1;
 						MQTTOperation_StartRestartTimer(REBOOT_DELAY);
 						printf("MQTTOperation: Ending restart\n\r");
 				} else if (strcmp(token, "511") == 0) {
@@ -167,12 +170,17 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		    case 2:
 				if (strcmp(token, "speed") == 0 && phase == 1) {
 						phase = 2;  // prepare to read the speed
-						printf("MQTTOperation: Phase command speed: %i position: %i\n\r", phase,pos);
+						printf("MQTTOperation: Phase command speed: %i position: %i\n\r", phase, pos);
 						command = CMD_SPEED;
 				} else if (strcmp(token, "toggle") == 0 && phase == 1) {
 						BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 						command = CMD_TOGGLE;
-						printf("MQTTOperation: Phase command toggle: %i position: %i\n\r", phase,pos);
+						command_complete = 1;
+						printf("MQTTOperation: Phase command toggle: %i position: %i\n\r", phase, pos);
+				} else if (strcmp(token, "sensor") == 0 && phase == 1) {
+						phase = 2;  // prepare to read the speed
+						printf("MQTTOperation: Phase command sensor: %i position: %i \n\r", phase, pos);
+						command = CMD_SENSOR;
 				} else {
 						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 						printf("MQTTOperation: Unknown command: %s\n\r", token);
@@ -189,7 +197,28 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						MQTTCfgParser_SetStreamRate(speed);
 						MQTTCfgParser_FLWriteConfig();
 						MQTTOperation_AssetUpdate();
-
+						command_complete = 1;
+					} else if(command == CMD_SENSOR) {
+						phase = 3; // prepare to read next paramaeter TRUE or FALSE
+						printf("MQTTOperation: Phase command sensor: %i position: %i\n\r", phase, pos);
+						if (strcmp(token, A15Name) == 0) {
+							sensor_index= ATT_IDX_NOISEENABLED;
+						} else {
+							commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+							printf("MQTTOperation: Sensor not supported: %s\n\r", token);
+						}
+					}
+				}
+		        break;
+			case 4:
+				if (phase == 3) {
+					if (command == CMD_SENSOR){
+						printf("MQTTOperation: Phase execute: %i position: %i\n\r", phase,
+								pos);
+						MQTTCfgParser_SetSensor(token, sensor_index);
+						MQTTCfgParser_FLWriteConfig();
+						MQTTOperation_AssetUpdate();
+						command_complete = 1;
 					}
 				}
 		        break;
@@ -199,6 +228,11 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		    }
 			token = strtok(NULL, ", ");
 			pos++;
+		}
+		// test if commandwas complete
+		if ( command_complete == 0) {
+			commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+			printf("MQTTOperation: Incomplete command!\n\r");
 		}
 
 	}
