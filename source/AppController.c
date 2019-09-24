@@ -174,6 +174,12 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
 	}
 
+	if (BSP_Button_GetState((uint32_t) BSP_XDK_BUTTON_2) == 1) {
+		printf("AppController_Setup: Button 2 was pressed at startup and delete config stored on wifi chip!\r\n");
+		MQTTFlash_FLDeleteConfig();
+		BSP_Board_SoftReset();
+	}
+
 	rc_Boot_Mode = MQTTCfgParser_Init();
 	if (rc_Boot_Mode == APP_RESULT_ERROR) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
@@ -216,7 +222,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = Sensor_Setup(&SensorSetup);
 	}
 	//delay start
-	vTaskDelay(pdMS_TO_TICKS(10000));
+	vTaskDelay(pdMS_TO_TICKS(4000));
 
 
 	if (RETCODE_OK == retcode) {

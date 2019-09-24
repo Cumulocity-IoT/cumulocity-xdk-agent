@@ -210,7 +210,7 @@ void MQTTFlash_FLDeleteConfig(void) {
 			retcode = WifiStorage_FileDelete((const uint8_t *) CONFIG_FILENAME, &fileHandle);
 			if (RETCODE_OK == retcode)
 			{
-				printf("MQTTFlash: Deleted config\n\r");
+				printf("MQTTFlash: Deleted config successful!\n\r");
 
 			} else {
 				printf("MQTTFlash: Deleted config failed:[%lu] \n\r", Retcode_GetCode(retcode));

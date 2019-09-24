@@ -411,22 +411,27 @@ void MQTTCfgParser_GetConfig(ConfigDataBuffer *configBuffer, uint8_t defaultsOnl
 
 /** @brief For description of the function please refer interface header MQTTCfgParser.h  */
 APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
+	APP_RESULT RetValFLash = APP_RESULT_ERROR;
 	APP_RESULT RetVal = APP_RESULT_ERROR;
 
+	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
 
-	RetVal = MQTTFlash_FLReadConfig(&fileReadBuffer);
-	if (RetVal != APP_RESULT_FILE_MISSING) {
+	RetValFLash = MQTTFlash_FLReadConfig(&fileReadBuffer);
+	if (RetValFLash != APP_RESULT_FILE_MISSING) {
 		//config on flash exists an is
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*) fileReadBuffer.data,
 						fileReadBuffer.length, CFG_FALSE)) {
-			RetVal = APP_RESULT_OPERATION_OK;
+			RetValFLash = APP_RESULT_OPERATION_OK;
 		}
 	}
-	printf("MQTTCfgParser_ParseConfigFile: Read from SDCard!");
-	RetVal = MQTTFlash_SDRead((int8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
 
+	// test if config on SDCard exists and overwrite setting from config on flash
+	printf("MQTTCfgParser_ParseConfigFile: Trying to read config from SDCard ...\n\r");
+	fileReadBuffer.length = NUMBER_UINT32_ZERO;
+	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
+	RetVal = MQTTFlash_SDRead((int8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
 
 	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%lu]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
 
@@ -437,7 +442,12 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 			RetVal = APP_RESULT_OPERATION_OK;
 		}
 	} else {
-		printf("MQTTCfgParser: Config from SD not read!\n\r");
+		printf("MQTTCfgParser: Config not read from SD!\n\r");
+	}
+
+	// if any of the attemps to parse a config: Flash or SD was successful return OK
+	if (RetVal == APP_RESULT_OPERATION_OK || RetValFLash == APP_RESULT_OPERATION_OK) {
+		RetVal = APP_RESULT_OPERATION_OK;
 	}
 	return RetVal;
 }
