@@ -103,8 +103,8 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
 		AppController_SetStatus(APP_STATUS_REGISTERED);
 
-		char stringBuffer[128];
-		char username[128];
+		char stringBuffer[128] = {0};
+		char username[128] = {0};
 		strcpy(stringBuffer, "\n");
 		strcat(stringBuffer, A6Name);
 		strcat(stringBuffer, "=");

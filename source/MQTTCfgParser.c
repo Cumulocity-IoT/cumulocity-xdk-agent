@@ -154,8 +154,8 @@ static void setAttValue(int index, char* value) {
 	if (0 <= index && index < ATT_IDX_SIZE) {
 		if (DEBUG_LEVEL <= FINEST ) printf("MQTTCfgParser: Debugging attribute set: %i / %s \n\r",
 				ConfigStructure[index].defined, ConfigStructure[index].attValue );
-		//ConfigStructure[index].attValue = value;
 		strcpy(ConfigStructure[index].attValue, value);
+		ConfigStructure[index].defined = CFG_TRUE;
 	}
 }
 
@@ -591,8 +591,6 @@ void MQTTCfgParser_FLWriteConfig(void) {
 	localbuffer.length = NUMBER_UINT32_ZERO;
 	memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
 	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-	printf ("DEBUGGING: [%s]", localbuffer.data);
-	printf ("PASSWORD: [%s]", MQTTCfgParser_GetMqttPassword());
 	MQTTFlash_FLWriteConfig(&localbuffer);
 }
 
