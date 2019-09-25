@@ -239,7 +239,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			token = strtok(NULL, ", ");
 			pos++;
 		}
-		// test if commandwas complete
+		// test if command was complete
 		if ( command_complete == 0) {
 			commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 			printf("MQTTOperation: Incomplete command!\n\r");

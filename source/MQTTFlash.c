@@ -154,7 +154,7 @@ APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer *configBuffer) {
 			retcode = Storage_Read(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &readCredentials);
 			if (retcode == RETCODE_OK) {
 				configBuffer->length =  strlen(configBuffer->data);
-				printf("MQTTFlash: Read config from flash success: [%i] \n\r", configBuffer->length);
+				printf("MQTTFlash: Read config from flash success: [%lu] \n\r", configBuffer->length);
 			    return APP_RESULT_OPERATION_OK;
 			}
 		}
@@ -185,7 +185,7 @@ void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer) {
 		retcode = Storage_Write(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &writeCredentials);
 		if (RETCODE_OK == retcode)
 		{
-			printf("MQTTFlash: Write config to flash memory with length: [%i]\n\r", configBuffer->length);
+			printf("MQTTFlash: Write config to flash memory with length: [%lu]\n\r", configBuffer->length);
 
 		} else {
 			printf("MQTTFlash: Write config failed!\n\r");
@@ -239,11 +239,11 @@ APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBuffe
 	/*Read some data from file */
 	if ((f_read(&fileObject, ramBufferRead->data, fileSize, &(ramBufferRead->length)) == FR_Z_OK) && (fileSize == ramBufferRead->length)) {
 		if (DEBUG_LEVEL <= FINEST)
-			printf("MQTTFlash: Reading from succeded: %i %i\n\r",
+			printf("MQTTFlash: Reading from succeded: %lu %lu\n\r",
 					fileSize, ramBufferRead->length);
 	} else {
 		/* Error. Cannot read the file */
-			printf("MQTTFlash: Read failed with different size : %i %i\n\r",
+			printf("MQTTFlash: Read failed with different size : %lu %lu\n\r",
 					fileSize, ramBufferRead->length);
 		return (APP_RESULT_SDCARD_ERROR);
 	}
