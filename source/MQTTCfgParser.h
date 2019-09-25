@@ -54,23 +54,23 @@ typedef struct ConfigLine_S ConfigLine_T;
  * INDEX at the configuration array
  */
 
-static const char A1Name[] = "WIFISSID";
-static const char A2Name[] = "WIFIPASSWORD";
-static const char A3Name[] = "MQTTBROKERNAME";
-static const char A4Name[] = "MQTTBROKERPORT";
-static const char A5Name[] = "MQTTSECURE";
-static const char A6Name[] = "MQTTUSER";
-static const char A7Name[] = "MQTTPASSWORD";
-static const char A8Name[] = "MQTTANONYMOUS";
-static const char A9Name[] = "STREAMRATE";
-static const char A10Name[] = "ACCELENABLED";
-static const char A11Name[] = "GYROENABLED";
-static const char A12Name[] = "MAGENABLED";
-static const char A13Name[] = "ENVENABLED";
-static const char A14Name[] = "LIGHTENABLED";
-static const char A15Name[] = "NOISEENABLED";
-static const char A16Name[] = "SNTPNAME";
-static const char A17Name[] = "SNTPPORT";
+static const char A00Name[] = "WIFISSID";
+static const char A01Name[] = "WIFIPASSWORD";
+static const char A02Name[] = "MQTTBROKERNAME";
+static const char A03Name[] = "MQTTBROKERPORT";
+static const char A04Name[] = "MQTTSECURE";
+static const char A05Name[] = "MQTTUSER";
+static const char A06Name[] = "MQTTPASSWORD";
+static const char A07Name[] = "MQTTANONYMOUS";
+static const char A08Name[] = "STREAMRATE";
+static const char A09Name[] = "ACCELENABLED";
+static const char A10Name[] = "GYROENABLED";
+static const char A11Name[] = "MAGENABLED";
+static const char A12Name[] = "ENVENABLED";
+static const char A13Name[] = "LIGHTENABLED";
+static const char A14Name[] = "NOISEENABLED";
+static const char A15Name[] = "SNTPNAME";
+static const char A16Name[] = "SNTPPORT";
 enum AttributesIndex_E
 {
     ATT_IDX_WIFISSID,
@@ -173,7 +173,7 @@ void MQTTCfgParser_GetConfig(ConfigDataBuffer *config, uint8_t defaultsOnly);
  * @return RETCODE_OK - if the parsing is completed successfully
  *
  * @note: Precondition before calling this function user has to ensure that SD card is inserted
- * and CONFIG.TXT file is available
+ * and config.txt file is available
  */
 
 APP_RESULT MQTTCfgParser_ParseConfigFile(void);

@@ -201,8 +201,18 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					} else if(command == CMD_SENSOR) {
 						phase = 3; // prepare to read next paramaeter TRUE or FALSE
 						printf("MQTTOperation: Phase command sensor: %i position: %i\n\r", phase, pos);
-						if (strcmp(token, A15Name) == 0) {
+						if (strcmp(token, A14Name) == 0) {
 							sensor_index= ATT_IDX_NOISEENABLED;
+						} else if (strcmp(token, A13Name) == 0) {
+							sensor_index= ATT_IDX_LIGHTENABLED;
+						} else if (strcmp(token, A12Name) == 0) {
+							sensor_index= ATT_IDX_ENVENABLED;
+						} else if (strcmp(token, A11Name) == 0) {
+							sensor_index= ATT_IDX_MAGENABLED;
+						} else if (strcmp(token, A10Name) == 0) {
+							sensor_index= ATT_IDX_GYROENABLED;
+						} else if (strcmp(token, A09Name) == 0) {
+							sensor_index= ATT_IDX_ACCELENABLED;
 						} else {
 							commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 							printf("MQTTOperation: Sensor not supported: %s\n\r", token);
@@ -598,13 +608,13 @@ static void MQTTOperation_AssetUpdate(void) {
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length,
 			"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\n\r",
-			A9Name, tickRateMS,
-			A10Name, MQTTCfgParser_IsAccelEnabled(),
-			A11Name, MQTTCfgParser_IsGyroEnabled(),
-			A12Name, MQTTCfgParser_IsMagnetEnabled(),
-			A13Name, MQTTCfgParser_IsEnvEnabled(),
-			A14Name, MQTTCfgParser_IsLightEnabled(),
-			A15Name, MQTTCfgParser_IsNoiseEnabled());
+			A08Name, tickRateMS,
+			A09Name, MQTTCfgParser_IsAccelEnabled(),
+			A10Name, MQTTCfgParser_IsGyroEnabled(),
+			A11Name, MQTTCfgParser_IsMagnetEnabled(),
+			A12Name, MQTTCfgParser_IsEnvEnabled(),
+			A13Name, MQTTCfgParser_IsLightEnabled(),
+			A14Name, MQTTCfgParser_IsNoiseEnabled());
 
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length, "117,5\n\r");

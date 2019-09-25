@@ -48,7 +48,7 @@ APP_RESULT MQTTFlash_Init(void) {
 
 }
 
-void MQTTFlash_AppendCredentials(char* stringBuffer) {
+void MQTTFlash_SDAppendCredentials(char* stringBuffer) {
 	if (DEBUG_LEVEL <= FINE)
 		printf("MQTTFlash: Received credentials:%s\n\r", stringBuffer);
 	if (SDCARD_INSERTED == SDCardDriver_GetDetectStatus()) {

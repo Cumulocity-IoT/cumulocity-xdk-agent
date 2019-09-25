@@ -103,11 +103,12 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
 		AppController_SetStatus(APP_STATUS_REGISTERED);
 
-		char stringBuffer[128] = {0};
+		char credentials[128] = {0};
 		char username[128] = {0};
-		strcpy(stringBuffer, "\n");
-		strcat(stringBuffer, A6Name);
-		strcat(stringBuffer, "=");
+		strcpy(credentials, "\n");
+		strcat(credentials, A05Name);
+		strcat(credentials, "=");
+
 		//extract password and  username
 		int pos = 0;
 		int phase = 0;
@@ -120,22 +121,22 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				printf("MQTTRegistration: correct message type \n\r");
 				phase = 1; // mark that we are in a credential notificationmessage
 			} else if (phase == 1 && pos == 1) {
-				strcat(stringBuffer, token);
-				strcat(stringBuffer, "/");
+				strcat(credentials, token);
+				strcat(credentials, "/");
 				strcat(username, token);
 				strcat(username, "/");
 				printf("MQTTRegistration: Found tenant: [%s]\n\r", token);
 			} else if (phase == 1 && pos == 2) {
-				strcat(stringBuffer, token);
-				strcat(stringBuffer, "\n");
+				strcat(credentials, token);
+				strcat(credentials, "\n");
 				strcat(username, token);
 				MQTTCfgParser_SetMqttUser(username);
 				printf("MQTTRegistration: Found username: [%s]\n\r", token);
 			} else if (phase == 1 && pos == 3) {
-				strcat(stringBuffer, A7Name);
-				strcat(stringBuffer, "=");
-				strcat(stringBuffer, token);
-				strcat(stringBuffer, "\n");
+				strcat(credentials, A06Name);
+				strcat(credentials, "=");
+				strcat(credentials, token);
+				strcat(credentials, "\n");
 				MQTTCfgParser_SetMqttPassword(token);
 				printf("MQTTRegistration: Found password: [%s]\n\r", token);
 			} else {
@@ -146,8 +147,8 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			pos++;
 		}
 
-		// append credentials at the end of CONFIG.TXT
-		MQTTFlash_AppendCredentials(stringBuffer);
+		// append credentials at the end of config.txt
+		MQTTFlash_SDAppendCredentials(credentials);
 		MQTTCfgParser_FLWriteConfig();
 		MQTTRegistration_StartRestartTimer(REBOOT_DELAY);
 	}

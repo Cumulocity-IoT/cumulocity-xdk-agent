@@ -96,7 +96,7 @@ void MQTTFlash_FLWriteBootStatus(uint8_t* status);
 void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
 APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
 void MQTTFlash_FLDeleteConfig(void);
-void MQTTFlash_AppendCredentials(char* stringBuffer);
+void MQTTFlash_SDAppendCredentials(char* stringBuffer);
 APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, int8_t* stringBuffer, BYTE mode);
 APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize);
 

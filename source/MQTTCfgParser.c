@@ -31,7 +31,7 @@
  * \code{.unparsed}
  *
  * Example for config.txt file:
- * Documentation for CONFIG.TXT
+ * Documentation for config.txt
  * The device agent for the XDK runs in two modes:
  *	1) Registration mode: Entries for MQTTUSER and MQTTPASSWORD are missing. This is important.
  *		Upon registration the XDK receives device credentials and writes them to the file.
@@ -52,6 +52,7 @@
  * MAGENABLED=<TRUE TO SEND,FALSE OTHERWISE>
  * ENVENABLED=<TRUE TO SEND,FALSE OTHERWISE>
  * LIGHTENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+ * NOISEENABLED=<TRUE TO SEND,FALSE OTHERWISE>
  * SNTPNAME=<NAME/IP OF SNTP SERVER>
  * SNTPPORT=<PORT SNTP SEVER>
  * MQTTUSER=<USESNAME IN THE FORM TENANT/USER, RECEIVED IN REGISTRATION>
@@ -59,7 +60,7 @@
  */
 
 
-//lint -esym(956,*) /* Suppressing Non const, non volatile static or external variable */
+/* Suppressing Non const, non volatile static or external variable */
 /* own header files */
 #include "AppController.h"
 #include "MQTTCfgParser.h"
@@ -112,23 +113,23 @@ static char *itoa (int value, char *result, int base);
  * Configuration holder structure array
  */
 static ConfigLine_T ConfigStructure[ATT_IDX_SIZE] = {
-		{ A1Name, WLAN_SSID,CFG_FALSE, CFG_FALSE, AttValues[0] },
-		{ A2Name, WLAN_PSK, CFG_FALSE, CFG_FALSE, AttValues[1] },
-		{ A3Name, MQTT_BROKER_HOST_NAME, CFG_FALSE, CFG_FALSE, AttValues[2] },
-		{ A4Name, STR_MQTT_BROKER_HOST_PORT, CFG_FALSE, CFG_FALSE,	AttValues[3] },
-		{ A5Name, BOOL_TO_STR(MQTT_SECURE), CFG_FALSE, CFG_FALSE, AttValues[4] },
-		{ A6Name, MQTT_USERNAME, CFG_FALSE, CFG_FALSE,AttValues[5] },
-		{ A7Name, MQTT_PASSWORD, CFG_FALSE, CFG_FALSE,AttValues[6] },
-		{ A8Name, BOOL_TO_STR(MQTT_ANONYMOUS), CFG_FALSE, CFG_FALSE,AttValues[7] },
-		{ A9Name, STR_STREAM_RATE, CFG_FALSE, CFG_FALSE, AttValues[8] },
-		{ A10Name, BOOL_TO_STR(ACCEL_EN), CFG_FALSE, CFG_FALSE, AttValues[9] },
-		{ A11Name, BOOL_TO_STR(GYRO_EN), CFG_FALSE, CFG_FALSE, AttValues[10] },
-		{ A12Name, BOOL_TO_STR(MAG_EN), CFG_FALSE, CFG_FALSE, AttValues[11] },
-		{ A13Name, BOOL_TO_STR(ENV_EN), CFG_FALSE, CFG_FALSE, AttValues[12] },
-		{ A14Name, BOOL_TO_STR(LIGHT_EN), CFG_FALSE, CFG_FALSE, AttValues[13]},
-		{ A15Name, BOOL_TO_STR(NOISE_EN), CFG_FALSE, CFG_FALSE, AttValues[14]},
-		{ A16Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
-		{ A17Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
+		{ A00Name, WLAN_SSID,CFG_FALSE, CFG_FALSE, AttValues[0] },
+		{ A01Name, WLAN_PSK, CFG_FALSE, CFG_FALSE, AttValues[1] },
+		{ A02Name, MQTT_BROKER_HOST_NAME, CFG_FALSE, CFG_FALSE, AttValues[2] },
+		{ A03Name, STR_MQTT_BROKER_HOST_PORT, CFG_FALSE, CFG_FALSE,	AttValues[3] },
+		{ A04Name, BOOL_TO_STR(MQTT_SECURE), CFG_FALSE, CFG_FALSE, AttValues[4] },
+		{ A05Name, MQTT_USERNAME, CFG_FALSE, CFG_FALSE,AttValues[5] },
+		{ A06Name, MQTT_PASSWORD, CFG_FALSE, CFG_FALSE,AttValues[6] },
+		{ A07Name, BOOL_TO_STR(MQTT_ANONYMOUS), CFG_FALSE, CFG_FALSE,AttValues[7] },
+		{ A08Name, STR_STREAM_RATE, CFG_FALSE, CFG_FALSE, AttValues[8] },
+		{ A09Name, BOOL_TO_STR(ACCEL_EN), CFG_FALSE, CFG_FALSE, AttValues[9] },
+		{ A10Name, BOOL_TO_STR(GYRO_EN), CFG_FALSE, CFG_FALSE, AttValues[10] },
+		{ A11Name, BOOL_TO_STR(MAG_EN), CFG_FALSE, CFG_FALSE, AttValues[11] },
+		{ A12Name, BOOL_TO_STR(ENV_EN), CFG_FALSE, CFG_FALSE, AttValues[12] },
+		{ A13Name, BOOL_TO_STR(LIGHT_EN), CFG_FALSE, CFG_FALSE, AttValues[13]},
+		{ A14Name, BOOL_TO_STR(NOISE_EN), CFG_FALSE, CFG_FALSE, AttValues[14]},
+		{ A15Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
+		{ A16Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
 };
 
 
