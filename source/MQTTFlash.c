@@ -28,6 +28,7 @@
 /* global variables ********************************************************* */
 
 /* local module global variable declarations */
+static void MQTTFlash_FLDeleteFile (const uint8_t* fileName);
 
 APP_RESULT MQTTFlash_Init(void) {
 	/* read boot status */
@@ -55,7 +56,7 @@ void MQTTFlash_AppendCredentials(char* stringBuffer) {
 			printf("MQTTFlash: SD card is inserted in XDK\n\r");
 
 		/* SDC Disk FAT file system Write/Read functionality */
-		if (MQTTFlash_SDWrite(stringBuffer, CONFIG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE) == APP_RESULT_SDCARD_NO_ERROR) {
+		if (MQTTFlash_SDWrite(CONFIG_FILENAME, stringBuffer, FA_OPEN_ALWAYS | FA_WRITE) == APP_RESULT_OPERATION_OK) {
 			if (DEBUG_LEVEL <= FINEST)
 				printf("MQTTFlash: Write using FAT file system success \n\r");
 		} else {
@@ -73,7 +74,7 @@ void MQTTFlash_AppendCredentials(char* stringBuffer) {
 APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* bootstatus) {
     Storage_Read_T readCredentials =
             {
-                    .FileName = BOOT_FILENAME,
+                    .FileName = REBOOT_FILENAME,
                     .ReadBuffer = bootstatus,
 					.BytesToRead = 0UL,
                     .ActualBytesRead = 0UL,
@@ -85,7 +86,7 @@ APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* bootstatus) {
     /* Validating if wifi storage medium is available */
     retcode = Storage_IsAvailable(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &status);
     if ((RETCODE_OK == retcode) && (true == status)) {
-    	retcode = WifiStorage_GetFileStatus((const uint8_t*) &(BOOT_FILENAME), &(readCredentials.BytesToRead));
+    	retcode = WifiStorage_GetFileStatus((const uint8_t*) &(REBOOT_FILENAME), &(readCredentials.BytesToRead));
 		if (retcode == RETCODE_OK) {
 			retcode = Storage_Read(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &readCredentials);
 			if (retcode == RETCODE_OK) {
@@ -104,7 +105,7 @@ void MQTTFlash_FLWriteBootStatus(uint8_t* bootstatus) {
 
     Storage_Write_T writeCredentials =
             {
-                    .FileName = BOOT_FILENAME,
+                    .FileName = REBOOT_FILENAME,
                     .WriteBuffer = bootstatus,
                     .BytesToWrite = strlen(bootstatus) + 1,
                     .ActualBytesWritten = 0UL,
@@ -195,36 +196,12 @@ void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer) {
 }
 
 void MQTTFlash_FLDeleteConfig(void) {
-
-    Retcode_T retcode = RETCODE_OK;
-    bool status = false;
-    uint32_t bytesToRead = 0;
-    /* Validating if wifi storage medium is available */
-    retcode = Storage_IsAvailable(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &status);
-    if ((RETCODE_OK == retcode) && (true == status))
-    {
-    	retcode = WifiStorage_GetFileStatus((const uint8_t*) (CONFIG_FILENAME), &bytesToRead);
-		if (retcode == RETCODE_OK) {
-			printf("MQTTFlash: File config exists: [%s], length: [%lu]\n\r", CONFIG_FILENAME, bytesToRead );
-			int32_t fileHandle = INT32_C(-1);
-			retcode = WifiStorage_FileDelete((const uint8_t *) CONFIG_FILENAME, &fileHandle);
-			if (RETCODE_OK == retcode)
-			{
-				printf("MQTTFlash: Deleted config successful!\n\r");
-
-			} else {
-				printf("MQTTFlash: Deleted config failed:[%lu] \n\r", Retcode_GetCode(retcode));
-				//assert(0);
-			}
-		} else {
-			printf("MQTTFlash: Something is wrong with: [%s], length: [%lu], error_code [%lu]\n\r", CONFIG_FILENAME, bytesToRead,  Retcode_GetCode(retcode) );
-		}
-    }
-
+	MQTTFlash_FLDeleteFile(CONFIG_FILENAME);
+	MQTTFlash_FLDeleteFile(REBOOT_FILENAME);
 }
 
 
-APP_RESULT MQTTFlash_SDRead(int8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize) {
+APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize) {
 	FIL fileObject; /* File objects */
 	uint16_t fileSize;
 	FILINFO fileInfo;
@@ -280,7 +257,7 @@ APP_RESULT MQTTFlash_SDRead(int8_t* fileName, ConfigDataBuffer * ramBufferRead, 
 	return APP_RESULT_OPERATION_OK;
 }
 
-APP_RESULT MQTTFlash_SDWrite(int8_t* stringBuffer, int8_t* fileName, BYTE mode ) {
+APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, int8_t* stringBuffer, BYTE mode ) {
 	FIL fileObject; /* File objects */
 	int8_t ramBufferWrite[FILE_SMALL_BUFFER_SIZE]; /* Temporary buffer for write file */
 	uint16_t fileSize;
@@ -290,7 +267,7 @@ APP_RESULT MQTTFlash_SDWrite(int8_t* stringBuffer, int8_t* fileName, BYTE mode )
 	fileSize = strlen(stringBuffer);
 	if (DEBUG_LEVEL <= FINE)
 		printf("MQTTFlash: Size of buffer: [%i]\n\r", fileSize);
-	memcpy(ramBufferWrite, stringBuffer, fileSize);
+		memcpy(ramBufferWrite, stringBuffer, fileSize);
 
 	/* Open the file to write */
 	if (f_open(&fileObject, fileName, mode) != FR_Z_OK) {
@@ -321,5 +298,33 @@ APP_RESULT MQTTFlash_SDWrite(int8_t* stringBuffer, int8_t* fileName, BYTE mode )
 	}
 
 	return APP_RESULT_OPERATION_OK;
+}
+
+static void MQTTFlash_FLDeleteFile (const uint8_t* fileName) {
+    Retcode_T retcode = RETCODE_OK;
+    bool status = false;
+    uint32_t bytesToRead = 0;
+    /* Validating if wifi storage medium is available */
+    retcode = Storage_IsAvailable(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &status);
+    if ((RETCODE_OK == retcode) && (true == status))
+    {
+    	retcode = WifiStorage_GetFileStatus(fileName, &bytesToRead);
+		if (retcode == RETCODE_OK) {
+			printf("MQTTFlash: File  [%s] exists, length: [%lu]\n\r", fileName, bytesToRead );
+			int32_t fileHandle = INT32_C(-1);
+			retcode = WifiStorage_FileDelete((const uint8_t *) fileName, &fileHandle);
+			if (RETCODE_OK == retcode)
+			{
+				printf("MQTTFlash: Deleted file successful!\n\r");
+
+			} else {
+				printf("MQTTFlash: Deleted file failed:[%lu] \n\r", Retcode_GetCode(retcode));
+				//assert(0);
+			}
+		} else {
+			printf("MQTTFlash: Something is wrong with: [%s], length: [%lu], error_code [%lu]\n\r", fileName, bytesToRead,  Retcode_GetCode(retcode) );
+		}
+    }
+
 }
 

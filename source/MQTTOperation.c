@@ -254,7 +254,7 @@ static void MQTTOperation_StartRestartTimer(int period) {
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
 	(void) xTimer;
 	printf("MQTTOperation: Now calling SoftReset\n\r");
-	MQTTFlash_FLWriteBootStatus(BOOT_PENDING);
+	MQTTFlash_FLWriteBootStatus((uint8_t *)BOOT_PENDING);
 	MQTTOperation_DeInit();
 	deviceRunning = false;
 	BSP_Board_SoftReset();
@@ -485,7 +485,6 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
  * @return NONE
  */
 void MQTTOperation_DeInit(void) {
-	Retcode_T retcode = RETCODE_OK;
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Calling DeInit\n\r");
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeCommandInfo,
@@ -493,7 +492,7 @@ void MQTTOperation_DeInit(void) {
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeRestartInfo,
 			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
 	//ignore return code
-	retcode = Mqtt_DisconnectFromBroker_Z();
+	Mqtt_DisconnectFromBroker_Z();
 }
 
 /**
@@ -579,7 +578,7 @@ static void MQTTOperation_AssetUpdate(void) {
 	/* Initialize Variables */
 	char readbuffer[FILE_TINY_BUFFER_SIZE]; /* Temporary buffer for write file */
 
-	MQTTFlash_FLReadBootStatus(readbuffer);
+	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
 	printf("MQTTOperation: Reading boot status: [%s]\n\r", readbuffer);
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
@@ -587,7 +586,7 @@ static void MQTTOperation_AssetUpdate(void) {
 		assetStreamBuffer.length += sprintf(
 				assetStreamBuffer.data + assetStreamBuffer.length,
 				"503,c8y_Restart\n\r");
-		MQTTFlash_FLWriteBootStatus(NO_BOOT_PENDING);
+		MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
 	}
 
 	assetStreamBuffer.length += sprintf(

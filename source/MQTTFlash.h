@@ -62,7 +62,7 @@ typedef enum {
 #define SEEK_FIRST_LOCATION		    UINT8_C(0)      /**< File seek to the first location */
 #define SECTOR_VALUE			    UINT8_C(1)      /**< SDC Disk sector value */
 
-#define BOOT_FILENAME    "reboot.txt"	/**< Filename to open/write/read from SD-card */
+#define REBOOT_FILENAME    "reboot.txt"	/**< Filename to open/write/read from SD-card */
 #define CONFIG_FILENAME  "config.txt"	/**< Filename to open/write/read from SD-card */
 
 /* Ram buffers
@@ -97,8 +97,8 @@ void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
 APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
 void MQTTFlash_FLDeleteConfig(void);
 void MQTTFlash_AppendCredentials(char* stringBuffer);
-APP_RESULT MQTTFlash_SDWrite(int8_t* stringBuffer, int8_t* fileName, BYTE mode);
-APP_RESULT MQTTFlash_SDRead(int8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize);
+APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, int8_t* stringBuffer, BYTE mode);
+APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize);
 
 /* local inline function definitions */
 

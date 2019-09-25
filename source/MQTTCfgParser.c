@@ -431,7 +431,7 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	printf("MQTTCfgParser_ParseConfigFile: Trying to read config from SDCard ...\n\r");
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
-	RetVal = MQTTFlash_SDRead((int8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
+	RetVal = MQTTFlash_SDRead((uint8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
 
 	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%lu]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
 
@@ -503,11 +503,11 @@ const char *MQTTCfgParser_GetMqttPassword(void) {
 }
 
 void MQTTCfgParser_SetMqttUser(char * user) {
-	return setAttValue(ATT_IDX_MQTTUSER, user);
+	setAttValue(ATT_IDX_MQTTUSER, user);
 }
 
 void MQTTCfgParser_SetMqttPassword(char * password) {
-	return setAttValue(ATT_IDX_MQTTPASSWORD, password);
+	setAttValue(ATT_IDX_MQTTPASSWORD, password);
 }
 
 
@@ -591,6 +591,8 @@ void MQTTCfgParser_FLWriteConfig(void) {
 	localbuffer.length = NUMBER_UINT32_ZERO;
 	memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
 	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
+	printf ("DEBUGGING: [%s]", localbuffer.data);
+	printf ("PASSWORD: [%s]", MQTTCfgParser_GetMqttPassword());
 	MQTTFlash_FLWriteConfig(&localbuffer);
 }
 

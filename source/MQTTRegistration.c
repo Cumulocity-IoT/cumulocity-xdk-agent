@@ -104,7 +104,10 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		AppController_SetStatus(APP_STATUS_REGISTERED);
 
 		char stringBuffer[128];
-		strcpy(stringBuffer, "\nMQTTUSER=");
+		char username[128];
+		strcpy(stringBuffer, "\n");
+		strcat(stringBuffer, A6Name);
+		strcat(stringBuffer, "=");
 		//extract password and  username
 		int pos = 0;
 		int phase = 0;
@@ -119,14 +122,18 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			} else if (phase == 1 && pos == 1) {
 				strcat(stringBuffer, token);
 				strcat(stringBuffer, "/");
+				strcat(username, token);
+				strcat(username, "/");
 				printf("MQTTRegistration: Found tenant: [%s]\n\r", token);
 			} else if (phase == 1 && pos == 2) {
 				strcat(stringBuffer, token);
 				strcat(stringBuffer, "\n");
-				MQTTCfgParser_SetMqttUser(token);
+				strcat(username, token);
+				MQTTCfgParser_SetMqttUser(username);
 				printf("MQTTRegistration: Found username: [%s]\n\r", token);
 			} else if (phase == 1 && pos == 3) {
-				strcat(stringBuffer, "MQTTPASSWORD=");
+				strcat(stringBuffer, A7Name);
+				strcat(stringBuffer, "=");
 				strcat(stringBuffer, token);
 				strcat(stringBuffer, "\n");
 				MQTTCfgParser_SetMqttPassword(token);
@@ -299,13 +306,11 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
  * @return NONE
  */
 void MQTTRegistration_DeInit(void) {
-	Retcode_T retcode = RETCODE_OK;
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTRegistration: Calling DeInit\n\r");
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeInfo,
 	MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
-	//ignore return code
-	retcode = Mqtt_DisconnectFromBroker_Z();
+    Mqtt_DisconnectFromBroker_Z();
 }
 
 /**

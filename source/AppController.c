@@ -28,6 +28,7 @@
 /* additional interface header files */
 #include "BSP_BoardType.h"
 #include "BCDS_BSP_Board.h"
+#include "BCDS_BSP_Button.h"
 #include "BCDS_CmdProcessor.h"
 #include "BCDS_Assert.h"
 #include "BCDS_BSP_LED.h"
@@ -305,7 +306,6 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 static void AppController_Fire(void* pvParameters)
 {
     BCDS_UNUSED(pvParameters);
-	int rc = APP_RESULT_OPERATION_MODE;
 
 	AppController_SetClientId();
 	printf("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
@@ -317,18 +317,11 @@ static void AppController_Fire(void* pvParameters)
 
 	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		CmdProcessor_Enqueue(AppCmdProcessor, MQTTOperation_StartTimer, NULL, UINT32_C(0));
+		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
+		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
+		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
+		MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
 
-//		/* Initialize Buttons */
-//		rc = MQTTButton_Init(AppCmdProcessor);
-//		if (rc == APP_RESULT_ERROR) {
-//			printf("AppController_Fire: Boot error\r\n");
-//			assert(0);
-//		} else {
-			MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
-			MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
-			MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
-			MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
-//		}
 	} else {
 		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
 	}
