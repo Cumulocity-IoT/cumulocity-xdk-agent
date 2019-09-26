@@ -223,7 +223,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			case 4:
 				if (command_pos == 3) {
 					if (command == CMD_SENSOR){
-						printf("MQTTOperation: Phase execute: %i position: %i\n\r", command_pos,
+						printf("MQTTOperation: Phase execute: command_pos %i token_pos: %i\n\r", command_pos,
 								token_pos);
 						MQTTCfgParser_SetSensor(token, sensor_index);
 						MQTTCfgParser_FLWriteConfig();
