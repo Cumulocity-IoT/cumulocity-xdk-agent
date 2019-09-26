@@ -14,18 +14,18 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 ## Overview of features XDK device agent
 
 The agent runs in either of two modes: REGISTRATION or OPERATION mode.
-When the device agent starts the fist time it is in REGISTRATION modes (this mode is recognized when no MQTTUSER, MQTTPASSWORD is defined in `config.txt`).
+When the device agent starts the first time it is in REGISTRATION mode (this mode is recognized when no `MQTTUSER`, `MQTTPASSWORD` is defined in `config.txt`).
 
-The XDK agents supports device registration as described here: https://cumulocity.com/guides/rest/device-integration/
+The XDK agents supports device registration as described in the Cumulocity documentation: https://cumulocity.com/guides/rest/device-integration/
 
 After successful registration - vales for `MQTTUSER`, `MQTTPASSWORD` are received and saved in `config.txt` - the XDK restarts automatically.
-After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect to C8Y and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
+After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect to Cumulocity and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
 
-Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see https://www.cumulocity.com/guides/users-guide/device-management/#shell
+Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell .
 
 ### Configuration
 
-The C8Y Agent for XDK sends following sensor measurements to C8Y:
+The C8Y Agent for XDK sends the following sensor measurements to C8Y:
 * `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
 * `GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
 * `MAGENATBLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
@@ -36,31 +36,36 @@ The C8Y Agent for XDK sends following sensor measurements to C8Y:
 with the defined streamrate:
 * `STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000`
 
-Measurements types can be switched on/off in `config.txt` by setting the value to true/false. 
-> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise config file cannot be parsed correctly.  
-> NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required  
+Measurements types can be switched on/off in `config.txt` by setting the value to `TRUE`, `FALSE`. 
+> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise the config file cannot be parsed correctly.  
+> NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required.  
 
 The configuration for the XDK uses two sources:
 * file `config.txt` on the SDCard
 * file `config.txt`on the filesystem of the WIFI chip  
 
 When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the`MQTTUSER`, `MQTTPASSWORD` are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
-Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one only needs to define `WIFISSID`,`WIFIPASSWORD`.  
+Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SDand thus overwrite settings stored on the file system of the WIFI chip.
 The values defined in the config on the SDCard always take precedence.
 
 ### Operations
-The XDK can receive operations and messages initiated in your C8Y tenant. So you can:
-* change streaming rate: 
-	* send shell command from C8Y (publish any 1000 ms): `speed 1000`. Changing the speed is written to the config file on the WIFI chip
-* toggle yellow light upon receiving any message:
-	* for this define device dashboard and use "message" widget, see https://www.cumulocity.com/guides/users-guide/cockpit/#widgets
-* restart XDK from C8Y:
-	* select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"
-* toggle yellow light:
-	* send shell command: `toggle`
-* enable/disable sensor:
-	* send shell command: `sensor NOISEENABELED TRUE` or `sensor NOISEENABELED TRUE`. Enabling/disabling the sensor is written to the config file on the WIFI chip
-`
+The XDK can receive operations and messages initiated in your C8Y tenant. Operations to the XDK can either be issued by using:
+1. shell: see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell.
+2. message widget: see https://www.cumulocity.com/guides/users-guide/cockpit/#widgets.
+3. drop-down menue in app Devicemanagment: from the Cumulocity app `cockpit` and execute "Restart device" from dropdown-menue "More"
+
+The following commands are supported:
+* change streaming rate at which XDK publishes measurements, issued by shell (option 1.): 
+	* `speed 1000`: to publish measurements every 1000 m, changing the speed is written to the config file on the WIFI chip
+* toggle yellow light on/off, initiated by command from shell (option 1.):
+	* `toggle`
+* enable/disable sensor, initiated by command from shell (option 1.):
+	* `sensor NOISEENABELED TRUE` or `sensor NOISEENABELED TRUE`: to enable/disable the noise sensor. To tkae effect an restart is required. Enabling/disabling the sensor is written to the config file on the WIFI chip
+* restart XDK from C8Y, issued by option in drop-down menue (option 3.):
+	* select XDk device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"	
+* toggle yellow light on/off, initiated from message (any text) widget (option 2.)
+
+	
 ### Buttons
 The buttons have following on the XDK have the following functions:
 
