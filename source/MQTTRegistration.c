@@ -76,8 +76,8 @@ static MQTT_Credentials_TZ MqttCredentials;
 static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
 	(void) xTimer;
 	printf("MQTTRegistration: Filling registration msg!\n\r");
-	assetStreamBuffer.length += sprintf(assetStreamBuffer.data + assetStreamBuffer.length, "   \n");
-
+	// send empty message to Cumulocity to trigger acceptance of the regitration in WebUI
+	assetStreamBuffer.length += sprintf(assetStreamBuffer.data + assetStreamBuffer.length, "  \n");
 }
 
 /**
@@ -110,29 +110,29 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		strcat(credentials, "=");
 
 		//extract password and  username
-		int pos = 0;
-		int phase = 0;
+		int token_pos = 0; //mark position of token
+		int command_pos = 0; //mark positon for command which is parsed
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",");
 		while (token != NULL) {
 			printf(
 					"MQTTRegistration: Parsing token: [%s], phase: %i position: %i \n\r",
-					token, phase, pos);
-			if (pos == 0 && strcmp(token, "70") == 0) {
+					token, command_pos, token_pos);
+			if (token_pos == 0 && strcmp(token, TEMPLATE_STD_CREDENTIALS) == 0) {
 				printf("MQTTRegistration: correct message type \n\r");
-				phase = 1; // mark that we are in a credential notificationmessage
-			} else if (phase == 1 && pos == 1) {
+				command_pos = 1; // mark that we are in a credential notification message
+			} else if (command_pos == 1 && token_pos == 1) {
 				strcat(credentials, token);
 				strcat(credentials, "/");
 				strcat(username, token);
 				strcat(username, "/");
 				printf("MQTTRegistration: Found tenant: [%s]\n\r", token);
-			} else if (phase == 1 && pos == 2) {
+			} else if (command_pos == 1 && token_pos == 2) {
 				strcat(credentials, token);
 				strcat(credentials, "\n");
 				strcat(username, token);
 				MQTTCfgParser_SetMqttUser(username);
 				printf("MQTTRegistration: Found username: [%s]\n\r", token);
-			} else if (phase == 1 && pos == 3) {
+			} else if (command_pos == 1 && token_pos == 3) {
 				strcat(credentials, A06Name);
 				strcat(credentials, "=");
 				strcat(credentials, token);
@@ -144,7 +144,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				assert(0);
 			}
 			token = strtok(NULL, ", ");
-			pos++;
+			token_pos++;
 		}
 
 		// append credentials at the end of config.txt

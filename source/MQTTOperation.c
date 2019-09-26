@@ -40,7 +40,7 @@
 #include "XDK_WLAN.h"
 
 /* constant definitions ***************************************************** */
-const float aku340ConversionRatio = pow(10,(-38/20));
+float aku340ConversionRatio = pow(10,(-38/20));
 /* local variables ********************************************************** */
 // Buffers
 static char appIncomingMsgTopicBuffer[SENSOR_SMALL_BUF_SIZE];/**< Incoming message topic buffer */
@@ -123,20 +123,20 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	} else if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_STANDARD,
 			strlen(TOPIC_DOWNSTREAM_STANDARD)) == 0)) {
 		// split payload into tokens
-		int pos = 0;
-		int phase = 0;
+		int token_pos = 0;
+		int command_pos = 0;
 		C8Y_COMMAND command;
 		int sensor_index = 0;
 		int command_complete = 0;
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
-			printf("MQTTOperation: Processing token: [%s], phase: %i, position: %i \n\r",
-					token, phase, pos);
+			printf("MQTTOperation: Processing token: [%s], command_pos: %i, token_pos: %i \n\r",
+					token, command_pos, token_pos);
 
-		    switch (pos) {
+		    switch (token_pos) {
 		    case 0:
-				if (strcmp(token, "510") == 0) {
+				if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
 						printf("MQTTOperation: Starting restart \n\r");
 
 						AppController_SetStatus(APP_STATUS_REBOOT);
@@ -156,8 +156,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						command_complete = 1;
 						MQTTOperation_StartRestartTimer(REBOOT_DELAY);
 						printf("MQTTOperation: Ending restart\n\r");
-				} else if (strcmp(token, "511") == 0) {
-						phase = 1;  // mark that we are in a command
+				} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
+						command_pos = 1;  // mark that we are in a command
 						if (commandProgress == DEVICE_OPERATION_WAITING) {
 							commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
 						}
@@ -168,18 +168,18 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				//do nothing, ignore the device ID
 				break;
 		    case 2:
-				if (strcmp(token, "speed") == 0 && phase == 1) {
-						phase = 2;  // prepare to read the speed
-						printf("MQTTOperation: Phase command speed: %i position: %i\n\r", phase, pos);
+				if (strcmp(token, "speed") == 0 && command_pos == 1) {
+						command_pos = 2;  // prepare to read the speed
+						printf("MQTTOperation: Phase command speed: command_pos %i token_pos: %i\n\r", command_pos, token_pos);
 						command = CMD_SPEED;
-				} else if (strcmp(token, "toggle") == 0 && phase == 1) {
+				} else if (strcmp(token, "toggle") == 0 && command_pos == 1) {
 						BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 						command = CMD_TOGGLE;
 						command_complete = 1;
-						printf("MQTTOperation: Phase command toggle: %i position: %i\n\r", phase, pos);
-				} else if (strcmp(token, "sensor") == 0 && phase == 1) {
-						phase = 2;  // prepare to read the speed
-						printf("MQTTOperation: Phase command sensor: %i position: %i \n\r", phase, pos);
+						printf("MQTTOperation: Phase command toggle: command_pos %i token_pos: %i\n\r", command_pos, token_pos);
+				} else if (strcmp(token, "sensor") == 0 && command_pos == 1) {
+						command_pos = 2;  // prepare to read the speed
+						printf("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i \n\r", command_pos, token_pos);
 						command = CMD_SENSOR;
 				} else {
 						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
@@ -187,10 +187,10 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				}
 		        break;
 			case 3:
-				if (phase == 2) {
+				if (command_pos == 2) {
 					if (command == CMD_SPEED){
-						printf("MQTTOperation: Phase execute: %i position: %i\n\r", phase,
-								pos);
+						printf("MQTTOperation: Phase execute: command_pos %i token_pos: %i\n\r", command_pos,
+								token_pos);
 						int speed = strtol(token, (char **) NULL, 10);
 						printf("MQTTOperation: New speed: %i\n\r", speed);
 						tickRateMS = (int) pdMS_TO_TICKS(speed);
@@ -199,8 +199,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						MQTTOperation_AssetUpdate();
 						command_complete = 1;
 					} else if(command == CMD_SENSOR) {
-						phase = 3; // prepare to read next paramaeter TRUE or FALSE
-						printf("MQTTOperation: Phase command sensor: %i position: %i\n\r", phase, pos);
+						command_pos = 3; // prepare to read next paramaeter TRUE or FALSE
+						printf("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\n\r", command_pos, token_pos);
 						if (strcmp(token, A14Name) == 0) {
 							sensor_index= ATT_IDX_NOISEENABLED;
 						} else if (strcmp(token, A13Name) == 0) {
@@ -221,10 +221,10 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				}
 		        break;
 			case 4:
-				if (phase == 3) {
+				if (command_pos == 3) {
 					if (command == CMD_SENSOR){
-						printf("MQTTOperation: Phase execute: %i position: %i\n\r", phase,
-								pos);
+						printf("MQTTOperation: Phase execute: %i position: %i\n\r", command_pos,
+								token_pos);
 						MQTTCfgParser_SetSensor(token, sensor_index);
 						MQTTCfgParser_FLWriteConfig();
 						MQTTOperation_AssetUpdate();
@@ -237,7 +237,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		        break;
 		    }
 			token = strtok(NULL, ", ");
-			pos++;
+			token_pos++;
 		}
 		// test if command was complete
 		if ( command_complete == 0) {
@@ -263,7 +263,7 @@ static void MQTTOperation_StartRestartTimer(int period) {
 
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
 	(void) xTimer;
-	printf("MQTTOperation: Now calling SoftReset\n\r");
+	printf("MQTTOperation: Now calling SoftReset ...\n\r");
 	MQTTFlash_FLWriteBootStatus((uint8_t *)BOOT_PENDING);
 	MQTTOperation_DeInit();
 	deviceRunning = false;
@@ -619,7 +619,7 @@ static void MQTTOperation_AssetUpdate(void) {
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length, "117,5\n\r");
 
-	Utils_GetXdkVersionString(readbuffer);
+	Utils_GetXdkVersionString((uint8_t *) readbuffer);
 	assetStreamBuffer.length += sprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length,
 			"115,XDK,%s\n\r", readbuffer);

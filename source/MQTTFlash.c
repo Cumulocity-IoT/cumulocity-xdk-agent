@@ -35,7 +35,7 @@ APP_RESULT MQTTFlash_Init(void) {
 	uint8_t bootstatus[FILE_TINY_BUFFER_SIZE] = { 0 };
 	if (MQTTFlash_FLReadBootStatus(bootstatus) != APP_RESULT_OPERATION_OK) {
 		//probably the first time this XDK is used with C8Y, so we need to initialize the reboot.txt file
-		MQTTFlash_FLWriteBootStatus(NO_BOOT_PENDING);
+		MQTTFlash_FLWriteBootStatus((uint8_t*) NO_BOOT_PENDING);
 		if (MQTTFlash_FLReadBootStatus(bootstatus) != APP_RESULT_OPERATION_OK)
 		{
 			return APP_RESULT_ERROR;
@@ -56,7 +56,7 @@ void MQTTFlash_SDAppendCredentials(char* stringBuffer) {
 			printf("MQTTFlash: SD card is inserted in XDK\n\r");
 
 		/* SDC Disk FAT file system Write/Read functionality */
-		if (MQTTFlash_SDWrite(CONFIG_FILENAME, stringBuffer, FA_OPEN_ALWAYS | FA_WRITE) == APP_RESULT_OPERATION_OK) {
+		if (MQTTFlash_SDWrite((const uint8_t*) CONFIG_FILENAME, stringBuffer, FA_OPEN_ALWAYS | FA_WRITE) == APP_RESULT_OPERATION_OK) {
 			if (DEBUG_LEVEL <= FINEST)
 				printf("MQTTFlash: Write using FAT file system success \n\r");
 		} else {
@@ -196,8 +196,8 @@ void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer) {
 }
 
 void MQTTFlash_FLDeleteConfig(void) {
-	MQTTFlash_FLDeleteFile(CONFIG_FILENAME);
-	MQTTFlash_FLDeleteFile(REBOOT_FILENAME);
+	MQTTFlash_FLDeleteFile( (const uint8_t*)CONFIG_FILENAME);
+	MQTTFlash_FLDeleteFile( (const uint8_t*)REBOOT_FILENAME);
 }
 
 
@@ -206,7 +206,7 @@ APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBuffe
 	uint16_t fileSize;
 	FILINFO fileInfo;
 
-	if (f_stat(fileName, &fileInfo) != FR_Z_OK) {
+	if (f_stat((const TCHAR*) fileName, &fileInfo) != FR_Z_OK) {
 		if (DEBUG_LEVEL <= EXCEPTION)
 			printf("MQTTFlash: Can't find file: [%s]!\n\r",fileName );
 		return (APP_RESULT_SDCARD_ERROR);
@@ -222,7 +222,7 @@ APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBuffe
 	}
 
 	/* Open the file for read */
-	if (f_open(&fileObject, fileName, FA_READ) != FR_Z_OK) {
+	if (f_open(&fileObject, (const TCHAR*) fileName, FA_READ) != FR_Z_OK) {
 		if (DEBUG_LEVEL <= EXCEPTION)
 			printf("MQTTFlash: Opening file failed\n\r");
 		return (APP_RESULT_SDCARD_ERROR);
@@ -239,11 +239,11 @@ APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBuffe
 	/*Read some data from file */
 	if ((f_read(&fileObject, ramBufferRead->data, fileSize, &(ramBufferRead->length)) == FR_Z_OK) && (fileSize == ramBufferRead->length)) {
 		if (DEBUG_LEVEL <= FINEST)
-			printf("MQTTFlash: Reading from succeded: %lu %lu\n\r",
+			printf("MQTTFlash: Reading from succeded: %i %lu\n\r",
 					fileSize, ramBufferRead->length);
 	} else {
 		/* Error. Cannot read the file */
-			printf("MQTTFlash: Read failed with different size : %lu %lu\n\r",
+			printf("MQTTFlash: Read failed with different size : %i %lu\n\r",
 					fileSize, ramBufferRead->length);
 		return (APP_RESULT_SDCARD_ERROR);
 	}
@@ -257,9 +257,9 @@ APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBuffe
 	return APP_RESULT_OPERATION_OK;
 }
 
-APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, int8_t* stringBuffer, BYTE mode ) {
+APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, uint8_t* stringBuffer, BYTE mode ) {
 	FIL fileObject; /* File objects */
-	int8_t ramBufferWrite[FILE_SMALL_BUFFER_SIZE]; /* Temporary buffer for write file */
+	uint8_t ramBufferWrite[FILE_SMALL_BUFFER_SIZE]; /* Temporary buffer for write file */
 	uint16_t fileSize;
 	UINT bytesWritten;
 
@@ -270,7 +270,7 @@ APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, int8_t* stringBuffer, BYTE
 		memcpy(ramBufferWrite, stringBuffer, fileSize);
 
 	/* Open the file to write */
-	if (f_open(&fileObject, fileName, mode) != FR_Z_OK) {
+	if (f_open(&fileObject, (const TCHAR*) fileName, mode) != FR_Z_OK) {
 		/* Error. Cannot create the file */
 		printf("MQTTFlash: Error creating status");
 		return (APP_RESULT_SDCARD_ERROR);

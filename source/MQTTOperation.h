@@ -21,14 +21,19 @@
 #ifndef _MQTT_OPERATION_H_
 #define _MQTT_OPERATION_H_
 
-/* Paho Client interface declaration ********************************************** */
+/* Cumulocity MQTT declaration ********************************************** */
 
-//TODO Check of this can be replaced with template topic
+//Cumulocity standard mqtt tmeplate number
+#define TEMPLATE_STD_CREDENTIALS  	"70"
+#define TEMPLATE_STD_RESTART    	"510"
+#define TEMPLATE_STD_COMMAND    	"511"
+
+
+//Cumulocity topics to send data
 #define TOPIC_ASSET_STREAM    	 "s/us"
 #define TOPIC_DATA_STREAM    	 "s/uc/XDK"
 
 //Topic for template data stream s/us/<xId>
-
 #define TOPIC_DOWNSTREAM_CUSTOM        "s/dc/XDK"
 #define TOPIC_DOWNSTREAM_STANDARD        "s/ds"
 
