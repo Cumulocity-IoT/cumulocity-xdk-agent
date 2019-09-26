@@ -45,7 +45,7 @@ The configuration for the XDK uses two sources:
 * file `config.txt`on the filesystem of the WIFI chip  
 
 When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the`MQTTUSER`, `MQTTPASSWORD` are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
-Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SDand thus overwrite settings stored on the file system of the WIFI chip.
+Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SD and thus overwrite settings stored on the file system of the WIFI chip.
 The values defined in the config on the SDCard always take precedence.
 
 ### Operations
@@ -72,7 +72,7 @@ The buttons have following on the XDK have the following functions:
 * Button one dot: stop/start sending measurements to Cumulocity
 * Button two dots: 
 	* if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
-	* if pressed only shortly print the configuration currently stored in the `config.txt` file on the filesystem of the WIFI chip
+	* if pressed shortly prints the configuration currently stored in the `config.txt` file on the filesystem of the WIFI chip
 	* if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
 
 ### Status indicated by LEDs
