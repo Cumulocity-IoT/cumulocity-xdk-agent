@@ -344,13 +344,15 @@ static void MQTTOperation_ClientPublish(void) {
 					assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 
 					if (!assetUpdateYetPublished) {
-						assetUpdateYetPublished = true;
 						// wait an extra tick rate until topic are created in Cumulocity
 						// topics are only created after the device is created
 						vTaskDelay(pdMS_TO_TICKS(5000));
 						retcode = MQTTOperation_SubscribeTopics();
 						if (RETCODE_OK != retcode) {
-							assert(0);
+							printf("MQTTOperation: MQTT subscription failed \n\r");
+							retcode = MQTTOperation_ValidateWLANConnectivity(true);
+						} else {
+							assetUpdateYetPublished = true;
 						}
 					}
 				}
@@ -515,7 +517,6 @@ void MQTTOperation_DeInit(void) {
 static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 	Retcode_T retcode = RETCODE_OK;
 	WlanNetworkConnect_IpStatus_T nwStatus;
-
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
