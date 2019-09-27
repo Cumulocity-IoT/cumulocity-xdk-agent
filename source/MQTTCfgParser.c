@@ -98,7 +98,7 @@
 
 #define CFG_NUMBER_UINT8_ZERO           UINT8_C(0)    /**< Zero value */
 
-#define CFG_WHITESPACE                  "\t\n\r"
+#define CFG_WHITESPACE                  "\t\n\r "
 #define CFG_SPACE                       "\t "
 
 /* local variables ********************************************************** */
@@ -416,11 +416,11 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	APP_RESULT RetVal = APP_RESULT_ERROR;
 
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
-	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
+	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XLARGE_BUF);
 
 	RetValFLash = MQTTFlash_FLReadConfig(&fileReadBuffer);
 	if (RetValFLash != APP_RESULT_FILE_MISSING) {
-		//config on flash exists an is
+		//config on flash exists
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*) fileReadBuffer.data,
 						fileReadBuffer.length, CFG_FALSE)) {
@@ -431,12 +431,14 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	// test if config on SDCard exists and overwrite setting from config on flash
 	printf("MQTTCfgParser_ParseConfigFile: Trying to read config from SDCard ...\n\r");
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
-	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SENSOR_XLARGE_BUF_SIZE);
-	RetVal = MQTTFlash_SDRead((uint8_t*) CONFIG_FILENAME, &fileReadBuffer, SENSOR_XLARGE_BUF_SIZE);
+	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XLARGE_BUF);
+	RetVal = MQTTFlash_SDRead((uint8_t*) CONFIG_FILENAME, &fileReadBuffer, SIZE_XLARGE_BUF);
 
 	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%lu]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
 
 	if (RetVal == APP_RESULT_OPERATION_OK ) {
+		// append \n , since parser only parses complete lines
+		fileReadBuffer.length += snprintf (fileReadBuffer.data + strlen(fileReadBuffer.data), sizeof (fileReadBuffer.data) - strlen(fileReadBuffer.data) , "\n");
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
 						fileReadBuffer.length, CFG_TRUE)) {
@@ -590,7 +592,7 @@ void MQTTCfgParser_FLWriteConfig(void) {
 	// update config in flash memory
 	ConfigDataBuffer localbuffer;
 	localbuffer.length = NUMBER_UINT32_ZERO;
-	memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+	memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
 	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
 	MQTTFlash_FLWriteConfig(&localbuffer);
 }

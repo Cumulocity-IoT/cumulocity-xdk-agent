@@ -90,8 +90,8 @@ APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* bootstatus) {
 		if (retcode == RETCODE_OK) {
 			retcode = Storage_Read(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &readCredentials);
 			if (retcode == RETCODE_OK) {
-				printf("MQTTFlash: Read using FAT file system success: [%s] \n\r", readCredentials.ReadBuffer);
-				 return APP_RESULT_OPERATION_OK;
+				//printf("MQTTFlash: Read using FAT file system success: [%s] \n\r", readCredentials.ReadBuffer);
+				return APP_RESULT_OPERATION_OK;
 			}
 		}
 
@@ -101,7 +101,7 @@ APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* bootstatus) {
 	return APP_RESULT_FILE_MISSING;
 }
 
-void MQTTFlash_FLWriteBootStatus(uint8_t* bootstatus) {
+APP_RESULT MQTTFlash_FLWriteBootStatus(uint8_t* bootstatus) {
 
     Storage_Write_T writeCredentials =
             {
@@ -130,6 +130,7 @@ void MQTTFlash_FLWriteBootStatus(uint8_t* bootstatus) {
 			assert(0);
 		}
     }
+    return retcode;
 
 }
 
@@ -201,7 +202,7 @@ void MQTTFlash_FLDeleteConfig(void) {
 }
 
 
-APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize) {
+APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer *ramBufferRead, uint16_t maxBufferSize) {
 	FIL fileObject; /* File objects */
 	uint16_t fileSize;
 	FILINFO fileInfo;

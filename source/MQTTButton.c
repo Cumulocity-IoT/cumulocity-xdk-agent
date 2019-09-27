@@ -91,12 +91,12 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
 		} else {
 			ConfigDataBuffer localbuffer;
 			localbuffer.length = NUMBER_UINT32_ZERO;
-			memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+			memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
 			MQTTFlash_FLReadConfig(&localbuffer);
 			printf("MQTTButton: Current configuration in flash:\n\r%s\n\r", localbuffer.data);
 
 			localbuffer.length = NUMBER_UINT32_ZERO;
-			memset(localbuffer.data, 0x00, SENSOR_XLARGE_BUF_SIZE);
+			memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
 			MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
 			printf("MQTTButton: Currently used configuration:\n\r%s\n\r", localbuffer.data);
 			printf("MQTTButton: Button pressed for: %lu\n\r", time_passed);

@@ -43,8 +43,8 @@
 float aku340ConversionRatio = pow(10,(-38/20));
 /* local variables ********************************************************** */
 // Buffers
-static char appIncomingMsgTopicBuffer[SENSOR_SMALL_BUF_SIZE];/**< Incoming message topic buffer */
-static char appIncomingMsgPayloadBuffer[SENSOR_LARGE_BUF_SIZE];/**< Incoming message payload buffer */
+static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
+static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 static int tickRateMS;
 static bool deviceRunning = true;
 static SensorDataBuffer sensorStreamBuffer;
@@ -284,9 +284,9 @@ static void MQTTOperation_ClientPublish(void) {
 	bool assetUpdateYetPublished = false;
 
 	// initialize buffers
-	memset(sensorStreamBuffer.data, 0x00, SENSOR_LARGE_BUF_SIZE);
+	memset(sensorStreamBuffer.data, 0x00, SIZE_LARGE_BUF);
 	sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
-	memset(assetStreamBuffer.data, 0x00, SENSOR_SMALL_BUF_SIZE);
+	memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
 	assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 	MQTTOperation_AssetUpdate();
 

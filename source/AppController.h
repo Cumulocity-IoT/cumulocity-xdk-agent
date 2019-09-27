@@ -223,25 +223,24 @@ typedef enum
 
 
 /* Sensor type and macro definitions */
-#define SENSOR_XLARGE_BUF_SIZE    512
-/* Sensor type and macro definitions */
-#define SENSOR_LARGE_BUF_SIZE    256
-/* Sensor type and macro definitions */
-#define SENSOR_SMALL_BUF_SIZE    128
+#define SIZE_XLARGE_BUF    512
+#define SIZE_LARGE_BUF    256
+#define SIZE_SMALL_BUF    128
+#define SIZE_XSMALL_BUF    64
 
 typedef struct {
 	uint32_t length;
-	char data[SENSOR_LARGE_BUF_SIZE];
+	char data[SIZE_LARGE_BUF];
 } SensorDataBuffer;
 
 typedef struct {
 	uint32_t length;
-	char data[SENSOR_LARGE_BUF_SIZE];
+	char data[SIZE_LARGE_BUF];
 } AssetDataBuffer;
 
 typedef struct {
 	uint32_t length;
-	char data[SENSOR_XLARGE_BUF_SIZE];
+	char data[SIZE_XLARGE_BUF];
 } ConfigDataBuffer;
 
 /* local inline function definitions */

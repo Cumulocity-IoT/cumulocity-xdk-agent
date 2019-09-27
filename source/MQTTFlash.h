@@ -92,7 +92,7 @@ typedef enum {
  */
 APP_RESULT MQTTFlash_Init(void);
 APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* status);
-void MQTTFlash_FLWriteBootStatus(uint8_t* status);
+APP_RESULT MQTTFlash_FLWriteBootStatus(uint8_t* status);
 void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
 APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
 void MQTTFlash_FLDeleteConfig(void);

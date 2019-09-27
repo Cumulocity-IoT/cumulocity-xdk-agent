@@ -44,8 +44,8 @@
 static xTimerHandle clientRegistrationTimerHandle = POINTER_NULL; // timer handle for data stream
 
 // Subscribe topics variables
-static char appIncomingMsgTopicBuffer[SENSOR_SMALL_BUF_SIZE];/**< Incoming message topic buffer */
-static char appIncomingMsgPayloadBuffer[SENSOR_LARGE_BUF_SIZE];/**< Incoming message payload buffer */
+static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
+static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 
 static AssetDataBuffer assetStreamBuffer;
 
@@ -71,7 +71,7 @@ static MQTT_Publish_TZ MqttPublishInfo = { .Topic = TOPIC_REGISTRATION, .QoS =
 
 static MQTT_Setup_TZ MqttSetupInfo;
 static MQTT_Connect_TZ MqttConnectInfo;
-static MQTT_Credentials_TZ MqttCredentials;
+static MQTT_Credentials_TZ MqttCredentials = { .Username = MQTT_REGISTRATION_USERNAME, .Password = MQTT_REGISTRATION_PASSWORD,	};
 
 static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
 	(void) xTimer;
@@ -103,11 +103,10 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
 		AppController_SetStatus(APP_STATUS_REGISTERED);
 
-		char credentials[128] = {0};
-		char username[128] = {0};
-		strcpy(credentials, "\n");
-		strcat(credentials, A05Name);
-		strcat(credentials, "=");
+
+		char username[SIZE_SMALL_BUF] = {0};
+		char tenant[SIZE_XSMALL_BUF] = {0};
+		char password[SIZE_XSMALL_BUF] = {0};
 
 		//extract password and  username
 		int token_pos = 0; //mark position of token
@@ -121,23 +120,15 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				printf("MQTTRegistration: correct message type \n\r");
 				command_pos = 1; // mark that we are in a credential notification message
 			} else if (command_pos == 1 && token_pos == 1) {
-				strcat(credentials, token);
-				strcat(credentials, "/");
-				strcat(username, token);
-				strcat(username, "/");
+				// found tenant
+				snprintf(tenant,SIZE_XSMALL_BUF,token);
 				printf("MQTTRegistration: Found tenant: [%s]\n\r", token);
 			} else if (command_pos == 1 && token_pos == 2) {
-				strcat(credentials, token);
-				strcat(credentials, "\n");
-				strcat(username, token);
-				MQTTCfgParser_SetMqttUser(username);
-				printf("MQTTRegistration: Found username: [%s]\n\r", token);
+				// found username
+				snprintf(username, SIZE_XSMALL_BUF,"%s/%s", tenant, token);
+				printf("MQTTRegistration: Found username: [%s], [%s]\n\r", token, username);
 			} else if (command_pos == 1 && token_pos == 3) {
-				strcat(credentials, A06Name);
-				strcat(credentials, "=");
-				strcat(credentials, token);
-				strcat(credentials, "\n");
-				MQTTCfgParser_SetMqttPassword(token);
+				snprintf(password, SIZE_XSMALL_BUF, token);
 				printf("MQTTRegistration: Found password: [%s]\n\r", token);
 			} else {
 				printf("MQTTRegistration: Wrong message format\n\r");
@@ -148,7 +139,12 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		}
 
 		// append credentials at the end of config.txt
+		char credentials[SIZE_SMALL_BUF] = {0};
+		snprintf(credentials,SIZE_SMALL_BUF,"\n%s=%s\n%s=%s\n", A05Name, username, A06Name, password );
 		MQTTFlash_SDAppendCredentials(credentials);
+
+		MQTTCfgParser_SetMqttUser(username);
+		MQTTCfgParser_SetMqttPassword(password);
 		MQTTCfgParser_FLWriteConfig();
 		MQTTRegistration_StartRestartTimer(REBOOT_DELAY);
 	}
@@ -204,7 +200,7 @@ static void MQTTRegistration_ClientPublish(void) {
 				if (RETCODE_OK != retcode) {
 					Retcode_RaiseError(retcode);
 				}
-				memset(assetStreamBuffer.data, 0x00, SENSOR_SMALL_BUF_SIZE);
+				memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
 				assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 			}
 			vTaskDelay(pdMS_TO_TICKS(1000));
@@ -220,7 +216,7 @@ static void MQTTRegistration_ClientPublish(void) {
  */
 void MQTTRegistration_StartTimer(void){
 
-	memset(assetStreamBuffer.data, 0x00, SENSOR_SMALL_BUF_SIZE);
+	memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
 	assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 	/* Start the timers */
 	if (DEBUG_LEVEL <= INFO)
@@ -241,8 +237,6 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	/* Initialize Variables */
 	MqttSetupInfo = MqttSetupInfo_P;
 	MqttConnectInfo = MqttConnectInfo_P;
-	MqttCredentials.Password = MQTT_REGISTRATION_PASSWORD;
-	MqttCredentials.Username = MQTT_REGISTRATION_USERNAME;
 
 	Retcode_T retcode = RETCODE_OK;
 
