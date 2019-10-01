@@ -4,8 +4,23 @@
   "com_cumulocity_model_smartrest_csv_CsvSmartRestTemplate": {
     "requestTemplates": [
       {
+        "method": "POST",
+        "response": false,
+        "msgId": "991",
         "api": "MEASUREMENT",
         "byId": true,
+        "mandatoryValues": [
+          {
+            "path": "$.type",
+            "type": "STRING",
+            "value": "c8y_Acceleration"
+          },
+          {
+            "path": "$.time",
+            "type": "DATE",
+            "value": null
+          }
+        ],
         "customValues": [
           {
             "path": "c8y_Acceleration.accelerationX.value",
@@ -23,11 +38,19 @@
             "value": null
           }
         ],
+        "name": "Acceleration"
+      },
+      {
+        "method": "POST",
+        "response": false,
+        "msgId": "992",
+        "api": "MEASUREMENT",
+        "byId": true,
         "mandatoryValues": [
           {
             "path": "$.type",
             "type": "STRING",
-            "value": "c8y_Acceleration"
+            "value": "c8y_Gyroscope"
           },
           {
             "path": "$.time",
@@ -35,14 +58,6 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "991",
-        "response": false,
-        "name": "Acceleration"
-      },
-      {
-        "api": "MEASUREMENT",
-        "byId": true,
         "customValues": [
           {
             "path": "c8y_Gyroscope.gyroX.value",
@@ -60,11 +75,19 @@
             "value": null
           }
         ],
+        "name": "Gyroscope"
+      },
+      {
+        "method": "POST",
+        "response": false,
+        "msgId": "993",
+        "api": "MEASUREMENT",
+        "byId": true,
         "mandatoryValues": [
           {
             "path": "$.type",
             "type": "STRING",
-            "value": "c8y_Gyroscope"
+            "value": "c8y_Magnetometer"
           },
           {
             "path": "$.time",
@@ -72,14 +95,6 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "992",
-        "response": false,
-        "name": "Gyroscope"
-      },
-      {
-        "api": "MEASUREMENT",
-        "byId": true,
         "customValues": [
           {
             "path": "c8y_Magnetometer.magnetometerX.value",
@@ -97,33 +112,14 @@
             "value": null
           }
         ],
-        "mandatoryValues": [
-          {
-            "path": "$.type",
-            "type": "STRING",
-            "value": "c8y_Magnetometer"
-          },
-          {
-            "path": "$.time",
-            "type": "DATE",
-            "value": null
-          }
-        ],
-        "method": "POST",
-        "msgId": "993",
-        "response": false,
         "name": "Magnetometer"
       },
       {
+        "method": "POST",
+        "response": false,
+        "msgId": "994",
         "api": "MEASUREMENT",
         "byId": true,
-        "customValues": [
-          {
-            "path": "c8y_Light.light.value",
-            "type": "NUMBER",
-            "value": null
-          }
-        ],
         "mandatoryValues": [
           {
             "path": "$.type",
@@ -136,21 +132,21 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "994",
-        "response": false,
-        "name": "Light"
-      },
-      {
-        "api": "MEASUREMENT",
-        "byId": true,
         "customValues": [
           {
-            "path": "c8y_Humidity.humidity.value",
+            "path": "c8y_Light.light.value",
             "type": "NUMBER",
             "value": null
           }
         ],
+        "name": "Light"
+      },
+      {
+        "method": "POST",
+        "response": false,
+        "msgId": "995",
+        "api": "MEASUREMENT",
+        "byId": true,
         "mandatoryValues": [
           {
             "path": "$.type",
@@ -163,21 +159,21 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "995",
-        "response": false,
-        "name": "Humidity"
-      },
-      {
-        "api": "MEASUREMENT",
-        "byId": true,
         "customValues": [
           {
-            "path": "c8y_Temperature.T.value",
+            "path": "c8y_Humidity.humidity.value",
             "type": "NUMBER",
             "value": null
           }
         ],
+        "name": "Humidity"
+      },
+      {
+        "method": "POST",
+        "response": false,
+        "msgId": "996",
+        "api": "MEASUREMENT",
+        "byId": true,
         "mandatoryValues": [
           {
             "path": "$.type",
@@ -190,21 +186,21 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "996",
-        "response": false,
-        "name": "Temperature"
-      },
-      {
-        "api": "MEASUREMENT",
-        "byId": true,
         "customValues": [
           {
-            "path": "c8y_Pressure.pressure.value",
+            "path": "c8y_Temperature.T.value",
             "type": "NUMBER",
             "value": null
           }
         ],
+        "name": "Temperature"
+      },
+      {
+        "method": "POST",
+        "response": false,
+        "msgId": "997",
+        "api": "MEASUREMENT",
+        "byId": true,
         "mandatoryValues": [
           {
             "path": "$.type",
@@ -217,21 +213,21 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "997",
-        "response": false,
-        "name": "Pressure"
-      },
-	  {
-        "api": "MEASUREMENT",
-        "byId": true,
         "customValues": [
           {
-            "path": "c8y_Noise.noise.value",
+            "path": "c8y_Pressure.pressure.value",
             "type": "NUMBER",
             "value": null
           }
         ],
+        "name": "Pressure"
+      },
+      {
+        "method": "POST",
+        "response": false,
+        "msgId": "998",
+        "api": "MEASUREMENT",
+        "byId": true,
         "mandatoryValues": [
           {
             "path": "$.type",
@@ -244,17 +240,187 @@
             "value": null
           }
         ],
-        "method": "POST",
-        "msgId": "998",
-        "response": false,
+        "customValues": [
+          {
+            "path": "c8y_Noise.noise.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
         "name": "Noise"
+      },
+      {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1991",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Acceleration.accelerationX.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Acceleration.accelerationY.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Acceleration.accelerationZ.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "AccelerationInventory"
+      },
+      {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1992",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Gyroscope.gyroX.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Gyroscope.gyroY.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Gyroscope.gyroZ.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "GyroscopeInventory"
+      },
+	  {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1993",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Magnetometer.magnetometerX.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Magnetometer.magnetometerY.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Magnetometer.magnetometerZ.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "MagnetometerInventory"
+      },
+	  {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1994",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Light.light.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "LightInventory"
+      },
+	  {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1995",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Humidity.humidity.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "HumidityInventory"
+      },
+	  {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1996",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Temperature.T.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "TemperatureInventory"
+      },
+	  {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1997",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Pressure.pressure.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "PressureInventory"
+      },
+	  {
+        "method": "PUT",
+        "response": false,
+        "msgId": "1998",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Noise.noise.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "NoiseInventory"
       }
     ],
     "responseTemplates": [
       {
-        "base": "c8y_Message",
-        "condition": "c8y_Message",
         "msgId": "999",
+        "condition": "c8y_Message",
+        "base": "c8y_Message",
         "name": "Message",
         "pattern": [
           "text"

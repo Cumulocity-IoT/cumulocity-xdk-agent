@@ -230,7 +230,7 @@ typedef enum
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_LARGE_BUF];
+	char data[SIZE_XLARGE_BUF];
 } SensorDataBuffer;
 
 typedef struct {
