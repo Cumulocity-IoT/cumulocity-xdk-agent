@@ -432,7 +432,7 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	printf("MQTTCfgParser_ParseConfigFile: Trying to read config from SDCard ...\n\r");
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XLARGE_BUF);
-	RetVal = MQTTFlash_SDRead((uint8_t*) CONFIG_FILENAME, &fileReadBuffer, SIZE_XLARGE_BUF);
+	RetVal = MQTTFlash_SDReadConfig(&fileReadBuffer);
 
 	printf("MQTTCfgParser_ParseConfigFile: Current configuration with length [%lu]:\n\r%s\n\r", fileReadBuffer.length, fileReadBuffer.data);
 

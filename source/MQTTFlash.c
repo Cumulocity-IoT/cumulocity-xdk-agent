@@ -28,11 +28,13 @@
 /* global variables ********************************************************* */
 
 /* local module global variable declarations */
-static void MQTTFlash_FLDeleteFile (const uint8_t* fileName);
+static void MQTTFlash_FLDeleteFile (const uint8_t *fileName);
+static APP_RESULT MQTTFlash_SDWrite(const uint8_t *fileName, uint8_t *stringBuffer, BYTE mode);
+static APP_RESULT MQTTFlash_SDRead(const uint8_t *fileName, ConfigDataBuffer *ramBufferRead);
 
 APP_RESULT MQTTFlash_Init(void) {
 	/* read boot status */
-	uint8_t bootstatus[FILE_TINY_BUFFER_SIZE] = { 0 };
+	uint8_t bootstatus[SIZE_XSMALL_BUF] = { 0 };
 	if (MQTTFlash_FLReadBootStatus(bootstatus) != APP_RESULT_OPERATION_OK) {
 		//probably the first time this XDK is used with C8Y, so we need to initialize the reboot.txt file
 		MQTTFlash_FLWriteBootStatus((uint8_t*) NO_BOOT_PENDING);
@@ -201,11 +203,15 @@ void MQTTFlash_FLDeleteConfig(void) {
 	MQTTFlash_FLDeleteFile( (const uint8_t*)REBOOT_FILENAME);
 }
 
+APP_RESULT MQTTFlash_SDReadConfig(ConfigDataBuffer *configBuffer) {
+	return MQTTFlash_SDRead ((const uint8_t*) CONFIG_FILENAME, configBuffer);
+}
 
-APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer *ramBufferRead, uint16_t maxBufferSize) {
+static APP_RESULT MQTTFlash_SDRead(const uint8_t *fileName, ConfigDataBuffer *ramBufferRead) {
 	FIL fileObject; /* File objects */
 	uint16_t fileSize;
 	FILINFO fileInfo;
+	uint16_t maxBufferSize = sizeof(ramBufferRead->data);
 
 	if (f_stat((const TCHAR*) fileName, &fileInfo) != FR_Z_OK) {
 		if (DEBUG_LEVEL <= EXCEPTION)
@@ -258,9 +264,9 @@ APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer *ramBuffer
 	return APP_RESULT_OPERATION_OK;
 }
 
-APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, uint8_t* stringBuffer, BYTE mode ) {
+static APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, uint8_t* stringBuffer, BYTE mode ) {
 	FIL fileObject; /* File objects */
-	uint8_t ramBufferWrite[FILE_SMALL_BUFFER_SIZE]; /* Temporary buffer for write file */
+	uint8_t ramBufferWrite[SIZE_LARGE_BUF]; /* Temporary buffer for write file */
 	uint16_t fileSize;
 	UINT bytesWritten;
 
@@ -328,4 +334,3 @@ static void MQTTFlash_FLDeleteFile (const uint8_t* fileName) {
     }
 
 }
-

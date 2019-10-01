@@ -590,7 +590,7 @@ static void MQTTOperation_AssetUpdate(void) {
 
 
 	/* Initialize Variables */
-	char readbuffer[FILE_TINY_BUFFER_SIZE]; /* Temporary buffer for write file */
+	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
 
 	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
 	printf("MQTTOperation: Reading boot status: [%s]\n\r", readbuffer);
@@ -641,13 +641,11 @@ static void MQTTOperation_SensorUpdate(void) {
 	if (SensorSetup.Enable.Accel) {
 		sensorStreamBuffer.length += snprintf(
 				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-				"991,,%ld,%ld,%ld\n\r", sensorValue.Accel.X, sensorValue.Accel.Y,
-				sensorValue.Accel.Z);
+				"991,,%ld,%ld,%ld\n\r", sensorValue.Accel.X, sensorValue.Accel.Y, sensorValue.Accel.Z);
 		// update inventory with latest measurements
 		sensorStreamBuffer.length += snprintf(
 				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-				"1991,%s,%ld,%ld,%ld\n\r", deviceId, sensorValue.Accel.X, sensorValue.Accel.Y,
-				sensorValue.Accel.Z);
+				"1991,%s,%ld,%ld,%ld\n\r", deviceId, sensorValue.Accel.X, sensorValue.Accel.Y,sensorValue.Accel.Z);
 	}
 	if (SensorSetup.Enable.Gyro) {
 		sensorStreamBuffer.length += snprintf(

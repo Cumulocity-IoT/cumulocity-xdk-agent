@@ -51,54 +51,17 @@ typedef enum {
 	FR_Z_INVALID_PARAMETER	/* (19) Given parameter is invalid */
 } F_Z_RESULT;
 
-#define DEFAULT_LOGICAL_DRIVE        ""             /**< Macro to define default logical drive */
-#define FORCE_MOUNT                 UINT8_C(1)      /**< Macro to define force mount */
-#define WRITEREAD_DELAY 			UINT32_C(5000) 	 /**< Millisecond delay for WriteRead timer task */
-#define WRITEREAD_BLOCK_TIME 		UINT32_C(0xffff) /**< Macro used to define block time of a timer*/
-#define SINGLE_BLOCK				UINT8_C(1)      /**< SD- Card Single block write or read */
-#define DRIVE_ZERO				    UINT8_C(0)      /**< SD Card Drive 0 location */
-#define PARTITION_RULE_FDISK	    UINT8_C(0)      /**< SD Card Drive partition rule 0: FDISK, 1: SFD */
-#define AUTO_CLUSTER_SIZE		    UINT8_C(0)      /**< zero is given, the cluster size is determined depends on the volume size. */
-#define SEEK_FIRST_LOCATION		    UINT8_C(0)      /**< File seek to the first location */
-#define SECTOR_VALUE			    UINT8_C(1)      /**< SDC Disk sector value */
+#define REBOOT_FILENAME		"reboot.txt"	/**< Filename to open/write/read from SD-card */
+#define CONFIG_FILENAME  	"config.txt"	/**< Filename to open/write/read from SD-card */
 
-#define REBOOT_FILENAME    "reboot.txt"	/**< Filename to open/write/read from SD-card */
-#define CONFIG_FILENAME  "config.txt"	/**< Filename to open/write/read from SD-card */
-
-/* Ram buffers
- * BUFFERSIZE should be between 512 and 1024, depending on available ram on efm32
- */
-#define FILE_TINY_BUFFER_SIZE          UINT16_C(128)
-#define FILE_SMALL_BUFFER_SIZE         UINT16_C(256)
-#define FILE_EQUAL 		     UINT8_C(0)
-#define FILE_NOT_EQUAL 	     UINT8_C(1)
-
-#define SDCARD_DRIVE_NUMBER  UINT8_C(0)           /**< SD Card Drive 0 location */
-/**
- * @brief
- *      The sdCardFatFileSystemWriteRead API uses the FAT file system library calls.
- *      This API will mount and create the file system, then it will open, seek write,
- *      read and close the files. This API will compare the contents which has been
- *      written and read.
- *
- * @retval
- *      ERR_NO_ERROR - All the file operations are success
- *
- * @retval
- *      ERR_ERROR - one of the file operation failed
- *
- * @retval
- *      APP_ERR_INIT_FAILED - disk has not been initialized
- */
 APP_RESULT MQTTFlash_Init(void);
 APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* status);
 APP_RESULT MQTTFlash_FLWriteBootStatus(uint8_t* status);
 void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
 APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
+APP_RESULT MQTTFlash_SDReadConfig(ConfigDataBuffer* configBuffer);
 void MQTTFlash_FLDeleteConfig(void);
 void MQTTFlash_SDAppendCredentials(char* stringBuffer);
-APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, uint8_t* stringBuffer, BYTE mode);
-APP_RESULT MQTTFlash_SDRead(const uint8_t* fileName, ConfigDataBuffer * ramBufferRead, uint16_t maxBufferSize);
 
 /* local inline function definitions */
 

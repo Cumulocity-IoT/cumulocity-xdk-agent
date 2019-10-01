@@ -113,8 +113,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		int command_pos = 0; //mark positon for command which is parsed
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",");
 		while (token != NULL) {
-			printf(
-					"MQTTRegistration: Parsing token: [%s], command_pos: %i token_pos: %i \n\r",
+			printf("MQTTRegistration: Parsing token: [%s], command_pos: %i token_pos: %i \n\r",
 					token, command_pos, token_pos);
 			if (token_pos == 0 && strcmp(token, TEMPLATE_STD_CREDENTIALS) == 0) {
 				printf("MQTTRegistration: correct message type \n\r");
