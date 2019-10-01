@@ -143,12 +143,12 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						// set flag so that XDK acknowledges reboot command
 						if (rebootProgress == DEVICE_OPERATION_WAITING) {
 							rebootProgress = DEVICE_OPERATION_EXECUTING;
-							assetStreamBuffer.length += sprintf(
-									assetStreamBuffer.data + assetStreamBuffer.length,
+							assetStreamBuffer.length += snprintf(
+									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 									"501,c8y_Restart\n\r");
 						} else {
-							assetStreamBuffer.length += sprintf(
-									assetStreamBuffer.data + assetStreamBuffer.length,
+							assetStreamBuffer.length += snprintf(
+									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 									"502,c8y_Restart\n\r");
 						}
 						commandType = "c8y_Restart";
@@ -597,20 +597,20 @@ static void MQTTOperation_AssetUpdate(void) {
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
 		printf("MQTTOperation: Confirm successful reboot\n\r");
-		assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length,
+		assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 				"503,c8y_Restart\n\r");
 		MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
 	}
 
-	assetStreamBuffer.length += sprintf(
-			assetStreamBuffer.data + assetStreamBuffer.length,
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 			"100,\"%s\",c8y_XDKDevice\n\r", deviceId);
-	assetStreamBuffer.length += sprintf(
-			assetStreamBuffer.data + assetStreamBuffer.length,
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 			"114,c8y_Restart,c8y_Message,c8y_Command\n\r");
-	assetStreamBuffer.length += sprintf(
-			assetStreamBuffer.data + assetStreamBuffer.length,
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 			"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\n\r",
 			A08Name, tickRateMS,
 			A09Name, MQTTCfgParser_IsAccelEnabled(),
@@ -620,12 +620,12 @@ static void MQTTOperation_AssetUpdate(void) {
 			A13Name, MQTTCfgParser_IsLightEnabled(),
 			A14Name, MQTTCfgParser_IsNoiseEnabled());
 
-	assetStreamBuffer.length += sprintf(
-			assetStreamBuffer.data + assetStreamBuffer.length, "117,5\n\r");
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\n\r");
 
 	Utils_GetXdkVersionString((uint8_t *) readbuffer);
-	assetStreamBuffer.length += sprintf(
-			assetStreamBuffer.data + assetStreamBuffer.length,
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 			"115,XDK,%s\n\r", readbuffer);
 
 	if (DEBUG_LEVEL <= FINEST)
@@ -639,104 +639,104 @@ static void MQTTOperation_SensorUpdate(void) {
 		retcode = Sensor_GetData(&sensorValue);
 	}
 	if (SensorSetup.Enable.Accel) {
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"991,,%ld,%ld,%ld\n\r", sensorValue.Accel.X, sensorValue.Accel.Y,
 				sensorValue.Accel.Z);
 		// update inventory with latest measurements
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1991,%s,%ld,%ld,%ld\n\r", deviceId, sensorValue.Accel.X, sensorValue.Accel.Y,
 				sensorValue.Accel.Z);
 	}
 	if (SensorSetup.Enable.Gyro) {
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"992,,%ld,%ld,%ld\n\r", sensorValue.Gyro.X, sensorValue.Gyro.Y,
 				sensorValue.Gyro.Z);
 		// update inventory with latest measurements
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1992,%s,%ld,%ld,%ld\n\r", deviceId, sensorValue.Gyro.X, sensorValue.Gyro.Y,
 				sensorValue.Gyro.Z);
 	}
 	if (SensorSetup.Enable.Mag) {
 
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"993,,%ld,%ld,%ld\n\r", sensorValue.Mag.X, sensorValue.Mag.Y,
 				sensorValue.Mag.Z);
 		// update inventory with latest measurements
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1993,%s,%ld,%ld,%ld\n\r", deviceId, sensorValue.Mag.X, sensorValue.Mag.Y,
 				sensorValue.Mag.Z);
 	}
 	if (SensorSetup.Enable.Light) {
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"994,,%ld\n\r", sensorValue.Light);
 		// update inventory with latest measurements
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1994,%s,%ld\n\r", deviceId, sensorValue.Light);
 	}
 	// only all three at the same time can be enabled
 	if (SensorSetup.Enable.Temp) {
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"995,,%ld\n\r", sensorValue.RH);
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"996,,%.2lf\n\r", sensorValue.Temp / 972.3);
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"997,,%ld\n\r", sensorValue.Pressure);
 		// update inventory with latest measurements
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1995,%s,%ld\n\r",  deviceId, sensorValue.RH);
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1996,%s,%.2lf\n\r",  deviceId, sensorValue.Temp / 972.3);
-		sensorStreamBuffer.length += sprintf(
-				sensorStreamBuffer.data + sensorStreamBuffer.length,
+		sensorStreamBuffer.length += snprintf(
+				sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 				"1997,%s,%ld\n\r",  deviceId, sensorValue.Pressure);
 	}
 
 	if (SensorSetup.Enable.Noise) {
-		sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "998,,%.4f\n", MQTTOperation_CalcSoundPressure(sensorValue.Noise));
+		sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "998,,%.4f\n", MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 		// update inventory with latest measurements
-		sensorStreamBuffer.length += sprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, "1998,%s,%.4f\n", deviceId, MQTTOperation_CalcSoundPressure(sensorValue.Noise));
+		sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "1998,%s,%.4f\n", deviceId, MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 	}
 
 	switch (commandProgress) {
 		case DEVICE_OPERATION_BEFORE_EXECUTING:
 			commandProgress = DEVICE_OPERATION_EXECUTING;
-			assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, "501,%s\n\r", commandType);
+			assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
 			break;
 		case DEVICE_OPERATION_BEFORE_FAILED:
 			commandProgress = DEVICE_OPERATION_FAILED;
-			assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, "501,%s\n\r", commandType);
+			assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
 			break;
 		case DEVICE_OPERATION_FAILED:
 			commandProgress = DEVICE_OPERATION_WAITING;
-			assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commandType);
+			assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commandType);
 			break;
 		case DEVICE_OPERATION_EXECUTING:
 			commandProgress = DEVICE_OPERATION_WAITING;
-			assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, "503,%s\n\r", commandType);
+			assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
 			break;
 		case DEVICE_OPERATION_IMMEDIATE:
 			commandProgress = DEVICE_OPERATION_WAITING;
-			assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, "501,%s\n\r", commandType);
-			assetStreamBuffer.length += sprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, "503,%s\n\r", commandType);
+			assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+			assetStreamBuffer.length += snprintf(
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
 		break;
 	}
 

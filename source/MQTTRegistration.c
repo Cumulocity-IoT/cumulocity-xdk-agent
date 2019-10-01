@@ -77,7 +77,7 @@ static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
 	(void) xTimer;
 	printf("MQTTRegistration: Filling registration msg!\n\r");
 	// send empty message to Cumulocity to trigger acceptance of the regitration in WebUI
-	assetStreamBuffer.length += sprintf(assetStreamBuffer.data + assetStreamBuffer.length, "  \n");
+	assetStreamBuffer.length += snprintf(assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "  \n");
 }
 
 /**
