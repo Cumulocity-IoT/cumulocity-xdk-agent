@@ -288,7 +288,6 @@ static void MQTTOperation_ClientPublish(void) {
 	// initialize buffers
 	memset(sensorStreamBuffer.data, 0x00, SIZE_LARGE_BUF);
 	sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
-	//memset(assetStreamBuffer.data, 0x00, SIZE_LARGE_BUF);
 	memset(assetStreamBuffer.data, 0x00, SIZE_LARGE_BUF);
 	assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 	MQTTOperation_AssetUpdate();
