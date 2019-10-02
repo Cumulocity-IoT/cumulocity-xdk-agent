@@ -39,6 +39,7 @@
 #include "XDK_SNTP.h"
 #include "XDK_WLAN.h"
 
+static const int MINIMAL_SPEED = 50;
 /* constant definitions ***************************************************** */
 float aku340ConversionRatio = pow(10,(-38/20));
 /* local variables ********************************************************** */
@@ -148,14 +149,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					AppController_SetStatus(APP_STATUS_REBOOT);
 					// set flag so that XDK acknowledges reboot command
 					if (rebootProgress == DEVICE_OPERATION_WAITING) {
-						rebootProgress = DEVICE_OPERATION_EXECUTING;
-						assetStreamBuffer.length += snprintf(
-								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-								"501,c8y_Restart\n\r");
-					} else {
-						assetStreamBuffer.length += snprintf(
-								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-								"502,c8y_Restart\n\r");
+						rebootProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
 					}
 					commandType = "c8y_Restart";
 					command = CMD_RESTART;
@@ -200,6 +194,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						printf("MQTTOperation: Phase execute: command_pos %i token_pos: %i\n\r", command_pos,
 								token_pos);
 						int speed = strtol(token, (char **) NULL, 10);
+						speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
 						printf("MQTTOperation: New speed: %i\n\r", speed);
 						tickRateMS = (int) pdMS_TO_TICKS(speed);
 						xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
@@ -396,8 +391,7 @@ static void MQTTOperation_ClientPublish(void) {
 
 			}
 		}
-		//vTaskDelay(pdMS_TO_TICKS(tickRateMS));
-		vTaskDelay(pdMS_TO_TICKS(50));
+		vTaskDelay(pdMS_TO_TICKS(MINIMAL_SPEED));
 	}
 
 }
@@ -475,6 +469,17 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 
 	Retcode_T retcode = RETCODE_OK;
 	tickRateMS = (int) pdMS_TO_TICKS(MQTTCfgParser_GetStreamRate());
+
+	/* Initialize Variables */
+	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
+	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
+	printf("MQTTOperation_Init: Reading boot status: [%s]\n\r", readbuffer);
+
+	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
+		printf("MQTTOperation_Init: Confirm successful reboot\n\r");
+		rebootProgress = DEVICE_OPERATION_SUCCESSFUL;
+		MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
+	}
 
 	if (MqttSetupInfo.IsSecure == true) {
 
@@ -629,19 +634,6 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 		if (assetUpdate == APP_ASSET_WAITING) {
 			assetUpdate = APP_ASSET_PUBLISHED;
-			/* Initialize Variables */
-			char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
-
-			MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
-			printf("MQTTOperation: Reading boot status: [%s]\n\r", readbuffer);
-
-			if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
-				printf("MQTTOperation: Confirm successful reboot\n\r");
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"503,c8y_Restart\n\r");
-				MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
-			}
 
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
@@ -663,38 +655,54 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\n\r");
 
+			char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
 			Utils_GetXdkVersionString((uint8_t *) readbuffer);
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 					"115,XDK,%s\n\r", readbuffer);
 		} else {
 			switch (commandProgress) {
+				case DEVICE_OPERATION_BEFORE_EXECUTING:
+					commandProgress = DEVICE_OPERATION_EXECUTING;
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+					break;
+				case DEVICE_OPERATION_BEFORE_FAILED:
+					commandProgress = DEVICE_OPERATION_FAILED;
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+					break;
+				case DEVICE_OPERATION_FAILED:
+					commandProgress = DEVICE_OPERATION_WAITING;
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commandType);
+					break;
+				case DEVICE_OPERATION_EXECUTING:
+					commandProgress = DEVICE_OPERATION_WAITING;
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
+					break;
+				case DEVICE_OPERATION_IMMEDIATE:
+					commandProgress = DEVICE_OPERATION_WAITING;
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
+					break;
+			}
+
+			switch (rebootProgress) {
 			case DEVICE_OPERATION_BEFORE_EXECUTING:
-				commandProgress = DEVICE_OPERATION_EXECUTING;
+				rebootProgress = DEVICE_OPERATION_EXECUTING;
 				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"501,c8y_Restart\n\r");
 				break;
-			case DEVICE_OPERATION_BEFORE_FAILED:
-				commandProgress = DEVICE_OPERATION_FAILED;
+			case DEVICE_OPERATION_SUCCESSFUL:
+				rebootProgress = DEVICE_OPERATION_WAITING;
 				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
-				break;
-			case DEVICE_OPERATION_FAILED:
-				commandProgress = DEVICE_OPERATION_WAITING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commandType);
-				break;
-			case DEVICE_OPERATION_EXECUTING:
-				commandProgress = DEVICE_OPERATION_WAITING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
-				break;
-			case DEVICE_OPERATION_IMMEDIATE:
-				commandProgress = DEVICE_OPERATION_WAITING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"503,c8y_Restart\n\r");
 				break;
 			}
 
