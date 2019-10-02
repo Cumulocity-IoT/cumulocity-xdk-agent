@@ -370,19 +370,19 @@ Retcode_T MQTT_ConnectToBroker_Z(MQTT_Connect_TZ * mqttConnect, uint32_t timeout
 				StringDescr_T passw;
 				StringDescr_wrap(&passw, mqttCredentials->Password);
 				MqttSession_Z.password = passw;
-				printf("MQTT_ConnectToBroker_Z: setting credentials: [%s]\r\n", mqttCredentials->Username );
-				printf("MQTT_ConnectToBroker_Z: setting password: [%s]\r\n", mqttCredentials->Password );
+				printf("MQTT_ConnectToBroker_Z: Setting credentials: [%s]\r\n", mqttCredentials->Username );
+				printf("MQTT_ConnectToBroker_Z: Setting password: [%s]\r\n", mqttCredentials->Password );
 			}
 
 			if (MqttSetupInfo_Z.IsSecure)
 			{
-				printf("MQTT_ConnectToBroker_Z: connecting secure\r\n");
+				printf("MQTT_ConnectToBroker_Z: Connecting secure\r\n");
 				sprintf(mqttBrokerURL, MQTT_URL_FORMAT_SECURE, serverIpStringBuffer, mqttConnect->BrokerPort);
 				MqttSession_Z.target.scheme = SERVAL_SCHEME_MQTTS;
 			}
 			else
 			{
-				printf("MQTT_ConnectToBroker_Z: connecting unsecure\r\n");
+				printf("MQTT_ConnectToBroker_Z: Connecting unsecure\r\n");
 				sprintf(mqttBrokerURL, MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, mqttConnect->BrokerPort);
 				MqttSession_Z.target.scheme = SERVAL_SCHEME_MQTT;
 			}

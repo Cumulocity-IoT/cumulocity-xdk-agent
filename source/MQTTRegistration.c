@@ -113,10 +113,10 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		int command_pos = 0; //mark positon for command which is parsed
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",");
 		while (token != NULL) {
-			printf("MQTTRegistration: Parsing token: [%s], command_pos: %i token_pos: %i \n\r",
+			printf("MQTTRegistration: Parsed token: [%s], command_pos: %i token_pos: %i \n\r",
 					token, command_pos, token_pos);
 			if (token_pos == 0 && strcmp(token, TEMPLATE_STD_CREDENTIALS) == 0) {
-				printf("MQTTRegistration: correct message type \n\r");
+				printf("MQTTRegistration: Correct message type \n\r");
 				command_pos = 1; // mark that we are in a credential notification message
 			} else if (command_pos == 1 && token_pos == 1) {
 				// found tenant
@@ -156,7 +156,7 @@ static void MQTTRegistration_StartRestartTimer(int period) {
 			pdFALSE, //Autoreload pdTRUE or pdFALSE - should the timer start again after it expired?
 			NULL, // optional identifier
 			MQTTRegistration_RestartCallback // static callback function
-			);
+	);
 	xTimerStart(timerHandle, MILLISECONDS(10));
 }
 
@@ -180,29 +180,29 @@ static void MQTTRegistration_ClientPublish(void) {
 	Retcode_T retcode = RETCODE_OK;
 	while (1) {
 		/* Resetting / clearing the necessary buffers / variables for re-use */
-			if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
-				/* Check whether the WLAN network connection is available */
-				retcode = MQTTRegistration_ValidateWLANConnectivity(false);
-				if (RETCODE_OK == retcode) {
+		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
+			/* Check whether the WLAN network connection is available */
+			retcode = MQTTRegistration_ValidateWLANConnectivity(false);
+			if (RETCODE_OK == retcode) {
 
-					MqttPublishInfo.Payload = assetStreamBuffer.data;
-					MqttPublishInfo.PayloadLength = assetStreamBuffer.length;
+				MqttPublishInfo.Payload = assetStreamBuffer.data;
+				MqttPublishInfo.PayloadLength = assetStreamBuffer.length;
 
-					retcode = MQTT_PublishToTopic_Z(&MqttPublishInfo,
-					MQTT_PUBLISH_TIMEOUT_IN_MS);
-					if (RETCODE_OK != retcode) {
-						printf("MQTTRegistration: MQTT publish failed \n\r");
-						retcode = MQTTRegistration_ValidateWLANConnectivity(true);
-						Retcode_RaiseError(retcode);
-					}
-				}
+				retcode = MQTT_PublishToTopic_Z(&MqttPublishInfo,
+						MQTT_PUBLISH_TIMEOUT_IN_MS);
 				if (RETCODE_OK != retcode) {
+					printf("MQTTRegistration: MQTT publish failed \n\r");
+					retcode = MQTTRegistration_ValidateWLANConnectivity(true);
 					Retcode_RaiseError(retcode);
 				}
-				memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
-				assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 			}
-			vTaskDelay(pdMS_TO_TICKS(1000));
+			if (RETCODE_OK != retcode) {
+				Retcode_RaiseError(retcode);
+			}
+			memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
+			assetStreamBuffer.length = NUMBER_UINT32_ZERO;
+		}
+		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }
 
@@ -247,7 +247,7 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		 * Since there is no point in doing a HTTPS communication without a valid time */
 		do {
 			retcode = SNTP_GetTimeFromServer(&sntpTimeStampFromServer,
-			APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
+					APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
 			if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
 				printf(
 						"MQTTRegistration: SNTP server time was not synchronized. Retrying...\r\n");
@@ -259,7 +259,7 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-		MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
+				MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 		if (RETCODE_OK != retcode) {
 			printf("MQTTRegistration: MQTT connection to the broker failed \n\r");
 		}
@@ -267,7 +267,7 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
-		MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+				MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 		if (RETCODE_OK != retcode) {
 			printf("MQTTRegistration: MQTT subscribe failed \n\r");
 		}
@@ -303,8 +303,8 @@ void MQTTRegistration_DeInit(void) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTRegistration: Calling DeInit\n\r");
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeInfo,
-	MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
-    Mqtt_DisconnectFromBroker_Z();
+			MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+	Mqtt_DisconnectFromBroker_Z();
 }
 
 /**
@@ -318,7 +318,8 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 	Retcode_T retcode = RETCODE_OK;
 	WlanNetworkConnect_IpStatus_T nwStatus;
 
-	printf("MQTTRegistration: MQTTRegistration_ValidateWLANConnectivity starting \n\r");
+	//printf("MQTTRegistration: MQTTRegistration_ValidateWLANConnectivity starting ...\n\r");
+
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
 		if (MqttSetupInfo.IsSecure == true) {
@@ -339,7 +340,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 
 		if (RETCODE_OK == retcode) {
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-			MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
+					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 			if (RETCODE_OK != retcode) {
 				printf(	"MQTTRegistration: MQTT connection to the broker failed\n\r");
 			}
@@ -347,7 +348,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 
 		if (RETCODE_OK == retcode) {
 			retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
-			MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+					MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 			if (RETCODE_OK != retcode) {
 				printf("MQTTRegistration: MQTT subscribe command failed\n\r");
 			}

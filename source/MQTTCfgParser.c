@@ -205,7 +205,7 @@ static TokensType_T GetToken(const char *buffer, uint16_t *idxAtBuffer,
 		{
 			while ((buffer[*idxAtBuffer] != '\n')
 
-			&& (buffer[*idxAtBuffer] != '\r') && (*idxAtBuffer < bufSize)) // skip to EOL if since Start of comment tag '#' was found
+					&& (buffer[*idxAtBuffer] != '\r') && (*idxAtBuffer < bufSize)) // skip to EOL if since Start of comment tag '#' was found
 			{
 				*idxAtBuffer = *idxAtBuffer + 1;
 			}
@@ -627,40 +627,40 @@ APP_RESULT MQTTCfgParser_Init(void) {
 		}
 	}
 
-    if (APP_RESULT_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
-    {
-        printf("MQTTCfgParser: Config file is not correct. Please give a proper config file and reboot the device!\n\r");
+	if (APP_RESULT_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
+	{
+		printf("MQTTCfgParser: Config file is not correct. Please give a proper config file and reboot the device!\n\r");
 		return APP_RESULT_ERROR;
-    }
+	}
 
-    if (strcmp(MQTTCfgParser_GetMqttUser(), MQTT_USERNAME) == UINT8_C(0)) {
-    	return APP_RESULT_REGISTRATION_MODE;
-    } else {
-    	return APP_RESULT_OPERATION_MODE;
-    }
+	if (strcmp(MQTTCfgParser_GetMqttUser(), MQTT_USERNAME) == UINT8_C(0)) {
+		return APP_RESULT_REGISTRATION_MODE;
+	} else {
+		return APP_RESULT_OPERATION_MODE;
+	}
 }
 
 static char *itoa (int value, char *result, int base)
 {
-    // check that the base if valid
-    if (base < 2 || base > 36) { *result = '\0'; return result; }
+	// check that the base if valid
+	if (base < 2 || base > 36) { *result = '\0'; return result; }
 
-    char* ptr = result, *ptr1 = result, tmp_char;
-    int tmp_value;
+	char* ptr = result, *ptr1 = result, tmp_char;
+	int tmp_value;
 
-    do {
-        tmp_value = value;
-        value /= base;
-        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
-    } while ( value );
+	do {
+		tmp_value = value;
+		value /= base;
+		*ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
+	} while ( value );
 
-    // Apply negative sign
-    if (tmp_value < 0) *ptr++ = '-';
-    *ptr-- = '\0';
-    while (ptr1 < ptr) {
-        tmp_char = *ptr;
-        *ptr--= *ptr1;
-        *ptr1++ = tmp_char;
-    }
-    return result;
+	// Apply negative sign
+	if (tmp_value < 0) *ptr++ = '-';
+	*ptr-- = '\0';
+	while (ptr1 < ptr) {
+		tmp_char = *ptr;
+		*ptr--= *ptr1;
+		*ptr1++ = tmp_char;
+	}
+	return result;
 }
