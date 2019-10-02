@@ -62,11 +62,12 @@ typedef enum
 
 typedef enum
 {
-	CMD_TOGGLE= INT8_C(1),
-	CMD_RESTART = INT8_C(2),
-	CMD_SPEED= INT8_C(3),
-	CMD_MESSAGE= INT8_C(4),
-	CMD_SENSOR= INT8_C(5),
+	CMD_TOGGLE= INT8_C(0),
+	CMD_RESTART = INT8_C(1),
+	CMD_SPEED= INT8_C(2),
+	CMD_MESSAGE= INT8_C(3),
+	CMD_SENSOR= INT8_C(4),
+	CMD_COMMAND=INT8_C(5),
 } C8Y_COMMAND;
 
 /* global variable declarations */

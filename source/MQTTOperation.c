@@ -54,7 +54,7 @@ static SensorDataBuffer sensorStreamBuffer;
 static AssetDataBuffer assetStreamBuffer;
 static DEVICE_OPERATION rebootProgress = DEVICE_OPERATION_WAITING;
 static DEVICE_OPERATION commandProgress = DEVICE_OPERATION_WAITING;
-static char *commandType;
+static C8Y_COMMAND command;
 static uint16_t connectAttemps = 0UL;
 static xTimerHandle timerHandleSensor;
 static xTimerHandle timerHandleAsset;
@@ -98,6 +98,29 @@ static MQTT_Connect_TZ MqttConnectInfo;
 static MQTT_Credentials_TZ MqttCredentials;
 static Sensor_Setup_T SensorSetup;
 
+
+//typedef enum
+//{
+//	CMD_TOGGLE= INT8_C(0),
+//	CMD_RESTART = INT8_C(1),
+//	CMD_SPEED= INT8_C(2),
+//	CMD_MESSAGE= INT8_C(3),
+//	CMD_SENSOR= INT8_C(4),
+//} C8Y_COMMAND;
+static const char * commands[] = {
+	    "c8y_Command",
+	    "c8y_Restart",
+	    "c8y_Command",
+	    "c8y_Message",
+	    "c8y_Command",
+		"c8y_Command",
+	};
+
+
+
+
+
+
 /**
  * @brief callback function for subriptions
  *        toggles LEDS or sets read data flag
@@ -125,14 +148,13 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				(uint32_t) BSP_LED_COMMAND_TOGGLE);
 		if (commandProgress == DEVICE_OPERATION_WAITING) {
 			commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
-			commandType = "c8y_Message";
+			command = CMD_MESSAGE;
 		}
 	} else if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_STANDARD,
 			strlen(TOPIC_DOWNSTREAM_STANDARD)) == 0)) {
 		// split payload into tokens
 		int token_pos = 0;
 		int command_pos = 0;
-		C8Y_COMMAND command;
 		int sensor_index = 0;
 		int command_complete = 0;
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
@@ -151,7 +173,6 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					if (rebootProgress == DEVICE_OPERATION_WAITING) {
 						rebootProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
 					}
-					commandType = "c8y_Restart";
 					command = CMD_RESTART;
 					command_complete = 1;
 					MQTTOperation_StartRestartTimer(REBOOT_DELAY);
@@ -161,7 +182,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					if (commandProgress == DEVICE_OPERATION_WAITING) {
 						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
 					}
-					commandType = "c8y_Command";
+					command = CMD_COMMAND;
 				}
 				break;
 			case 1:
@@ -202,7 +223,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						MQTTCfgParser_FLWriteConfig();
 						configDirty = true;
 						command_complete = 1;
-					} else if(command == CMD_SENSOR) {
+					} else if (command == CMD_SENSOR) {
 						command_pos = 3; // prepare to read next paramaeter TRUE or FALSE
 						printf("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\n\r", command_pos, token_pos);
 						if (strcmp(token, A14Name) == 0) {
@@ -291,9 +312,9 @@ static void MQTTOperation_ClientPublish(void) {
 
 	Retcode_T retcode = RETCODE_OK;
 	// initialize buffers
-	memset(sensorStreamBuffer.data, 0x00, SIZE_LARGE_BUF);
+	memset(sensorStreamBuffer.data, 0x00, sizeof (sensorStreamBuffer.data));
 	sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
-	memset(assetStreamBuffer.data, 0x00, SIZE_LARGE_BUF);
+	memset(assetStreamBuffer.data, 0x00, sizeof (assetStreamBuffer.data));
 	assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 
 	timerHandleAsset = xTimerCreate((const char * const ) "Asset Update Timer", // used only for debugging purposes
@@ -665,29 +686,29 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 				case DEVICE_OPERATION_BEFORE_EXECUTING:
 					commandProgress = DEVICE_OPERATION_EXECUTING;
 					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commands[command]);
 					break;
 				case DEVICE_OPERATION_BEFORE_FAILED:
 					commandProgress = DEVICE_OPERATION_FAILED;
 					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commands[command]);
 					break;
 				case DEVICE_OPERATION_FAILED:
 					commandProgress = DEVICE_OPERATION_WAITING;
 					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commandType);
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\n\r",commands[command]);
 					break;
 				case DEVICE_OPERATION_EXECUTING:
 					commandProgress = DEVICE_OPERATION_WAITING;
 					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commands[command]);
 					break;
 				case DEVICE_OPERATION_IMMEDIATE:
 					commandProgress = DEVICE_OPERATION_WAITING;
 					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commandType);
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\n\r", commands[command]);
 					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commandType);
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\n\r", commands[command]);
 					break;
 			}
 
