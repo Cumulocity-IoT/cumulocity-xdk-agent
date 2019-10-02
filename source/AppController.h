@@ -149,6 +149,8 @@
 #define MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS              UINT32_C(1000)/**< Macro for MQTT subscription timeout in milli-second */
 #define MQTT_PUBLISH_TIMEOUT_IN_MS                  UINT32_C(20000)/**< Macro for MQTT publication timeout in milli-second */
 
+#define SEMAPHORE_TIMEOUT							UINT32_C(100)
+
 #define MQTT_DELAY_IN_MS        					UINT32_C(222)/**< Macro for MQTT publication timeout in milli-second */
 
 #define APP_TEMPERATURE_OFFSET_CORRECTION           (-1403)/**< Macro for static temperature offset correction. Self heating, temperature correction factor */
@@ -203,6 +205,17 @@ typedef enum
 	APP_STATUS_REGISTERED = INT8_C(6),
 
 } APP_STATUS;
+
+
+typedef enum
+{
+
+	APP_ASSET_WAITING = INT8_C(1),
+	APP_ASSET_PUBLISHED = INT8_C(2),
+	APP_ASSET_COMPLETED =  INT8_C(3),
+
+
+} APP_ASSET_STATUS;
 
 
 /* MQTT C8Y Configuration */

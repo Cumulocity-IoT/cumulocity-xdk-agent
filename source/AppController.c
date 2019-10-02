@@ -418,7 +418,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	printf("AppController_Init: XDK System Startup\r\n");
 
 	// start status LED indicator
-	app_status = APP_STATUS_STARTED;
+	AppController_SetStatus(APP_STATUS_STARTED);
 	AppController_StartLEDBlinkTimer (500);
 
 	if (cmdProcessorHandle == NULL) {

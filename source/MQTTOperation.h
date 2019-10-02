@@ -40,6 +40,7 @@
 #define MILLISECONDS(x) ((portTickType) x / portTICK_RATE_MS)
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)
 
+
 /* global function prototype declarations */
 void MQTTOperation_Init(MQTT_Setup_TZ, MQTT_Connect_TZ, MQTT_Credentials_TZ, Sensor_Setup_T);
 void MQTTOperation_DeInit(void);
