@@ -62,7 +62,7 @@ static void processbuttonCallback1 (void * param1, uint32_t buttonstatus)
 	if (DEBUG_LEVEL <= FINEST ) printf("MQTTButton: Status button %d %lu %i\r\n", toogleButton_1, buttonstatus, BSP_XDK_BUTTON_PRESS);
 
 	// only use button 1 when in operation mode
-	if (AppController_GetStatus() == APP_STATUS_OPERATEING_STARTED || AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
+	if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED || AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
 		if (BSP_XDK_BUTTON_PRESSED == buttonstatus ) {
 			if (toogleButton_1 == 0) {
 				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StopTimer, NULL, buttonstatus);

@@ -107,15 +107,15 @@ static Sensor_Setup_T SensorSetup;
 //	CMD_SENSOR= INT8_C(4),
 //} C8Y_COMMAND;
 static const char * commands[] = {
-	    "c8y_Command",
-	    "c8y_Restart",
-	    "c8y_Command",
-	    "c8y_Message",
-	    "c8y_Command",
 		"c8y_Command",
-	    "c8y_Command",
+		"c8y_Restart",
 		"c8y_Command",
-	};
+		"c8y_Message",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+};
 
 /**
  * @brief callback function for subriptions
@@ -347,81 +347,77 @@ static void MQTTOperation_ClientPublish(void) {
 	/* A function that implements a task must not exit or attempt to return to
 	 its caller function as there is nothing to return to. */
 	while (1) {
-		//if (deviceRunning) {
-			AppController_SetStatus(APP_STATUS_OPERATEING_STARTED);
-			//MQTTOperation_SensorUpdate();
-			/* Check whether the WLAN network connection is available */
-			retcode = MQTTOperation_ValidateWLANConnectivity(false);
-			if  (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
-				if (DEBUG_LEVEL <= DEBUG)
-					printf(	"MQTTOperation: Publishing sensor data length [%ld] and content:\r\n%s\r\n",
-							sensorStreamBuffer.length, sensorStreamBuffer.data);
-				if (RETCODE_OK == retcode) {
-					BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
-					if (pdPASS == semaphoreResult) {
-						MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
-						MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
-						retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
-						memset(sensorStreamBuffer.data, 0x00,
-								sensorStreamBuffer.length);
-						sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
-					}
-					xSemaphoreGive(semaphoreSensorBuffer);
-
-					if (RETCODE_OK != retcode) {
-						printf("MQTTOperation: MQTT publish failed \r\n");
-						retcode = MQTTOperation_ValidateWLANConnectivity(true);
-						Retcode_RaiseError(retcode);
-					}
-
-
-				} else {
-					// ignore previous measurements in order to prevent buffer overrun
+		/* Check whether the WLAN network connection is available */
+		retcode = MQTTOperation_ValidateWLANConnectivity(false);
+		if  (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
+			AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
+			if (DEBUG_LEVEL <= DEBUG)
+				printf(	"MQTTOperation: Publishing sensor data length [%ld] and content:\r\n%s\r\n",
+						sensorStreamBuffer.length, sensorStreamBuffer.data);
+			if (RETCODE_OK == retcode) {
+				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
+				if (pdPASS == semaphoreResult) {
+					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
+					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
+					retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
 					memset(sensorStreamBuffer.data, 0x00,
 							sensorStreamBuffer.length);
 					sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
 				}
-			}
+				xSemaphoreGive(semaphoreSensorBuffer);
 
-			if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
-				if (RETCODE_OK == retcode) {
-					if (DEBUG_LEVEL <= DEBUG)
-						printf(	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
-								assetStreamBuffer.length, assetStreamBuffer.data);
-
-					BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
-					if (pdPASS == semaphoreResult) {
-						MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
-						MqttPublishAssetInfo.PayloadLength =
-								assetStreamBuffer.length;
-						retcode = MQTT_PublishToTopic_Z(&MqttPublishAssetInfo,
-								MQTT_PUBLISH_TIMEOUT_IN_MS);
-						memset(assetStreamBuffer.data, 0x00,
-								assetStreamBuffer.length);
-						assetStreamBuffer.length = NUMBER_UINT32_ZERO;
-					}
-					xSemaphoreGive(semaphoreAssetBuffer);
-
-					if (RETCODE_OK != retcode) {
-						printf("MQTTOperation: MQTT publish failed \r\n");
-						Retcode_RaiseError(retcode);
-					}
-
-					if (assetUpdate == APP_ASSET_PUBLISHED) {
-						// wait an extra tick rate until topic are created in Cumulocity
-						// topics are only created after the device is created
-						vTaskDelay(pdMS_TO_TICKS(3000));
-						retcode = MQTTOperation_SubscribeTopics();
-						if (RETCODE_OK != retcode) {
-							printf("MQTTOperation: MQTT subscription failed \r\n");
-							retcode = MQTTOperation_ValidateWLANConnectivity(true);
-						} else {
-							assetUpdate = APP_ASSET_COMPLETED;
-						}
-					}
+				if (RETCODE_OK != retcode) {
+					printf("MQTTOperation: MQTT publish failed \r\n");
+					retcode = MQTTOperation_ValidateWLANConnectivity(true);
+					Retcode_RaiseError(retcode);
 				}
 
-			//}
+
+			} else {
+				// ignore previous measurements in order to prevent buffer overrun
+				memset(sensorStreamBuffer.data, 0x00,
+						sensorStreamBuffer.length);
+				sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
+			}
+		}
+
+		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
+			if (RETCODE_OK == retcode) {
+				if (DEBUG_LEVEL <= DEBUG)
+					printf(	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
+							assetStreamBuffer.length, assetStreamBuffer.data);
+
+				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
+				if (pdPASS == semaphoreResult) {
+					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
+					MqttPublishAssetInfo.PayloadLength =
+							assetStreamBuffer.length;
+					retcode = MQTT_PublishToTopic_Z(&MqttPublishAssetInfo,
+							MQTT_PUBLISH_TIMEOUT_IN_MS);
+					memset(assetStreamBuffer.data, 0x00,
+							assetStreamBuffer.length);
+					assetStreamBuffer.length = NUMBER_UINT32_ZERO;
+				}
+				xSemaphoreGive(semaphoreAssetBuffer);
+
+				if (RETCODE_OK != retcode) {
+					printf("MQTTOperation: MQTT publish failed \r\n");
+					Retcode_RaiseError(retcode);
+				}
+
+				if (assetUpdate == APP_ASSET_PUBLISHED) {
+					// wait an extra tick rate until topic are created in Cumulocity
+					// topics are only created after the device is created
+					vTaskDelay(pdMS_TO_TICKS(3000));
+					retcode = MQTTOperation_SubscribeTopics();
+					if (RETCODE_OK != retcode) {
+						printf("MQTTOperation: MQTT subscription failed \r\n");
+						retcode = MQTTOperation_ValidateWLANConnectivity(true);
+					} else {
+						assetUpdate = APP_ASSET_COMPLETED;
+					}
+				}
+			}
 		}
 		vTaskDelay(pdMS_TO_TICKS(MINIMAL_SPEED));
 	}
@@ -443,7 +439,7 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	if (DEBUG_LEVEL <= INFO)
 		printf("MQTTOperation: Start publishing ...\r\n");
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
-	AppController_SetStatus(APP_STATUS_OPERATEING_STARTED);
+	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
 	return;
 }
 /**
@@ -693,33 +689,33 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					"115,XDK,%s\r\n", readbuffer);
 		} else {
 			switch (commandProgress) {
-				case DEVICE_OPERATION_BEFORE_EXECUTING:
-					commandProgress = DEVICE_OPERATION_EXECUTING;
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-					break;
-				case DEVICE_OPERATION_BEFORE_FAILED:
-					commandProgress = DEVICE_OPERATION_FAILED;
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-					break;
-				case DEVICE_OPERATION_FAILED:
-					commandProgress = DEVICE_OPERATION_WAITING;
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\r\n",commands[command]);
-					break;
-				case DEVICE_OPERATION_EXECUTING:
-					commandProgress = DEVICE_OPERATION_WAITING;
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
-					break;
-				case DEVICE_OPERATION_IMMEDIATE:
-					commandProgress = DEVICE_OPERATION_WAITING;
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
-					break;
+			case DEVICE_OPERATION_BEFORE_EXECUTING:
+				commandProgress = DEVICE_OPERATION_EXECUTING;
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+				break;
+			case DEVICE_OPERATION_BEFORE_FAILED:
+				commandProgress = DEVICE_OPERATION_FAILED;
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+				break;
+			case DEVICE_OPERATION_FAILED:
+				commandProgress = DEVICE_OPERATION_WAITING;
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\r\n",commands[command]);
+				break;
+			case DEVICE_OPERATION_EXECUTING:
+				commandProgress = DEVICE_OPERATION_WAITING;
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+				break;
+			case DEVICE_OPERATION_IMMEDIATE:
+				commandProgress = DEVICE_OPERATION_WAITING;
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+				break;
 			}
 
 			switch (rebootProgress) {

@@ -357,7 +357,7 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			//printf("STATUS APP_STATUS_STARTED\n");
 			break;
-		case APP_STATUS_OPERATEING_STARTED:
+		case APP_STATUS_OPERATING_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			//printf("STATUS APP_STATUS_RUNNING\n");
