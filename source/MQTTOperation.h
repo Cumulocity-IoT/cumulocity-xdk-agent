@@ -68,6 +68,8 @@ typedef enum
 	CMD_MESSAGE= INT8_C(3),
 	CMD_SENSOR= INT8_C(4),
 	CMD_COMMAND=INT8_C(5),
+	CMD_START=INT8_C(6),
+	CMD_STOP=INT8_C(7),
 } C8Y_COMMAND;
 
 /* global variable declarations */

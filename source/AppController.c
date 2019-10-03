@@ -278,7 +278,7 @@ static void AppController_Enable(void * param1, uint32_t param2) {
         }
 	}
 	if (RETCODE_OK != retcode) {
-		printf("AppController_Enable: Now calling SoftReset and reboot to recover\n\r");
+		printf("AppController_Enable: Now calling SoftReset and reboot to recover\r\n");
 		Retcode_RaiseError(retcode);
 		BSP_Board_SoftReset();
 		// assert(0);
@@ -316,7 +316,6 @@ static void AppController_Fire(void* pvParameters)
 	MqttConnectInfo.KeepAliveInterval = 100;
 
 	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
-		CmdProcessor_Enqueue(AppCmdProcessor, MQTTOperation_StartTimer, NULL, UINT32_C(0));
 		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
 		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
 		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
@@ -346,7 +345,7 @@ static void AppController_SetClientId(void) {
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 
 	MqttConnectInfo.ClientId = clientId;
-	printf("AppController: Client id of the device: %s \n\r", clientId);
+	printf("AppController: Client id of the device: %s \r\n", clientId);
 }
 
 static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {

@@ -44,7 +44,7 @@ APP_RESULT MQTTFlash_Init(void) {
 		}
 
 	}
-	printf("MQTTFlash: Reading boot status: [%s]\n\r", bootstatus);
+	printf("MQTTFlash: Reading boot status: [%s]\r\n", bootstatus);
 
 	return APP_RESULT_OPERATION_OK;
 
@@ -52,23 +52,23 @@ APP_RESULT MQTTFlash_Init(void) {
 
 void MQTTFlash_SDAppendCredentials(char* stringBuffer) {
 	if (DEBUG_LEVEL <= FINE)
-		printf("MQTTFlash: Received credentials:%s\n\r", stringBuffer);
+		printf("MQTTFlash: Received credentials:%s\r\n", stringBuffer);
 	if (SDCARD_INSERTED == SDCardDriver_GetDetectStatus()) {
 		if (DEBUG_LEVEL <= FINE)
-			printf("MQTTFlash: SD card is inserted in XDK\n\r");
+			printf("MQTTFlash: SD card is inserted in XDK\r\n");
 
 		/* SDC Disk FAT file system Write/Read functionality */
 		if (MQTTFlash_SDWrite((const uint8_t*) CONFIG_FILENAME, stringBuffer, FA_OPEN_ALWAYS | FA_WRITE) == APP_RESULT_OPERATION_OK) {
 			if (DEBUG_LEVEL <= FINEST)
-				printf("MQTTFlash: Write using FAT file system success \n\r");
+				printf("MQTTFlash: Write using FAT file system success \r\n");
 		} else {
 			if (DEBUG_LEVEL <= EXCEPTION)
-				printf("MQTTFlash: Write using FAT file system failed\n\r");
+				printf("MQTTFlash: Write using FAT file system failed\r\n");
 			assert(0);
 		}
 	} else {
 		if (DEBUG_LEVEL <= EXCEPTION)
-			printf("MQTTFlash: SD card is not inserted in XDK\n\r");
+			printf("MQTTFlash: SD card is not inserted in XDK\r\n");
 		assert(0);
 	}
 }
@@ -92,13 +92,13 @@ APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* bootstatus) {
 		if (retcode == RETCODE_OK) {
 			retcode = Storage_Read(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &readCredentials);
 			if (retcode == RETCODE_OK) {
-				//printf("MQTTFlash: Read using FAT file system success: [%s] \n\r", readCredentials.ReadBuffer);
+				//printf("MQTTFlash: Read using FAT file system success: [%s] \r\n", readCredentials.ReadBuffer);
 				return APP_RESULT_OPERATION_OK;
 			}
 		}
 
 	}
-	printf("MQTTFlash: Read using FAT file system failed!\n\r");
+	printf("MQTTFlash: Read using FAT file system failed!\r\n");
 	Retcode_RaiseError(retcode);
 	return APP_RESULT_FILE_MISSING;
 }
@@ -125,10 +125,10 @@ APP_RESULT MQTTFlash_FLWriteBootStatus(uint8_t* bootstatus) {
 		retcode = Storage_Write(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &writeCredentials);
 		if (RETCODE_OK == retcode)
 		{
-			printf("MQTTFlash: Init boot status: [%s]\n\r", bootstatus);
+			printf("MQTTFlash: Init boot status: [%s]\r\n", bootstatus);
 
 		} else {
-			printf("MQTTFlash: Write boot status failed!\n\r");
+			printf("MQTTFlash: Write boot status failed!\r\n");
 			assert(0);
 		}
 	}
@@ -157,13 +157,13 @@ APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer *configBuffer) {
 			retcode = Storage_Read(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &readCredentials);
 			if (retcode == RETCODE_OK) {
 				configBuffer->length =  strlen(configBuffer->data);
-				printf("MQTTFlash: Read config from flash success: [%lu] \n\r", configBuffer->length);
+				printf("MQTTFlash: Read config from flash success: [%lu] \r\n", configBuffer->length);
 				return APP_RESULT_OPERATION_OK;
 			}
 		}
 
 	}
-	printf("MQTTFlash: Read config from flash not successful, maybe config isn't written to flash yet!\n\r");
+	printf("MQTTFlash: Read config from flash not successful, maybe config isn't written to flash yet!\r\n");
 	return APP_RESULT_FILE_MISSING;
 }
 
@@ -188,10 +188,10 @@ void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer) {
 		retcode = Storage_Write(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &writeCredentials);
 		if (RETCODE_OK == retcode)
 		{
-			printf("MQTTFlash: Write config to flash memory with length: [%lu]\n\r", configBuffer->length);
+			printf("MQTTFlash: Write config to flash memory with length: [%lu]\r\n", configBuffer->length);
 
 		} else {
-			printf("MQTTFlash: Write config failed!\n\r");
+			printf("MQTTFlash: Write config failed!\r\n");
 			assert(0);
 		}
 	}
@@ -215,23 +215,23 @@ static APP_RESULT MQTTFlash_SDRead(const uint8_t *fileName, ConfigDataBuffer *ra
 
 	if (f_stat((const TCHAR*) fileName, &fileInfo) != FR_Z_OK) {
 		if (DEBUG_LEVEL <= EXCEPTION)
-			printf("MQTTFlash: Can't find file: [%s]!\n\r",fileName );
+			printf("MQTTFlash: Can't find file: [%s]!\r\n",fileName );
 		return (APP_RESULT_SDCARD_ERROR);
 	}
 	fileSize = fileInfo.fsize;
 
 	if (fileSize > maxBufferSize) {
-		printf("MQTTFlash: Read size: %i to big: %hu\n\r", fileSize, maxBufferSize);
+		printf("MQTTFlash: Read size: %i to big: %hu\r\n", fileSize, maxBufferSize);
 		return (APP_RESULT_SDCARD_BUFFER_OVERFLOW_ERROR);
 	} else {
 		if (DEBUG_LEVEL <= FINEST)
-			printf("MQTTFlash: Read file: [%s] with size: %i\n\r", fileName, fileSize);
+			printf("MQTTFlash: Read file: [%s] with size: %i\r\n", fileName, fileSize);
 	}
 
 	/* Open the file for read */
 	if (f_open(&fileObject, (const TCHAR*) fileName, FA_READ) != FR_Z_OK) {
 		if (DEBUG_LEVEL <= EXCEPTION)
-			printf("MQTTFlash: Opening file failed\n\r");
+			printf("MQTTFlash: Opening file failed\r\n");
 		return (APP_RESULT_SDCARD_ERROR);
 	}
 
@@ -239,23 +239,23 @@ static APP_RESULT MQTTFlash_SDRead(const uint8_t *fileName, ConfigDataBuffer *ra
 	if (f_lseek(&fileObject, 0) != FR_Z_OK) {
 		/* Error. Cannot set the file pointer */
 		if (DEBUG_LEVEL <= EXCEPTION)
-			printf("MQTTFlash: Seeking file failed\n\r");
+			printf("MQTTFlash: Seeking file failed\r\n");
 		return (APP_RESULT_SDCARD_ERROR);
 	}
 
 	/*Read some data from file */
 	if ((f_read(&fileObject, ramBufferRead->data, fileSize, &(ramBufferRead->length)) == FR_Z_OK) && (fileSize == ramBufferRead->length)) {
 		if (DEBUG_LEVEL <= FINEST)
-			printf("MQTTFlash: Reading from succeded: %i %lu\n\r",
+			printf("MQTTFlash: Reading from succeded: %i %lu\r\n",
 					fileSize, ramBufferRead->length);
 	} else {
 		/* Error. Cannot read the file */
-		printf("MQTTFlash: Read failed with different size : %i %lu\n\r",
+		printf("MQTTFlash: Read failed with different size : %i %lu\r\n",
 				fileSize, ramBufferRead->length);
 		return (APP_RESULT_SDCARD_ERROR);
 	}
 	if (DEBUG_LEVEL <= FINEST)
-		printf("MQTTFlash: Read content from status file: %s\n\r", ramBufferRead->data);
+		printf("MQTTFlash: Read content from status file: %s\r\n", ramBufferRead->data);
 
 	/* Close the file */
 	if (f_close(&fileObject) != FR_Z_OK) {
@@ -273,7 +273,7 @@ static APP_RESULT MQTTFlash_SDWrite(const uint8_t* fileName, uint8_t* stringBuff
 	/* Initialization of file buffer write */
 	fileSize = strlen(stringBuffer);
 	if (DEBUG_LEVEL <= FINE)
-		printf("MQTTFlash: Size of buffer: [%i]\n\r", fileSize);
+		printf("MQTTFlash: Size of buffer: [%i]\r\n", fileSize);
 	memcpy(ramBufferWrite, stringBuffer, fileSize);
 
 	/* Open the file to write */
@@ -317,19 +317,19 @@ static void MQTTFlash_FLDeleteFile (const uint8_t* fileName) {
 	{
 		retcode = WifiStorage_GetFileStatus(fileName, &bytesToRead);
 		if (retcode == RETCODE_OK) {
-			printf("MQTTFlash: File  [%s] exists, length: [%lu]\n\r", fileName, bytesToRead );
+			printf("MQTTFlash: File  [%s] exists, length: [%lu]\r\n", fileName, bytesToRead );
 			int32_t fileHandle = INT32_C(-1);
 			retcode = WifiStorage_FileDelete((const uint8_t *) fileName, &fileHandle);
 			if (RETCODE_OK == retcode)
 			{
-				printf("MQTTFlash: Deleted file successful!\n\r");
+				printf("MQTTFlash: Deleted file successful!\r\n");
 
 			} else {
-				printf("MQTTFlash: Deleted file failed:[%lu] \n\r", Retcode_GetCode(retcode));
+				printf("MQTTFlash: Deleted file failed:[%lu] \r\n", Retcode_GetCode(retcode));
 				//assert(0);
 			}
 		} else {
-			printf("MQTTFlash: Something is wrong with: [%s], length: [%lu], error_code [%lu]\n\r", fileName, bytesToRead,  Retcode_GetCode(retcode) );
+			printf("MQTTFlash: Something is wrong with: [%s], length: [%lu], error_code [%lu]\r\n", fileName, bytesToRead,  Retcode_GetCode(retcode) );
 		}
 	}
 
