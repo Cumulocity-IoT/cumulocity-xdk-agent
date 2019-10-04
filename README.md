@@ -48,7 +48,7 @@ When registering the XDK a config on an SD card has to be inserted in the XDK. U
 Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SD and thus overwrite settings stored on the file system of the WIFI chip.
 The values defined in the config on the SDCard always take precedence.  
 
-In addition to the above listed measurements the battery staus is send ervery minute.
+In addition to the above listed measurements the battery stauts is send every minute.
 
 ### Operations
 The XDK can receive operations and messages initiated in your C8Y tenant. Operations to the XDK can either be issued by using:
