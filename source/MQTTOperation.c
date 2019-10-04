@@ -98,15 +98,7 @@ static MQTT_Credentials_TZ MqttCredentials;
 static Sensor_Setup_T SensorSetup;
 
 
-//typedef enum
-//{
-//	CMD_TOGGLE= INT8_C(0),
-//	CMD_RESTART = INT8_C(1),
-//	CMD_SPEED= INT8_C(2),
-//	CMD_MESSAGE= INT8_C(3),
-//	CMD_SENSOR= INT8_C(4),
-//} C8Y_COMMAND;
-static const char * commands[] = {
+const char * const commands[] = {
 		"c8y_Command",
 		"c8y_Restart",
 		"c8y_Command",
@@ -653,6 +645,10 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
  */
 static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	(void) xTimer;
+
+	// counter to send every 60 seconds a keep alive msg.
+	static keepAlive = 0;
+
 	if (DEBUG_LEVEL <= FINEST)
 		printf("MQTTOperation: Starting buffering device data ...\r\n");
 
@@ -750,14 +746,19 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			}
 
 		}
-		// send keep alive message
-		assetStreamBuffer.length += snprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-				" \n");
+		// send keep alive message every 60 seconds
+		keepAlive++;
+		if ( keepAlive >= 60) {
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					" \n");
+			keepAlive = 0;
+		}
 
-		// access exlusive Data
+
 	}
 
+	// access exlusive Data
 	xSemaphoreGive(semaphoreAssetBuffer);
 
 	if (DEBUG_LEVEL <= FINEST)

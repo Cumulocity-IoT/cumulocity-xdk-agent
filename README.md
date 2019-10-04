@@ -64,7 +64,10 @@ The following commands are supported:
 * restart XDK from C8Y, issued by option in drop-down menue (option 3.):
 	* select XD: device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"	
 * toggle yellow light on/off, initiated from message (any text) widget (option 2.):
-	* add "Message Widget" to dashboard, use your connected XDK device as destination and send any text to this XDK
+	* add "Message Widget" to dashboard, use your connected XDK device as destination and send any text to this XDK  
+* stop/start publishing measurements:
+	* `stop`
+	* `start`
 
 	
 ### Buttons
