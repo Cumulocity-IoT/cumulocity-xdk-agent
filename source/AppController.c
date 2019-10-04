@@ -44,7 +44,7 @@
 #include "task.h"
 #include "timers.h"
 #include "Serval_Ip.h"
-
+#include "BatteryMonitor.h"
 #include "MQTTFlash.h"
 #include "MQTTCfgParser.h"
 #include "MQTTRegistration.h"
@@ -419,6 +419,9 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	// start status LED indicator
 	AppController_SetStatus(APP_STATUS_STARTED);
 	AppController_StartLEDBlinkTimer (500);
+
+	// init battery monitor
+	BatteryMonitor_Init();
 
 	if (cmdProcessorHandle == NULL) {
 		printf("AppController_Init: Command processor handle is NULL \r\n");

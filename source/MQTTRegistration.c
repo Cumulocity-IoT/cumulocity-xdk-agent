@@ -103,7 +103,6 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
 		AppController_SetStatus(APP_STATUS_REGISTERED);
 
-
 		char username[SIZE_SMALL_BUF] = {0};
 		char tenant[SIZE_XSMALL_BUF] = {0};
 		char password[SIZE_XSMALL_BUF] = {0};

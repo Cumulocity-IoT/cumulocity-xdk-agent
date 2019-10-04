@@ -242,17 +242,17 @@ typedef enum
 #define SIZE_XSMALL_BUF    64
 
 typedef struct {
-	int length;
+	uint32_t length;
 	char data[SIZE_XLARGE_BUF];
 } SensorDataBuffer;
 
 typedef struct {
-	int length;
+	uint32_t length;
 	char data[SIZE_LARGE_BUF];
 } AssetDataBuffer;
 
 typedef struct {
-	int length;
+	uint32_t length;
 	char data[SIZE_XLARGE_BUF];
 } ConfigDataBuffer;
 

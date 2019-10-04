@@ -38,6 +38,8 @@
 #include <XDK_TimeStamp.h>
 #include "XDK_SNTP.h"
 #include "XDK_WLAN.h"
+#include "BatteryMonitor.h"
+
 
 static const int MINIMAL_SPEED = 50;
 /* constant definitions ***************************************************** */
@@ -647,7 +649,8 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	(void) xTimer;
 
 	// counter to send every 60 seconds a keep alive msg.
-	static keepAlive = 0;
+	static uint32_t keepAlive = 0;
+	static uint32_t mvoltage = 0, battery = 0;
 
 	if (DEBUG_LEVEL <= FINEST)
 		printf("MQTTOperation: Starting buffering device data ...\r\n");
@@ -749,12 +752,14 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 		// send keep alive message every 60 seconds
 		keepAlive++;
 		if ( keepAlive >= 60) {
+			BatteryMonitor_MeasureSignal(&mvoltage);
+			// Max = 4.3V, Min = 3.3V
+			battery = (mvoltage - 3300.0) / 1000.0 * 100.0;
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					" \n");
+					"212,%ld\r\n", battery);
 			keepAlive = 0;
 		}
-
 
 	}
 
