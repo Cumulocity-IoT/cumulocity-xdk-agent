@@ -338,19 +338,22 @@ static void MQTTOperation_ClientPublish(void) {
 	);
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 
+	uint32_t measurementCounter = 0;
 	/* A function that implements a task must not exit or attempt to return to
 	 its caller function as there is nothing to return to. */
 	while (1) {
+
 		/* Check whether the WLAN network connection is available */
 		retcode = MQTTOperation_ValidateWLANConnectivity(false);
 		if  (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
-			if (DEBUG_LEVEL <= DEBUG)
-				printf(	"MQTTOperation: Publishing sensor data length [%ld] and content:\r\n%s\r\n",
-						sensorStreamBuffer.length, sensorStreamBuffer.data);
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
+					measurementCounter++;
+					if (DEBUG_LEVEL <= DEBUG)
+						printf(	"MQTTOperation: Publishing sensor data length [%ld] %lu and content:\r\n%s\r\n",
+								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data);
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
 					retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
@@ -377,12 +380,11 @@ static void MQTTOperation_ClientPublish(void) {
 
 		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			if (RETCODE_OK == retcode) {
-				if (DEBUG_LEVEL <= DEBUG)
-					printf(	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
-							assetStreamBuffer.length, assetStreamBuffer.data);
-
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
+					if (DEBUG_LEVEL <= DEBUG)
+						printf(	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
+								assetStreamBuffer.length, assetStreamBuffer.data);
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
 							assetStreamBuffer.length;
@@ -759,6 +761,17 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 					"212,%ld\r\n", battery);
 			keepAlive = 0;
+
+			uint64_t sntpTimeStamp = 0UL;
+			uint32_t timeLapseInMs = 0UL;
+			SNTP_GetTimeFromSystem(&sntpTimeStamp, &timeLapseInMs);
+
+			struct tm time;
+			char timezoneISO8601format[40] = {0};
+			TimeStamp_SecsToTm(sntpTimeStamp, &time);
+			TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
+
+			printf("MQTTOperation_SensorUpdate: current time: %s\r\n", timezoneISO8601format);
 		}
 
 	}
