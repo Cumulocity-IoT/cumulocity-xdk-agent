@@ -127,7 +127,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
-	LOG_AT_DEBUG(("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
+	LOG_AT_INFO(("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
 			(int) param.TopicLength, appIncomingMsgTopicBuffer,
 			(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
 
@@ -150,7 +150,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
-			LOG_AT_DEBUG(("MQTTOperation: Processing token: [%s], command_pos: %i, token_pos: %i \r\n",
+			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], command_pos: %i, token_pos: %i \r\n",
 					token, command_pos, token_pos));
 
 			switch (token_pos) {
@@ -189,24 +189,24 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					command_complete = 1;
 					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					LOG_AT_TRACE(("MQTTOperation: Phase command toggle: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase command toggle: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 				} else if (strcmp(token, "start") == 0 && command_pos == 1) {
 					MQTTOperation_StartTimer(null,0);
 					command = CMD_START;
 					command_complete = 1;
 					// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					LOG_AT_TRACE(("MQTTOperation: Phase command start: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase command start: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 				} else if (strcmp(token, "stop") == 0 && command_pos == 1) {
 					MQTTOperation_StopTimer(null,0);
 					command = CMD_STOP;
 					command_complete = 1;
 					// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					LOG_AT_TRACE(("MQTTOperation: Phase command stop: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase command stop: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 				} else if (strcmp(token, "sensor") == 0 && command_pos == 1) {
 					command_pos = 2;  // prepare to read the speed
-					LOG_AT_TRACE(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i \r\n", command_pos, token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i \r\n", command_pos, token_pos));
 					command = CMD_SENSOR;
 				} else {
 					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
@@ -220,7 +220,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 								token_pos));
 						int speed = strtol(token, (char **) NULL, 10);
 						speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
-						LOG_AT_INFO(("MQTTOperation: New speed: %i\r\n", speed));
+						LOG_AT_DEBUG(("MQTTOperation: New speed: %i\r\n", speed));
 						tickRateMS = (int) pdMS_TO_TICKS(speed);
 						xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
 						MQTTCfgParser_SetStreamRate(speed);
@@ -229,7 +229,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						command_complete = 1;
 					} else if (command == CMD_SENSOR) {
 						command_pos = 3; // prepare to read next paramaeter TRUE or FALSE
-						LOG_AT_TRACE(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
+						LOG_AT_DEBUG(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 						if (strcmp(token, A14Name) == 0) {
 							sensor_index= ATT_IDX_NOISEENABLED;
 						} else if (strcmp(token, A13Name) == 0) {
