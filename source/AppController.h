@@ -30,7 +30,6 @@
 
 /* local type and macro definitions */
 
-
 /* WLAN configurations ****************************************************** */
 
 /**
@@ -170,12 +169,43 @@
 //
 #define POINTER_NULL 			     NULL          /**< ZERO value for pointers */
 
-#define FINEST			1
-#define FINE			2
-#define	DEBUG			3
-#define	INFO			4
-#define	EXCEPTION		5
-#define DEBUG_LEVEL 	FINE
+#define LOG_TRACE			1
+#define LOG_DEBUG			2
+#define	LOG_INFO			3
+#define	LOG_WARNING			4
+#define	LOG_ERROR			5
+#define LOG_LEVEL 	LOG_DEBUG
+
+#if LOG_LEVEL <= LOG_TRACE
+#define LOG_AT_TRACE(args) printf args
+#else
+#define LOG_AT_TRACE(args)
+#endif
+
+#if LOG_LEVEL <= LOG_DEBUG
+#define LOG_AT_DEBUG(args) printf args
+#else
+#define LOG_AT_DEBUG(args)
+#endif
+
+#if LOG_LEVEL <= LOG_INFO
+#define LOG_AT_INFO(args) printf args
+#else
+#define LOG_AT_INFO(args)
+#endif
+
+#if LOG_LEVEL <= LOG_WARNING
+#define LOG_AT_WARNING(args) printf args
+#else
+#define LOG_AT_WARNING(args)
+#endif
+
+#if LOG_LEVEL <= LOG_ERROR
+#define LOG_AT_ERROR(args) printf args
+#else
+#define LOG_AT_ERROR(args)
+#endif
+
 
 
 

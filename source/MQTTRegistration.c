@@ -75,7 +75,7 @@ static MQTT_Credentials_TZ MqttCredentials = { .Username = MQTT_REGISTRATION_USE
 
 static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
 	(void) xTimer;
-	printf("MQTTRegistration: Filling registration msg!\n\r");
+	LOG_AT_DEBUG(("MQTTRegistration: Filling registration msg!\n\r"));
 	// send empty message to Cumulocity to trigger acceptance of the regitration in WebUI
 	assetStreamBuffer.length += snprintf(assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "  \n");
 }
@@ -98,8 +98,8 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
-	printf("MQTTRegistration: Received new message on topic: %s from upstream: [%s]\n\r",
-			appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer);
+	LOG_AT_DEBUG(("MQTTRegistration: Received new message on topic: %s from upstream: [%s]\n\r",
+			appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer));
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
 		AppController_SetStatus(APP_STATUS_REGISTERED);
 
@@ -112,24 +112,24 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		int command_pos = 0; //mark positon for command which is parsed
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",");
 		while (token != NULL) {
-			printf("MQTTRegistration: Parsed token: [%s], command_pos: %i token_pos: %i \n\r",
-					token, command_pos, token_pos);
+			LOG_AT_TRACE(("MQTTRegistration: Parsed token: [%s], command_pos: %i token_pos: %i \n\r",
+					token, command_pos, token_pos));
 			if (token_pos == 0 && strcmp(token, TEMPLATE_STD_CREDENTIALS) == 0) {
-				printf("MQTTRegistration: Correct message type \n\r");
+				LOG_AT_TRACE(("MQTTRegistration: Correct message type \n\r"));
 				command_pos = 1; // mark that we are in a credential notification message
 			} else if (command_pos == 1 && token_pos == 1) {
 				// found tenant
 				snprintf(tenant,SIZE_XSMALL_BUF,token);
-				printf("MQTTRegistration: Found tenant: [%s]\n\r", token);
+				LOG_AT_TRACE(("MQTTRegistration: Found tenant: [%s]\n\r", token));
 			} else if (command_pos == 1 && token_pos == 2) {
 				// found username
 				snprintf(username, SIZE_XSMALL_BUF,"%s/%s", tenant, token);
-				printf("MQTTRegistration: Found username: [%s], [%s]\n\r", token, username);
+				LOG_AT_TRACE(("MQTTRegistration: Found username: [%s], [%s]\n\r", token, username));
 			} else if (command_pos == 1 && token_pos == 3) {
 				snprintf(password, SIZE_XSMALL_BUF, token);
-				printf("MQTTRegistration: Found password: [%s]\n\r", token);
+				LOG_AT_TRACE(("MQTTRegistration: Found password: [%s]\n\r", token));
 			} else {
-				printf("MQTTRegistration: Wrong message format\n\r");
+				LOG_AT_TRACE(("MQTTRegistration: Wrong message format\n\r"));
 				assert(0);
 			}
 			token = strtok(NULL, ", ");
@@ -175,7 +175,7 @@ static void MQTTRegistration_RestartCallback(xTimerHandle xTimer) {
  */
 static void MQTTRegistration_ClientPublish(void) {
 
-	printf("MQTTRegistration: MQTTRegistration_ClientPublish starting \n\r");
+	LOG_AT_DEBUG(("MQTTRegistration: MQTTRegistration_ClientPublish starting \n\r"));
 	Retcode_T retcode = RETCODE_OK;
 	while (1) {
 		/* Resetting / clearing the necessary buffers / variables for re-use */
@@ -190,7 +190,7 @@ static void MQTTRegistration_ClientPublish(void) {
 				retcode = MQTT_PublishToTopic_Z(&MqttPublishInfo,
 						MQTT_PUBLISH_TIMEOUT_IN_MS);
 				if (RETCODE_OK != retcode) {
-					printf("MQTTRegistration: MQTT publish failed \n\r");
+					LOG_AT_ERROR(("MQTTRegistration: MQTT publish failed \n\r"));
 					retcode = MQTTRegistration_ValidateWLANConnectivity(true);
 					Retcode_RaiseError(retcode);
 				}
@@ -217,8 +217,7 @@ void MQTTRegistration_StartTimer(void){
 	memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
 	assetStreamBuffer.length = NUMBER_UINT32_ZERO;
 	/* Start the timers */
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTRegistration: Start publishing ...\n\r");
+	LOG_AT_TRACE(("MQTTRegistration: Start publishing ...\n\r"));
 	xTimerStart(clientRegistrationTimerHandle, UINT32_MAX);
 	AppController_SetStatus(APP_STATUS_REGISTERING);
 	return;
@@ -248,8 +247,7 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 			retcode = SNTP_GetTimeFromServer(&sntpTimeStampFromServer,
 					APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
 			if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
-				printf(
-						"MQTTRegistration: SNTP server time was not synchronized. Retrying...\r\n");
+				LOG_AT_WARNING(("MQTTRegistration: SNTP server time was not synchronized. Retrying...\r\n"));
 			}
 		} while (0UL == sntpTimeStampFromServer);
 
@@ -260,7 +258,7 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 				MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 		if (RETCODE_OK != retcode) {
-			printf("MQTTRegistration: MQTT connection to the broker failed \n\r");
+			LOG_AT_ERROR(("MQTTRegistration: MQTT connection to the broker failed \n\r"));
 		}
 	}
 
@@ -268,7 +266,7 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
 				MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 		if (RETCODE_OK != retcode) {
-			printf("MQTTRegistration: MQTT subscribe failed \n\r");
+			LOG_AT_ERROR(("MQTTRegistration: MQTT subscribe failed \n\r"));
 		}
 	}
 
@@ -278,9 +276,8 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		vTaskSuspend(NULL);
 	}
 
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTRegistration: Successfully connected to [%s:%d]\n\r",
-				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort);
+	LOG_AT_INFO(("MQTTRegistration: Successfully connected to [%s:%d]\n\r",
+				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
 
 	int tickRate = (int) pdMS_TO_TICKS(MQTT_REGISTRATION_TICKRATE);
 	clientRegistrationTimerHandle = xTimerCreate(
@@ -299,8 +296,8 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
  * @return NONE
  */
 void MQTTRegistration_DeInit(void) {
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTRegistration: Calling DeInit\n\r");
+
+	LOG_AT_INFO(("MQTTRegistration: Calling DeInit\n\r"));
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeInfo,
 			MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 	Mqtt_DisconnectFromBroker_Z();
@@ -316,8 +313,6 @@ void MQTTRegistration_DeInit(void) {
 static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 	Retcode_T retcode = RETCODE_OK;
 	WlanNetworkConnect_IpStatus_T nwStatus;
-
-	//printf("MQTTRegistration: MQTTRegistration_ValidateWLANConnectivity starting ...\n\r");
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
@@ -341,7 +336,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 			if (RETCODE_OK != retcode) {
-				printf(	"MQTTRegistration: MQTT connection to the broker failed\n\r");
+				LOG_AT_ERROR(("MQTTRegistration: MQTT connection to the broker failed\n\r"));
 			}
 		}
 
@@ -349,7 +344,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 			retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
 					MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 			if (RETCODE_OK != retcode) {
-				printf("MQTTRegistration: MQTT subscribe command failed\n\r");
+				LOG_AT_ERROR(("MQTTRegistration: MQTT subscribe command failed\n\r"));
 			}
 		}
 	}

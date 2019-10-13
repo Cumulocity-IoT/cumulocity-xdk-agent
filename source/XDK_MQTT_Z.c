@@ -50,6 +50,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "Serval_Mqtt.h"
+#include "AppController.h"
 
 /* constant definitions ***************************************************** */
 
@@ -124,7 +125,7 @@ static retcode_t MqttEventHandler_Z(MqttSession_T* session, MqttEvent_t event, c
 {
     BCDS_UNUSED(session);
     Retcode_T retcode = RETCODE_OK;
-    printf("MqttEventHandler_Z: Event - %d\r\n", (int) event);
+    LOG_AT_DEBUG(("MqttEventHandler_Z: Event - %d\r\n", (int) event));
     switch (event)
     {
     case MQTT_CONNECTION_ESTABLISHED:
@@ -187,7 +188,7 @@ static retcode_t MqttEventHandler_Z(MqttSession_T* session, MqttEvent_t event, c
         }
         break;
     default:
-        printf("MqttEventHandler_Z: Unhandled MQTT Event\r\n");
+    	LOG_AT_TRACE(("MqttEventHandler_Z: Unhandled MQTT Event\r\n"));
         break;
     }
 
@@ -289,7 +290,7 @@ Retcode_T MQTT_Enable_Z(void)
     if (MqttSetupInfo_Z.IsSecure) {
             if(RC_OK != MbedTLSAdapter_Initialize())
             {
-                printf("MQTT_Enable_Z: MbedTLSAdapter_Initialize unable to initialize Mbedtls.\r\n");
+            	LOG_AT_ERROR(("MQTT_Enable_Z: MbedTLSAdapter_Initialize unable to initialize Mbedtls.\r\n"));
                 retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_HTTP_INIT_REQUEST_FAILED);
             }
 
@@ -305,7 +306,7 @@ Retcode_T MQTT_Enable_Z(void)
 Retcode_T Mqtt_DisconnectFromBroker_Z(void){
     Retcode_T retcode = RETCODE_OK;
 
-    printf("Mqtt_DisconnectFromBroker_Z: Disconnect from broker\r\n");
+    LOG_AT_TRACE(("Mqtt_DisconnectFromBroker_Z: Disconnect from broker\r\n"));
     retcode= Mqtt_disconnect(&MqttSession_Z);
 
     return retcode;
@@ -370,19 +371,19 @@ Retcode_T MQTT_ConnectToBroker_Z(MQTT_Connect_TZ * mqttConnect, uint32_t timeout
 				StringDescr_T passw;
 				StringDescr_wrap(&passw, mqttCredentials->Password);
 				MqttSession_Z.password = passw;
-				printf("MQTT_ConnectToBroker_Z: Setting credentials: [%s]\r\n", mqttCredentials->Username );
-				printf("MQTT_ConnectToBroker_Z: Setting password: [%s]\r\n", mqttCredentials->Password );
+				LOG_AT_TRACE(("MQTT_ConnectToBroker_Z: Setting credentials: [%s]\r\n", mqttCredentials->Username ));
+				LOG_AT_TRACE(("MQTT_ConnectToBroker_Z: Setting password: [%s]\r\n", mqttCredentials->Password ));
 			}
 
 			if (MqttSetupInfo_Z.IsSecure)
 			{
-				printf("MQTT_ConnectToBroker_Z: Connecting secure\r\n");
+				LOG_AT_TRACE(("MQTT_ConnectToBroker_Z: Connecting secure\r\n"));
 				sprintf(mqttBrokerURL, MQTT_URL_FORMAT_SECURE, serverIpStringBuffer, mqttConnect->BrokerPort);
 				MqttSession_Z.target.scheme = SERVAL_SCHEME_MQTTS;
 			}
 			else
 			{
-				printf("MQTT_ConnectToBroker_Z: Connecting unsecure\r\n");
+				LOG_AT_TRACE(("MQTT_ConnectToBroker_Z: Connecting unsecure\r\n"));
 				sprintf(mqttBrokerURL, MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, mqttConnect->BrokerPort);
 				MqttSession_Z.target.scheme = SERVAL_SCHEME_MQTT;
 			}
@@ -395,7 +396,7 @@ Retcode_T MQTT_ConnectToBroker_Z(MQTT_Connect_TZ * mqttConnect, uint32_t timeout
 				(void) xSemaphoreTake(MqttConnectHandle_Z, 0UL);
 				if (RC_OK != Mqtt_connect(&MqttSession_Z))
 				{
-					printf("MQTT_ConnectToBroker_Z: Failed to connect MQTT \r\n");
+					LOG_AT_ERROR(("MQTT_ConnectToBroker_Z: Failed to connect MQTT \r\n"));
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
 				}
 			}
@@ -408,7 +409,7 @@ Retcode_T MQTT_ConnectToBroker_Z(MQTT_Connect_TZ * mqttConnect, uint32_t timeout
 		{
 			if (pdTRUE != xSemaphoreTake(MqttConnectHandle_Z, pdMS_TO_TICKS(timeout)))
 			{
-				printf("MQTT_ConnectToBroker_Z: Failed since Connect event was not received \r\n");
+				LOG_AT_ERROR(("MQTT_ConnectToBroker_Z: Failed since Connect event was not received \r\n"));
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_CB_NOT_RECEIVED);
 			}
 			else
@@ -439,7 +440,7 @@ Retcode_T MQTT_SubsribeToTopic_Z(MQTT_Subscribe_TZ * subscribe, uint32_t timeout
 		StringDescr_wrap(&(subscribeTopicDescription[0]), subscribe->Topic);
 		qos[0] = (Mqtt_qos_t) subscribe->QoS;
 
-		printf("MQTT_SubsribeToTopic_Z: Subscribing to topic: [%s], Qos: [%d]\r\n", subscribe->Topic, qos[0]);
+		LOG_AT_TRACE(("MQTT_SubsribeToTopic_Z: Subscribing to topic: [%s], Qos: [%d]\r\n", subscribe->Topic, qos[0]));
 		IncomingPublishNotificationCB_Z = subscribe->IncomingPublishNotificationCB;
 		MqttSubscriptionStatus_Z = false;
 		/* This is a dummy take. In case of any callback received
@@ -524,7 +525,7 @@ Retcode_T MQTT_UnSubsribeFromTopic_Z(MQTT_Subscribe_TZ * subscribe, uint32_t tim
 		StringDescr_wrap(&(subscribeTopicDescription[0]), subscribe->Topic);
 		qos[0] = (Mqtt_qos_t) subscribe->QoS;
 
-		printf("MQTT_UnSubsribeFromTopic_Z: Unsubscribing from topic: [%s], Qos: [%d]\r\n", subscribe->Topic, qos[0]);
+		LOG_AT_TRACE(("MQTT_UnSubsribeFromTopic_Z: Unsubscribing from topic: [%s], Qos: [%d]\r\n", subscribe->Topic, qos[0]));
 		IncomingPublishNotificationCB_Z = subscribe->IncomingPublishNotificationCB;
 		MqttSubscriptionStatus_Z = false;
 		/* This is a dummy take. In case of any callback received

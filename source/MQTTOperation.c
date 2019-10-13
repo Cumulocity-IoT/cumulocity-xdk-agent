@@ -127,13 +127,13 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
-	printf("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
+	LOG_AT_DEBUG(("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
 			(int) param.TopicLength, appIncomingMsgTopicBuffer,
-			(int) param.PayloadLength, appIncomingMsgPayloadBuffer);
+			(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
 
 	if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_CUSTOM,
 			strlen(TOPIC_DOWNSTREAM_CUSTOM)) == 0)) {
-		printf("MQTTOperation: Received command \r\n");
+		LOG_AT_TRACE(("MQTTOperation: Received command \r\n"));
 		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y,
 				(uint32_t) BSP_LED_COMMAND_TOGGLE);
 		if (commandProgress == DEVICE_OPERATION_WAITING) {
@@ -150,13 +150,13 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
-			printf("MQTTOperation: Processing token: [%s], command_pos: %i, token_pos: %i \r\n",
-					token, command_pos, token_pos);
+			LOG_AT_DEBUG(("MQTTOperation: Processing token: [%s], command_pos: %i, token_pos: %i \r\n",
+					token, command_pos, token_pos));
 
 			switch (token_pos) {
 			case 0:
 				if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
-					printf("MQTTOperation: Starting restart \r\n");
+					LOG_AT_DEBUG(("MQTTOperation: Starting restart \r\n"));
 
 					AppController_SetStatus(APP_STATUS_REBOOT);
 					// set flag so that XDK acknowledges reboot command
@@ -166,7 +166,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					command = CMD_RESTART;
 					command_complete = 1;
 					MQTTOperation_StartRestartTimer(REBOOT_DELAY);
-					printf("MQTTOperation: Ending restart\r\n");
+					LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
 				} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
 					command_pos = 1;  // mark that we are in a command
 					if (commandProgress == DEVICE_OPERATION_WAITING) {
@@ -181,7 +181,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			case 2:
 				if (strcmp(token, "speed") == 0 && command_pos == 1) {
 					command_pos = 2;  // prepare to read the speed
-					printf("MQTTOperation: Phase command speed: command_pos %i token_pos: %i\r\n", command_pos, token_pos);
+					LOG_AT_TRACE(("MQTTOperation: Phase command speed: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 					command = CMD_SPEED;
 				} else if (strcmp(token, "toggle") == 0 && command_pos == 1) {
 					BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
@@ -189,38 +189,38 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					command_complete = 1;
 					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					printf("MQTTOperation: Phase command toggle: command_pos %i token_pos: %i\r\n", command_pos, token_pos);
+					LOG_AT_TRACE(("MQTTOperation: Phase command toggle: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 				} else if (strcmp(token, "start") == 0 && command_pos == 1) {
 					MQTTOperation_StartTimer(null,0);
 					command = CMD_START;
 					command_complete = 1;
 					// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					printf("MQTTOperation: Phase command start: command_pos %i token_pos: %i\r\n", command_pos, token_pos);
+					LOG_AT_TRACE(("MQTTOperation: Phase command start: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 				} else if (strcmp(token, "stop") == 0 && command_pos == 1) {
 					MQTTOperation_StopTimer(null,0);
 					command = CMD_STOP;
 					command_complete = 1;
 					// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					printf("MQTTOperation: Phase command stop: command_pos %i token_pos: %i\r\n", command_pos, token_pos);
+					LOG_AT_TRACE(("MQTTOperation: Phase command stop: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 				} else if (strcmp(token, "sensor") == 0 && command_pos == 1) {
 					command_pos = 2;  // prepare to read the speed
-					printf("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i \r\n", command_pos, token_pos);
+					LOG_AT_TRACE(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i \r\n", command_pos, token_pos));
 					command = CMD_SENSOR;
 				} else {
 					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-					printf("MQTTOperation: Unknown command: %s\r\n", token);
+					LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
 				}
 				break;
 			case 3:
 				if (command_pos == 2) {
 					if (command == CMD_SPEED){
-						printf("MQTTOperation: Phase execute: command_pos %i token_pos: %i\r\n", command_pos,
-								token_pos);
+						LOG_AT_TRACE(("MQTTOperation: Phase execute: command_pos %i token_pos: %i\r\n", command_pos,
+								token_pos));
 						int speed = strtol(token, (char **) NULL, 10);
 						speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
-						printf("MQTTOperation: New speed: %i\r\n", speed);
+						LOG_AT_INFO(("MQTTOperation: New speed: %i\r\n", speed));
 						tickRateMS = (int) pdMS_TO_TICKS(speed);
 						xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
 						MQTTCfgParser_SetStreamRate(speed);
@@ -229,7 +229,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						command_complete = 1;
 					} else if (command == CMD_SENSOR) {
 						command_pos = 3; // prepare to read next paramaeter TRUE or FALSE
-						printf("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\r\n", command_pos, token_pos);
+						LOG_AT_TRACE(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
 						if (strcmp(token, A14Name) == 0) {
 							sensor_index= ATT_IDX_NOISEENABLED;
 						} else if (strcmp(token, A13Name) == 0) {
@@ -244,7 +244,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 							sensor_index= ATT_IDX_ACCELENABLED;
 						} else {
 							commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-							printf("MQTTOperation: Sensor not supported: %s\r\n", token);
+							LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
 						}
 					}
 				}
@@ -252,8 +252,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			case 4:
 				if (command_pos == 3) {
 					if (command == CMD_SENSOR){
-						printf("MQTTOperation: Phase execute: command_pos %i token_pos: %i\r\n", command_pos,
-								token_pos);
+						LOG_AT_TRACE(("MQTTOperation: Phase execute: command_pos %i token_pos: %i\r\n", command_pos,
+								token_pos));
 						MQTTCfgParser_SetSensor(token, sensor_index);
 						MQTTCfgParser_FLWriteConfig();
 						configDirty = true;
@@ -262,7 +262,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				}
 				break;
 			default:
-				printf("MQTTOperation: Error parsing command!\r\n");
+				LOG_AT_WARNING(("MQTTOperation: Error parsing command!\r\n"));
 				break;
 			}
 			token = strtok(NULL, ", ");
@@ -271,7 +271,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		// test if command was complete
 		if ( command_complete == 0) {
 			commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-			printf("MQTTOperation: Incomplete command!\r\n");
+			LOG_AT_ERROR(("MQTTOperation: Incomplete command!\r\n"));
 		}
 
 	}
@@ -292,7 +292,7 @@ static void MQTTOperation_StartRestartTimer(int period) {
 
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
 	(void) xTimer;
-	printf("MQTTOperation: Now calling SoftReset ...\r\n");
+	LOG_AT_INFO(("MQTTOperation: Now calling SoftReset ...\r\n"));
 	MQTTFlash_FLWriteBootStatus((uint8_t *)BOOT_PENDING);
 	MQTTOperation_DeInit();
 	xTimerStop(timerHandleAsset, UINT32_C(0xffff));
@@ -351,9 +351,8 @@ static void MQTTOperation_ClientPublish(void) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					measurementCounter++;
-					if (DEBUG_LEVEL <= DEBUG)
-						printf(	"MQTTOperation: Publishing sensor data length [%ld] %lu and content:\r\n%s\r\n",
-								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data);
+					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s\r\n",
+								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
 					retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
@@ -364,7 +363,7 @@ static void MQTTOperation_ClientPublish(void) {
 				xSemaphoreGive(semaphoreSensorBuffer);
 
 				if (RETCODE_OK != retcode) {
-					printf("MQTTOperation: MQTT publish failed \r\n");
+					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
 					retcode = MQTTOperation_ValidateWLANConnectivity(true);
 					Retcode_RaiseError(retcode);
 				}
@@ -382,9 +381,8 @@ static void MQTTOperation_ClientPublish(void) {
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
-					if (DEBUG_LEVEL <= DEBUG)
-						printf(	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
-								assetStreamBuffer.length, assetStreamBuffer.data);
+					LOG_AT_INFO((	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
+								assetStreamBuffer.length, assetStreamBuffer.data));
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
 							assetStreamBuffer.length;
@@ -397,7 +395,7 @@ static void MQTTOperation_ClientPublish(void) {
 				xSemaphoreGive(semaphoreAssetBuffer);
 
 				if (RETCODE_OK != retcode) {
-					printf("MQTTOperation: MQTT publish failed \r\n");
+					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
 					Retcode_RaiseError(retcode);
 				}
 
@@ -407,7 +405,7 @@ static void MQTTOperation_ClientPublish(void) {
 					vTaskDelay(pdMS_TO_TICKS(3000));
 					retcode = MQTTOperation_SubscribeTopics();
 					if (RETCODE_OK != retcode) {
-						printf("MQTTOperation: MQTT subscription failed \r\n");
+						LOG_AT_ERROR(("MQTTOperation: MQTT subscription failed \r\n"));
 						retcode = MQTTOperation_ValidateWLANConnectivity(true);
 					} else {
 						assetUpdate = APP_ASSET_COMPLETED;
@@ -432,8 +430,7 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param2);
 
 	/* Start the timers */
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTOperation: Start publishing ...\r\n");
+	LOG_AT_INFO(("MQTTOperation: Start publishing ...\r\n"));
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
 	return;
@@ -447,8 +444,7 @@ void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
 	BCDS_UNUSED(param2);
 	/* Stop the timers */
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTOperation: Stopped publishing!\r\n");
+	LOG_AT_INFO(("MQTTOperation: Stopped publishing!\r\n"));
 	xTimerStop(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
 	return;
@@ -460,16 +456,16 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
 			MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 
 	if (RETCODE_OK != retcode) {
-		printf("MQTTOperation: MQTT subscribe command topic failed\r\n");
+		LOG_AT_ERROR(("MQTTOperation: MQTT subscribe command topic failed\r\n"));
 	} else {
-		printf("MQTTOperation: MQTT subscribe command topic successful\r\n");
+		LOG_AT_TRACE(("MQTTOperation: MQTT subscribe command topic successful\r\n"));
 
 		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeRestartInfo,
 				MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 		if (RETCODE_OK != retcode) {
-			printf("MQTTOperation: MQTT subscribe restart topic failed \r\n");
+			LOG_AT_ERROR(("MQTTOperation: MQTT subscribe restart topic failed \r\n"));
 		} else {
-			printf("MQTTOperation: MQTT subscribe restart topic successful\r\n");
+			LOG_AT_TRACE(("MQTTOperation: MQTT subscribe restart topic successful\r\n"));
 		}
 	}
 
@@ -497,10 +493,10 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	// ckeck if reboot process is pending to be confirmed
 	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
 	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
-	printf("MQTTOperation_Init: Reading boot status: [%s]\r\n", readbuffer);
+	LOG_AT_DEBUG(("MQTTOperation_Init: Reading boot status: [%s]\r\n", readbuffer));
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
-		printf("MQTTOperation_Init: Confirm successful reboot\r\n");
+		LOG_AT_DEBUG(("MQTTOperation_Init: Confirm successful reboot\r\n"));
 		rebootProgress = DEVICE_OPERATION_SUCCESSFUL;
 		MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
 	}
@@ -515,7 +511,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 			retcode = SNTP_GetTimeFromServer(&sntpTimeStampFromServer,
 					APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
 			if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
-				printf("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n");
+				LOG_AT_WARNING(("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
 			}
 		} while (0UL == sntpTimeStampFromServer);
 
@@ -533,7 +529,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 			if (RETCODE_OK != retcode) {
-				printf("MQTTOperation: MQTT connection to the broker failed  [%hu] time, try again ... \r\n", connectAttemps );
+				LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed  [%hu] time, try again ... \r\n", connectAttemps ));
 				connectAttemps ++;
 			}
 		} while (RETCODE_OK != retcode && connectAttemps < 10 );
@@ -542,12 +538,12 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	}
 
 	if (RETCODE_OK == retcode) {
-		printf("MQTTOperation: Successfully connected to [%s:%d]\r\n",
-				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort);
+		LOG_AT_DEBUG(("MQTTOperation: Successfully connected to [%s:%d]\r\n",
+				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
 		MQTTOperation_ClientPublish();
 	} else {
 		//reboot to recover
-		printf("MQTTOperation: Now calling SoftReset and reboot to recover\r\n");
+		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
 		//MQTTOperation_DeInit();
 		AppController_SetStatus(APP_STATUS_ERROR);
 		// wait one minute before reboot
@@ -563,8 +559,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
  * @return NONE
  */
 void MQTTOperation_DeInit(void) {
-	if (DEBUG_LEVEL <= INFO)
-		printf("MQTTOperation: Calling DeInit\r\n");
+	LOG_AT_DEBUG(("MQTTOperation: Calling DeInit\r\n"));
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeCommandInfo,
 			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeRestartInfo,
@@ -620,7 +615,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 			}
 		}
 		if (RETCODE_OK != retcode) {
-			printf("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps );
+			LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps ));
 		} else {
 			//reset connection counter
 			connectAttemps = 0L;
@@ -630,7 +625,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 
 	// test if we have to reboot
 	if (connectAttemps > 10) {
-		printf("MQTTOperation: Now calling SoftReset and reboot to recover\r\n");
+		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
 		//MQTTOperation_DeInit();
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(60000));
@@ -654,8 +649,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	static uint32_t keepAlive = 0;
 	static uint32_t mvoltage = 0, battery = 0;
 
-	if (DEBUG_LEVEL <= FINEST)
-		printf("MQTTOperation: Starting buffering device data ...\r\n");
+	LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
 
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
@@ -771,7 +765,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			TimeStamp_SecsToTm(sntpTimeStamp, &time);
 			TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
 
-			printf("MQTTOperation_SensorUpdate: current time: %s\r\n", timezoneISO8601format);
+			LOG_AT_TRACE(("MQTTOperation_SensorUpdate: current time: %s\r\n", timezoneISO8601format));
 		}
 
 	}
@@ -779,8 +773,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	// access exlusive Data
 	xSemaphoreGive(semaphoreAssetBuffer);
 
-	if (DEBUG_LEVEL <= FINEST)
-		printf("MQTTOperation: Finished buffering device data\r\n");
+	LOG_AT_TRACE(("MQTTOperation: Finished buffering device data\r\n"));
 }
 
 static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {

@@ -59,7 +59,7 @@ static void processbuttonCallback1 (void * param1, uint32_t buttonstatus)
 	static uint8_t toogleButton_1 = 0;
 	BCDS_UNUSED(param1);
 
-	if (DEBUG_LEVEL <= FINEST ) printf("MQTTButton: Status button %d %lu %i\r\n", toogleButton_1, buttonstatus, BSP_XDK_BUTTON_PRESS);
+	LOG_AT_TRACE(("MQTTButton: Status button %d %lu %i\r\n", toogleButton_1, buttonstatus, BSP_XDK_BUTTON_PRESS));
 
 	// only use button 1 when in operation mode
 	if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED || AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
@@ -87,19 +87,19 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
 		TickType_t time_passed = xTaskGetTickCountFromISR() - time_start;
 		if (time_passed > pdMS_TO_TICKS(3000)) {
 			MQTTFlash_FLWriteBootStatus((uint8_t*) NO_BOOT_PENDING);
-			printf("MQTTButton: Button pressed long: %lu\r\n", time_passed);
+			LOG_AT_TRACE(("MQTTButton: Button pressed long: %lu\r\n", time_passed));
 		} else {
 			ConfigDataBuffer localbuffer;
 			localbuffer.length = NUMBER_UINT32_ZERO;
 			memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
 			MQTTFlash_FLReadConfig(&localbuffer);
-			printf("MQTTButton: Current configuration in flash:\r\n%s\r\n", localbuffer.data);
+			LOG_AT_TRACE(("MQTTButton: Current configuration in flash:\r\n%s\r\n", localbuffer.data));
 
 			localbuffer.length = NUMBER_UINT32_ZERO;
 			memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
 			MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-			printf("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data);
-			printf("MQTTButton: Button pressed for: %lu\r\n", time_passed);
+			LOG_AT_TRACE(("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data));
+			LOG_AT_TRACE(("MQTTButton: Button pressed for: %lu\r\n", time_passed));
 		}
 	}
 
@@ -112,7 +112,7 @@ void button1Callback(uint32_t data)
 	Retcode_T returnValue = CmdProcessor_EnqueueFromIsr(AppCmdProcessor, processbuttonCallback1, NULL, data);
 	if (RETCODE_OK != returnValue)
 	{
-		printf("MQTTButton: Enqueuing for Button 1 callback failed\r\n");
+		LOG_AT_ERROR(("MQTTButton: Enqueuing for Button 1 callback failed\r\n"));
 	}
 }
 
@@ -123,7 +123,7 @@ void button2Callback(uint32_t data)
 	Retcode_T returnValue = CmdProcessor_EnqueueFromIsr(AppCmdProcessor, processbuttonCallback2, NULL, data);
 	if (RETCODE_OK != returnValue)
 	{
-		printf("MQTTButton: Enqueuing for Button 2 callback failed [%lu]\r\n", returnValue);
+		LOG_AT_ERROR(("MQTTButton: Enqueuing for Button 2 callback failed [%lu]\r\n", returnValue));
 	}
 }
 

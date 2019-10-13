@@ -159,7 +159,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
     if ((Retcode_T) RETCODE_STORAGE_SDCARD_NOT_AVAILABLE == Retcode_GetCode((retcode)))
     {
         /* This is only a warning error. So we will raise and proceed */
-        printf("AppController_Setup: SD card missing trying to use config from WIFI flash!\r\n");
+    	LOG_AT_WARNING(("AppController_Setup: SD card missing trying to use config from WIFI chip!\r\n"));
         //Retcode_RaiseError(retcode);
         retcode = RETCODE_OK; /* SD card was not inserted */
     }
@@ -171,12 +171,12 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 	/* Initialize Buttons */
 	rc_Boot_Mode = MQTTButton_Init(AppCmdProcessor);
 	if (rc_Boot_Mode == APP_RESULT_ERROR) {
-		printf("AppController_Setup: Boot error\r\n");
+		LOG_AT_ERROR(("AppController_Setup: Boot error\r\n"));
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
 	}
 
 	if (BSP_Button_GetState((uint32_t) BSP_XDK_BUTTON_2) == 1) {
-		printf("AppController_Setup: Button 2 was pressed at startup and delete config stored on wifi chip!\r\n");
+		LOG_AT_INFO(("AppController_Setup: Button 2 was pressed at startup and delete config stored on WIFI chip!\r\n"));
 		MQTTFlash_FLDeleteConfig();
 		BSP_Board_SoftReset();
 	}
@@ -203,7 +203,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		if (RETCODE_OK == retcode) {
 			SNTPSetupInfo.ServerUrl = MQTTCfgParser_GetSntpName();
 			SNTPSetupInfo.ServerPort = MQTTCfgParser_GetSntpPort();
-			printf("AppController_Setup: SNTP server: [%s:%d]\r\n", SNTPSetupInfo.ServerUrl, SNTPSetupInfo.ServerPort);
+			LOG_AT_INFO(("AppController_Setup: SNTP server: [%s:%d]\r\n", SNTPSetupInfo.ServerUrl, SNTPSetupInfo.ServerPort));
 			retcode = SNTP_Setup(&SNTPSetupInfo);
 		}
 	}
@@ -230,7 +230,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Enable, NULL, UINT32_C(0));
 	}
 	if (RETCODE_OK != retcode) {
-		printf("AppController_Setup: Failed \r\n");
+		LOG_AT_ERROR(("AppController_Setup: Failed \r\n"));
 		Retcode_RaiseError(retcode);
 		assert(0); /* To provide LED indication for the user */
 	}
@@ -278,7 +278,7 @@ static void AppController_Enable(void * param1, uint32_t param2) {
         }
 	}
 	if (RETCODE_OK != retcode) {
-		printf("AppController_Enable: Now calling SoftReset and reboot to recover\r\n");
+		LOG_AT_ERROR(("AppController_Enable: Now calling SoftReset and reboot to recover\r\n"));
 		Retcode_RaiseError(retcode);
 		BSP_Board_SoftReset();
 		// assert(0);
@@ -308,8 +308,8 @@ static void AppController_Fire(void* pvParameters)
     BCDS_UNUSED(pvParameters);
 
 	AppController_SetClientId();
-	printf("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
-			deviceId);
+	LOG_AT_INFO(("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
+			deviceId));
 	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
 	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
 	MqttConnectInfo.CleanSession = true;
@@ -345,7 +345,7 @@ static void AppController_SetClientId(void) {
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 
 	MqttConnectInfo.ClientId = clientId;
-	printf("AppController: Client id of the device: %s \r\n", clientId);
+	LOG_AT_INFO( ("AppController: Client id of the device: %s \r\n", clientId));
 }
 
 static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
@@ -355,40 +355,40 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 	switch(app_status) {
 		case APP_STATUS_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			//printf("STATUS APP_STATUS_STARTED\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_STARTED\n"));
 			break;
 		case APP_STATUS_OPERATING_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			//printf("STATUS APP_STATUS_RUNNING\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_RUNNING\n"));
 			break;
 		case APP_STATUS_OPERATING_STOPPED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
-			//printf("STATUS APP_STATUS_STOPPED\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_STOPPED\n"));
 			break;
 		case APP_STATUS_ERROR:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_ON);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
-			//printf("STATUS APP_STATUS_ERROR\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_ERROR\n"));
 			break;
 		case APP_STATUS_REBOOT:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			//printf("STATUS APP_STATUS_REBOOT\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_REBOOT\n"));
 			break;
 		case APP_STATUS_REGISTERED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_ON);
-			//printf("STATUS APP_STATUS_REGISTERED\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_REGISTERED\n"));
 			break;
 		case APP_STATUS_REGISTERING:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			//printf("STATUS APP_STATUS_REGISTERING\n");
+			LOG_AT_TRACE(("STATUS APP_STATUS_REGISTERING\n"));
 			break;
 		default:
-			printf("Unknown status\n");
+			LOG_AT_WARNING(("AppController: Unknown status\n"));
 			break;
 
 	}
@@ -414,7 +414,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	BCDS_UNUSED(param2);
 
 	vTaskDelay(pdMS_TO_TICKS(2000));
-	printf("AppController_Init: XDK System Startup\r\n");
+	LOG_AT_INFO(("AppController_Init: XDK System Startup\r\n"));
 
 	// start status LED indicator
 	AppController_SetStatus(APP_STATUS_STARTED);
@@ -424,7 +424,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	BatteryMonitor_Init();
 
 	if (cmdProcessorHandle == NULL) {
-		printf("AppController_Init: Command processor handle is NULL \r\n");
+		LOG_AT_ERROR(("AppController_Init: Command processor handle is NULL \r\n"));
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 	} else if (RETCODE_OK == retcode) {
 		AppCmdProcessor = (CmdProcessor_T *) cmdProcessorHandle;
