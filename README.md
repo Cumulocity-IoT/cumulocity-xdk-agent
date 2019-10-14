@@ -26,12 +26,12 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 ### Configuration
 
 The C8Y Agent for XDK sends the following sensor measurements to C8Y:
-* `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit g
 * `GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
 * `MAGENATBLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false`
+* `ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit temp C, pressure hPa
+* `LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit Lux
+* `NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false` #
 
 with the defined streamrate:
 * `STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000`
