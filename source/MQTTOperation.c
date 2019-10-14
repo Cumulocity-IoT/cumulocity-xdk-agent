@@ -790,7 +790,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 		if (SensorSetup.Enable.Accel) {
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"991,,%.3lf,%.3lf,%%.3lf\r\n", sensorValue.Accel.X / 1000.0 , sensorValue.Accel.Y / 1000.0 , sensorValue.Accel.Z / 1000.0);
+					"991,,%.3lf,%.3lf,%.3lf\r\n", sensorValue.Accel.X / 1000.0 , sensorValue.Accel.Y / 1000.0 , sensorValue.Accel.Z / 1000.0);
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
