@@ -790,11 +790,11 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 		if (SensorSetup.Enable.Accel) {
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"991,,%ld,%ld,%ld\r\n", sensorValue.Accel.X, sensorValue.Accel.Y, sensorValue.Accel.Z);
+					"991,,%.3lf,%.3lf,%%.3lf\r\n", sensorValue.Accel.X / 1000.0 , sensorValue.Accel.Y / 1000.0 , sensorValue.Accel.Z / 1000.0);
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1991,%s,%ld,%ld,%ld\r\n", deviceId, sensorValue.Accel.X, sensorValue.Accel.Y,sensorValue.Accel.Z);
+					"1991,%s,%.3lf,%.3lf,%.3lf\r\n", deviceId, sensorValue.Accel.X / 1000.0 , sensorValue.Accel.Y / 1000.0 ,sensorValue.Accel.Z / 1000.0 );
 		}
 		if (SensorSetup.Enable.Gyro) {
 			sensorStreamBuffer.length += snprintf(
@@ -822,11 +822,11 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 		if (SensorSetup.Enable.Light) {
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"994,,%ld\r\n", sensorValue.Light);
+					"994,,%.2lf\r\n", sensorValue.Light / 1000.0);
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1994,%s,%ld\r\n", deviceId, sensorValue.Light);
+					"1994,%s,%.2lf\r\n", deviceId, sensorValue.Light / 1000.0);
 		}
 		// only all three at the same time can be enabled
 		if (SensorSetup.Enable.Temp) {
@@ -849,11 +849,11 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"997,,%ld\r\n", sensorValue.Pressure);
+					"997,,%.2lf\r\n", sensorValue.Pressure/100.0);
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1997,%s,%ld\r\n",  deviceId, sensorValue.Pressure);
+					"1997,%s,%.2lf\r\n",  deviceId, sensorValue.Pressure/100.0);
 		}
 
 		if (SensorSetup.Enable.Noise) {
