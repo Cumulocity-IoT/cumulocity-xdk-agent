@@ -89,7 +89,7 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Zu"
-	 ng-class="{ 'dark': light < 20000, 'bright': light > 20000}"> 
+	 ng-class="{ 'dark': light < 400, 'bright': light > 400}"> 
     <image
        y="1.2715657e-006"
        x="-15.231251"
