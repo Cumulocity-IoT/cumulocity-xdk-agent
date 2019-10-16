@@ -72,7 +72,7 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-51.064583,-104.38333)"
-	 ng-class="{ 'bright': light < 20000, 'dark': light > 20000}">
+	 ng-class="{ 'bright': light < 400, 'dark': light > 400}">
 
     <image
        y="104.38333"
