@@ -48,6 +48,8 @@ When registering the XDK a config on an SD card has to be inserted in the XDK. U
 Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SD and thus overwrite settings stored on the file system of the WIFI chip.
 The values defined in the config on the SDCard always take precedence.  
 
+> NOTE: When setting up a hot spot for the WIFI connection, mak esure you use a network band of 2.4GHz, the XDK only supports this band.
+
 In addition to the above listed measurements the battery staus is send ervery minute.
 
 ### Operations
@@ -102,9 +104,9 @@ The buttons have following on the XDK have the following functions:
 5. Flash your C8Y Device Agent on your XDK		
 		
 ## 1. Prepare SD card
-		
+> NOTE: Make sure your SD card is smaller 32GB, otherwise it can't be formatted in the FAT filesystem format		
 1. Format SD in FAT format
-2. Adapt settings in `config.tx`t and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
+2. Adapt settings in `config.txt` and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
 
 ## 2. Register XDK in Cumulocity & upload SMART Rest Template
 
@@ -197,6 +199,7 @@ Connection to port 'COM9' established
  INFO | XDK DEVICE 1: b
  INFO | XDK DEVICE 1:  Invalid application
 ```
+If this doesn't help pls. flash a standard click app to the device, e.g `LedsandButtons`. If this works try to flash the device agent again.
 
 ### Config file cannot be pared
 Please verify if you used Linux line endings `\n`  
