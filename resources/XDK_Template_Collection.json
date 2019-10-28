@@ -252,6 +252,33 @@
       {
         "method": "PUT",
         "response": false,
+        "msgId": "1990",
+        "api": "INVENTORY",
+        "byId": false,
+        "externalIdType": "c8y_Serial",
+        "mandatoryValues": [],
+        "customValues": [
+          {
+            "path": "c8y_Rotation.pitch.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Rotation.roll.value",
+            "type": "NUMBER",
+            "value": null
+          },
+          {
+            "path": "c8y_Rotation.yaw.value",
+            "type": "NUMBER",
+            "value": null
+          }
+        ],
+        "name": "RotationInventory"
+      },
+      {
+        "method": "PUT",
+        "response": false,
         "msgId": "1991",
         "api": "INVENTORY",
         "byId": false,
