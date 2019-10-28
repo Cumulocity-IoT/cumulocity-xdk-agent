@@ -51,6 +51,9 @@
 #include "MQTTOperation.h"
 #include "MQTTButton.h"
 
+#include "XdkSensorHandle.h"
+#include "BCDS_Orientation.h"
+
 /* constant definitions ***************************************************** */
 
 /* local variables ********************************************************** */
@@ -221,6 +224,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		SensorSetup.Enable.Temp = MQTTCfgParser_IsEnvEnabled();
 		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();
 		retcode = Sensor_Setup(&SensorSetup);
+		retcode = Orientation_init(xdkOrientationSensor_Handle);
 	}
 	//delay start
 	vTaskDelay(pdMS_TO_TICKS(4000));
@@ -320,7 +324,6 @@ static void AppController_Fire(void* pvParameters)
 		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
 		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
 		MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
-
 	} else {
 		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
 	}

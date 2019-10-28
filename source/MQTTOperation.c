@@ -40,6 +40,8 @@
 #include "XDK_WLAN.h"
 #include "BatteryMonitor.h"
 
+#include "XdkSensorHandle.h"
+#include "BCDS_Orientation.h"
 
 static const int MINIMAL_SPEED = 50;
 /* constant definitions ***************************************************** */
@@ -648,6 +650,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	// counter to send every 60 seconds a keep alive msg.
 	static uint32_t keepAlive = 0;
 	static uint32_t mvoltage = 0, battery = 0;
+    Retcode_T returnCode = RETCODE_FAILURE;
 
 	LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
 
@@ -656,7 +659,6 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 		if (assetUpdate == APP_ASSET_WAITING) {
 			assetUpdate = APP_ASSET_PUBLISHED;
-
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 					"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
@@ -787,6 +789,19 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
+
+		// update inventory with latest measurements
+	   Orientation_EulerData_T eulerValueInDegree = {0.0F, 0.0F, 0.0F, 0.0F};
+	   retcode = Orientation_readEulerRadianVal(&eulerValueInDegree);
+
+		if (retcode == RETCODE_SUCCESS) {
+
+			// update orientation
+			sensorStreamBuffer.length += snprintf(
+					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
+					"1990,%s,%.3lf,%.3lf,%.3lf,%.3lf\r\n", deviceId, eulerValueInDegree.heading, eulerValueInDegree.pitch, eulerValueInDegree.roll, eulerValueInDegree.yaw );
+		}
+
 		if (SensorSetup.Enable.Accel) {
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
