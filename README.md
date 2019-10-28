@@ -132,9 +132,7 @@ INFO | XDK DEVICE 1:         11 [SSL:1] Sec_receiveCB: HORRIBLE Buffer full stat
 Increase MBEDTLS_SSL_MAX_CONTENT_LEN macro value from 4850 to 5950 in Common/config/MbedTLS/ MbedtlsConfigTLS.h in line 2921.
 The macro MBEDTLS_SSL_MAX_CONTENT_LEN determines the size of both the incoming and outgoing TLS I/O buffer used by MbedTLS library.
 
-> NOTE: You have to increase the heap size
-
- in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h`, otherwise you see error like
+> NOTE: You have to increase the heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h`.
 
 In order to avoid a heap issue, as seen in the following error message:
 
