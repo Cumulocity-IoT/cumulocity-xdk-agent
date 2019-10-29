@@ -41,7 +41,7 @@
 /* local variables ********************************************************** */
 
 // Client Task/Timer Variables
-static xTimerHandle clientRegistrationTimerHandle = POINTER_NULL; // timer handle for data stream
+static xTimerHandle clientRegistrationTimerHandle = NULL; // timer handle for data stream
 
 // Subscribe topics variables
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */

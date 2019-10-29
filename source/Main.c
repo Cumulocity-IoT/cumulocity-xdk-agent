@@ -68,7 +68,7 @@ int main(void)
     else
     {
         Retcode_RaiseError(retcode);
-        LOG_AT_DEBUG(("main : XDK System Startup failed.\r\n"));
+        LOG_AT_ERROR(("main : XDK System Startup failed.\r\n"));
     }
     assert(false);
 }

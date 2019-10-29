@@ -38,13 +38,11 @@
  */
 #define WLAN_SSID                           "TBD"
 
-
 /**
  * WLAN_PSK is the WIFI router WPA/WPA2 password used at the Wifi network connection.
  * Make sure to update the WLAN_PSK constant according to your router password.
  */
 #define WLAN_PSK                            "TBD"
-
 
 /**
  * WLAN_STATIC_IP is a boolean. If "true" then static IP will be assigned and if "false" then DHCP is used.
@@ -90,25 +88,25 @@
  * SNTP_SERVER_PORT is the SNTP server port number.
  */
 #define SNTP_SERVER_PORT                    123
-#define STR_SNTP_SERVER_PORT                "123"
+#define STR_SNTP_SERVER_PORT			   "123"
 
 /* MQTT server configurations *********************************************** */
 
 /**
  * APP_MQTT_BROKER_HOST_URL is the MQTT broker host address URL.
  */
-#define MQTT_BROKER_HOST_NAME            "mqtt.cumulocity.com"
+#define MQTT_BROKER_HOST_NAME              "mqtt.cumulocity.com"
 
 /**
  * APP_MQTT_BROKER_HOST_PORT is the MQTT broker host port.
  */
-#define MQTT_BROKER_HOST_PORT           UINT16_C(8883)
-#define STR_MQTT_BROKER_HOST_PORT           "8883"
+#define MQTT_BROKER_HOST_PORT			   UINT16_C(8883)
+#define STR_MQTT_BROKER_HOST_PORT          "8883"
 
 /**
  * APP_MQTT_CLIENT_ID is the device name
  */
-#define APP_MQTT_CLIENT_ID                  "TBD"
+#define APP_MQTT_CLIENT_ID				   "TBD"
 
 /**
  * APP_MQTT_USERNAME is the device name
@@ -120,11 +118,6 @@
  */
 #define APP_MQTT_PASSWORD                  "TBD"
 
-
-/**
- * APP_MQTT_TOPIC is the topic to subscribe and publish
- */
-#define APP_MQTT_TOPIC                      "s/uc/XDK"
 /**
  * APP_MQTT_SECURE_ENABLE is a macro to enable MQTT with security
  */
@@ -136,12 +129,10 @@
 #define APP_MQTT_DATA_PUBLISH_PERIODICITY   UINT32_C(1000)
 
 /* public type and macro definitions */
-#define WIFI_DEFAULT_MAC			"00:00:00:00:00:00"         /**< Macro used to specify the Default MAC Address*/
 #define WIFI_DEFAULT_MAC_CLIENTID	"d:XDK_00_00_00_00_00_00"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
 #define DEVICE_ID					"XDK_00_00_00_00_00_00"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
 
 #define WIFI_MAC_ADDR_LEN 	   		UINT8_C(6)                  /**< Macro used to specify MAC address length*/
-
 
 #define MQTT_CONNECT_TIMEOUT_IN_MS                  UINT32_C(20000)/**< Macro for MQTT connection timeout in milli-second */
 #define MQTT_SUBSCRIBE_TIMEOUT_IN_MS                UINT32_C(20000)/**< Macro for MQTT subscription timeout in milli-second */
@@ -167,7 +158,6 @@
 #define NUMBER_UINT16_ZERO 		     UINT16_C(0)    /**< Zero value */
 #define NUMBER_INT16_ZERO 		     INT16_C(0)     /**< Zero value */
 //
-#define POINTER_NULL 			     NULL          /**< ZERO value for pointers */
 
 #define LOG_TRACE			1
 #define LOG_DEBUG			2
@@ -206,67 +196,58 @@
 #define LOG_AT_ERROR(args)
 #endif
 
-
-
-
 #define BOOT_PENDING   		"1"
 #define NO_BOOT_PENDING   	"0"
 
-typedef enum
-{
+typedef enum {
 	APP_RESULT_FILE_MISSING = INT8_C(-4),
-	APP_RESULT_SDCARD_BUFFER_OVERFLOW_ERROR= INT8_C(-3),
+	APP_RESULT_SDCARD_BUFFER_OVERFLOW_ERROR = INT8_C(-3),
 	APP_RESULT_SDCARD_ERROR = INT8_C(-2),
-	APP_RESULT_ERROR= INT8_C(-1),
+	APP_RESULT_ERROR = INT8_C(-1),
 	APP_RESULT_OPERATION_MODE = INT8_C(0),
 	APP_RESULT_REGISTRATION_MODE = INT8_C(1),
 	APP_RESULT_OK = INT8_C(2),
 	APP_RESULT_OPERATION_OK = INT8_C(4),
 } APP_RESULT;
 
-typedef enum
-{
-	APP_STATUS_ERROR= INT8_C(-2),
-	APP_STATUS_OPERATING_STARTED= INT8_C(1),
+typedef enum {
+	APP_STATUS_ERROR = INT8_C(-2),
+	APP_STATUS_OPERATING_STARTED = INT8_C(1),
 	APP_STATUS_OPERATING_STOPPED = INT8_C(2),
-	APP_STATUS_STARTED =  INT8_C(3),
-	APP_STATUS_REBOOT= INT8_C(4),
+	APP_STATUS_STARTED = INT8_C(3),
+	APP_STATUS_REBOOT = INT8_C(4),
 	APP_STATUS_REGISTERING = INT8_C(5),
 	APP_STATUS_REGISTERED = INT8_C(6),
 
 } APP_STATUS;
 
-
-typedef enum
-{
+typedef enum {
 
 	APP_ASSET_WAITING = INT8_C(1),
 	APP_ASSET_PUBLISHED = INT8_C(2),
-	APP_ASSET_COMPLETED =  INT8_C(3),
-
+	APP_ASSET_COMPLETED = INT8_C(3),
 
 } APP_ASSET_STATUS;
 
+/* Default values for C8Y MQTT configuration*/
+#define DEFAULT_MQTTSECURE         true 						/**use MQTT over TLS */
+#define DEFAULT_MQTTANONYMOUS	   false
+#define DEFAULT_MQTTUSERNAME       "REGISTRATION"
+#define DEFAULT_MQTTPASSWORD	   "REGISTRATION"
 
-/* MQTT C8Y Configuration */
-#define MQTT_SECURE         true 						/**use MQTT over TLS */
-#define MQTT_USERNAME		"REGISTRATION"
-#define MQTT_PASSWORD		"REGISTRATION"
-#define MQTT_ANONYMOUS		false
+#define DEFAULT_STR_STREAMRATE           "5000"			   /**< Stream Data Rate in MS */
+#define DEFAULT_ACCELENABELED            true               /**< Accelerometer Data Enable */
+#define DEFAULT_GYRO_ENABELED            true               /**< Gyroscope Data Enable */
+#define DEFAULT_MAG_ENABELED             true               /**< Magnetometer Data Enable */
+#define DEFAULT_ENV_ENABELED             true               /**< Environmental Data Enable */
+#define DEFAULT_LIGHTENABELED            true               /**< Ambient Light Data Enable */
+#define DEFAULT_NOISEENABELED            false               /**< Noise Data Enable */
 
-
-#define STR_STREAM_RATE     "5000"			   /**< Stream Data Rate in MS */
 #define REBOOT_DELAY 		5000			   /**< Delay reboot so that device can send back "reboot is in progress" */
-#define ACCEL_EN            true               /**< Accelerometer Data Enable */
-#define GYRO_EN             true               /**< Gyroscope Data Enable */
-#define MAG_EN              true               /**< Magnetometer Data Enable */
-#define ENV_EN              true               /**< Environmental Data Enable */
-#define LIGHT_EN            true               /**< Ambient Light Data Enable */
-#define NOISE_EN            false               /**< Noise Data Enable */
 
 
 /* Sensor type and macro definitions */
-#define SIZE_XLARGE_BUF    512
+#define SIZE_XLARGE_BUF   512
 #define SIZE_LARGE_BUF    256
 #define SIZE_SMALL_BUF    128
 #define SIZE_XSMALL_BUF    64
@@ -298,7 +279,7 @@ typedef struct {
  * Unused
  */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
-void AppController_SetStatus( uint8_t status);
+void AppController_SetStatus(uint8_t status);
 uint8_t AppController_GetStatus(void);
 
 #endif /* APPCONTROLLER_H_ */
