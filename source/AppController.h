@@ -237,9 +237,9 @@ typedef enum {
 
 #define DEFAULT_STR_STREAMRATE           "5000"			   /**< Stream Data Rate in MS */
 #define DEFAULT_ACCELENABELED            true               /**< Accelerometer Data Enable */
-#define DEFAULT_GYRO_ENABELED            true               /**< Gyroscope Data Enable */
-#define DEFAULT_MAG_ENABELED             true               /**< Magnetometer Data Enable */
-#define DEFAULT_ENV_ENABELED             true               /**< Environmental Data Enable */
+#define DEFAULT_GYROENABELED            true               /**< Gyroscope Data Enable */
+#define DEFAULT_MAGENABELED             true               /**< Magnetometer Data Enable */
+#define DEFAULT_ENVENABELED             true               /**< Environmental Data Enable */
 #define DEFAULT_LIGHTENABELED            true               /**< Ambient Light Data Enable */
 #define DEFAULT_NOISEENABELED            false               /**< Noise Data Enable */
 
