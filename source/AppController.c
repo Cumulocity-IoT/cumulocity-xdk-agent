@@ -224,7 +224,9 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		SensorSetup.Enable.Temp = MQTTCfgParser_IsEnvEnabled();
 		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();
 		retcode = Sensor_Setup(&SensorSetup);
+#if ENABLE_SENSOR_TOOLBOX
 		retcode = Orientation_init(xdkOrientationSensor_Handle);
+#endif
 	}
 	//delay start
 	vTaskDelay(pdMS_TO_TICKS(4000));

@@ -773,6 +773,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
 
+#if ENABLE_SENSOR_TOOLBOX
 		// update inventory with latest measurements
 	   Orientation_EulerData_T eulerValueInDegree = {0.0F, 0.0F, 0.0F, 0.0F};
 	   retcode = Orientation_readEulerRadianVal(&eulerValueInDegree);
@@ -784,6 +785,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
 					"1990,%s,%.3lf,%.3lf,%.3lf,%.3lf\r\n", deviceId, eulerValueInDegree.heading, eulerValueInDegree.pitch, eulerValueInDegree.roll, eulerValueInDegree.yaw );
 		}
+#endif
 
 		if (SensorSetup.Enable.Accel) {
 			sensorStreamBuffer.length += snprintf(

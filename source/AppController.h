@@ -30,6 +30,14 @@
 
 /* local type and macro definitions */
 
+/**
+ * define if XDK Sensor Toolbox featue: Orentation,StepCounter, ... should be used
+ * in this case the value configTOTAL_HEAP_SIZE for the heap size has to be increased
+ * to (( size_t )(72 * 1024 )) in the file .../SDK/xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h
+ */
+#define ENABLE_SENSOR_TOOLBOX				1
+
+
 /* WLAN configurations ****************************************************** */
 
 /**
