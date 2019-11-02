@@ -407,7 +407,38 @@ static void AppController_StartLEDBlinkTimer(int period) {
 	xTimerStart(timerHandle, UINT32_C(0xffff));
 }
 
-
+Retcode_T AppController_SyncTime() {
+	uint64_t sntpTimeStampFromServer = 0UL;
+	uint16_t sntpAttemps = 0UL;
+	Retcode_T retcode = RETCODE_OK;
+	/* We Synchronize the node with the SNTP server for time-stamp.
+	 * Since there is no point in doing a HTTPS communication without a valid time */
+	do {
+		retcode = SNTP_GetTimeFromServer(&sntpTimeStampFromServer,
+				APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
+		if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
+			LOG_AT_WARNING(
+					("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
+		}
+		sntpAttemps++;
+		vTaskDelay(pdMS_TO_TICKS(2000));
+	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 5 times
+	if (0UL == sntpTimeStampFromServer) {
+		sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
+		SNTP_SetTime(sntpTimeStampFromServer);
+		LOG_AT_WARNING(
+				("MQTTOperation: Using fixed timestamp 1. Nov 2019 00:00:00 UTC, SNTP sync not possible\r\n"));
+		retcode = RETCODE_OK; // clear return code
+	}
+	//uint8_t * timeBuffer = (uint8_t *) &sntpTimeStampFromServer;
+	//LOG_AT_TRACE(("MQTTOperation: SNTP time: %d,%d,%d,%d,%d,%d,%d,%d\r\n", timeBuffer[0], timeBuffer[1], timeBuffer[2], timeBuffer[3],timeBuffer[4],timeBuffer[5],timeBuffer[6],timeBuffer[7]));
+	struct tm time;
+	char timezoneISO8601format[40];
+	TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
+	TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
+	BCDS_UNUSED(sntpTimeStampFromServer); /* Copy of sntpTimeStampFromServer will be used be HTTPS for TLS handshake */
+	return retcode;
+}
 
 /* global functions ********************************************************* */
 

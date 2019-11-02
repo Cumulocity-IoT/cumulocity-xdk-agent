@@ -474,6 +474,7 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
 	return retcode;
 }
 
+
 /**
  * @brief Initializes the MQTT Paho Client, set up subscriptions and initializes the timers and tasks
  *
@@ -504,25 +505,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	}
 
 	if (MqttSetupInfo.IsSecure == true) {
-
-		uint64_t sntpTimeStampFromServer = 0UL;
-
-		/* We Synchronize the node with the SNTP server for time-stamp.
-		 * Since there is no point in doing a HTTPS communication without a valid time */
-		do {
-			retcode = SNTP_GetTimeFromServer(&sntpTimeStampFromServer,
-					APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
-			if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
-				LOG_AT_WARNING(("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
-			}
-		} while (0UL == sntpTimeStampFromServer);
-
-		struct tm time;
-		char timezoneISO8601format[40];
-		TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
-		TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
-
-		BCDS_UNUSED(sntpTimeStampFromServer); /* Copy of sntpTimeStampFromServer will be used be HTTPS for TLS handshake */
+		retcode = AppController_SyncTime();
 	}
 
 	if (RETCODE_OK == retcode) {

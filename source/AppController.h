@@ -281,6 +281,7 @@ typedef struct {
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
 void AppController_SetStatus(uint8_t status);
 uint8_t AppController_GetStatus(void);
+Retcode_T AppController_SyncTime(void);
 
 #endif /* APPCONTROLLER_H_ */
 
