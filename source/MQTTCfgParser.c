@@ -412,7 +412,7 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	APP_RESULT RetVal = APP_RESULT_ERROR;
 
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
-	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XLARGE_BUF);
+	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XXLARGE_BUF);
 
 	RetValFLash = MQTTFlash_FLReadConfig(&fileReadBuffer);
 	if (RetValFLash != APP_RESULT_FILE_MISSING) {
@@ -428,7 +428,7 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	// test if config on SDCard exists and overwrite setting from config on flash
 	LOG_AT_INFO(("MQTTCfgParser_ParseConfigFile: Trying to read config from SDCard ...\r\n"));
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
-	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XLARGE_BUF);
+	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XXLARGE_BUF);
 	RetVal = MQTTFlash_SDReadConfig(&fileReadBuffer);
 
 	if (RetVal == APP_RESULT_OPERATION_OK ) {
@@ -582,7 +582,7 @@ void MQTTCfgParser_FLWriteConfig(void) {
 	// update config in flash memory
 	ConfigDataBuffer localbuffer;
 	localbuffer.length = NUMBER_UINT32_ZERO;
-	memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
+	memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
 	MQTTFlash_FLWriteConfig(&localbuffer);
 }

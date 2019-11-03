@@ -160,12 +160,13 @@
 /* local function prototype declarations */
 
 /* local module global variable declarations */
-//
+
+
 #define NUMBER_UINT8_ZERO		     UINT8_C(0)     /**< Zero value */
 #define NUMBER_UINT32_ZERO 		     UINT32_C(0)    /**< Zero value */
 #define NUMBER_UINT16_ZERO 		     UINT16_C(0)    /**< Zero value */
 #define NUMBER_INT16_ZERO 		     INT16_C(0)     /**< Zero value */
-//
+
 
 #define LOG_TRACE			1
 #define LOG_DEBUG			2
@@ -255,24 +256,25 @@ typedef enum {
 
 
 /* Sensor type and macro definitions */
-#define SIZE_XLARGE_BUF   512
+#define SIZE_XXLARGE_BUF  512
+#define SIZE_XLARGE_BUF   300
 #define SIZE_LARGE_BUF    256
 #define SIZE_SMALL_BUF    128
 #define SIZE_XSMALL_BUF    64
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_XLARGE_BUF];
+	char data[SIZE_XXLARGE_BUF];
 } SensorDataBuffer;
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_LARGE_BUF];
+	char data[SIZE_XLARGE_BUF];
 } AssetDataBuffer;
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_XLARGE_BUF];
+	char data[SIZE_XXLARGE_BUF];
 } ConfigDataBuffer;
 
 /* local inline function definitions */

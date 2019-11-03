@@ -68,6 +68,8 @@ SemaphoreHandle_t semaphoreSensorBuffer;
 // Network and Client Configuration
 /* global variable declarations */
 extern char deviceId[];
+extern xTaskHandle AppControllerHandle;
+extern CmdProcessor_T MainCmdProcessor;
 
 /* inline functions ********************************************************* */
 
@@ -431,7 +433,8 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
 	BCDS_UNUSED(param2);
 
-	/* Start the timers */
+	commandProgress = DEVICE_OPERATION_IMMEDIATE;
+	command = CMD_START;
 	LOG_AT_INFO(("MQTTOperation: Start publishing ...\r\n"));
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
@@ -445,7 +448,9 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
 	BCDS_UNUSED(param2);
-	/* Stop the timers */
+
+	commandProgress = DEVICE_OPERATION_IMMEDIATE;
+	command = CMD_STOP;
 	LOG_AT_INFO(("MQTTOperation: Stopped publishing!\r\n"));
 	xTimerStop(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
@@ -658,9 +663,11 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					A12Name, MQTTCfgParser_IsEnvEnabled(),
 					A13Name, MQTTCfgParser_IsLightEnabled(),
 					A14Name, MQTTCfgParser_IsNoiseEnabled());
-
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\r\n");
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"400,xdk_StartEvent,\"XDK started!\"\r\n");
 
 			char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
 			Utils_GetXdkVersionString((uint8_t *) readbuffer);
@@ -695,6 +702,18 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+				switch (command){
+				case CMD_START:
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+							"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
+					break;
+				case CMD_STOP:
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+							"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
+					break;
+				}
 				break;
 			}
 
@@ -726,6 +745,9 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 						A12Name, MQTTCfgParser_IsEnvEnabled(),
 						A13Name, MQTTCfgParser_IsLightEnabled(),
 						A14Name, MQTTCfgParser_IsNoiseEnabled());
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
 				break;
 			}
 
@@ -751,6 +773,16 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
 
 			LOG_AT_TRACE(("MQTTOperation_SensorUpdate: current time: %s\r\n", timezoneISO8601format));
+
+#if INCLUDE_uxTaskGetStackHighWaterMark
+			uint32_t everFreeHeap = xPortGetMinimumEverFreeHeapSize();
+			uint32_t freeHeap = xPortGetFreeHeapSize();
+			//UBaseType_t stackHighWaterMark = 0;
+			UBaseType_t stackHighWaterMarkApp = uxTaskGetStackHighWaterMark(AppControllerHandle);
+			UBaseType_t stackHighWaterMarkMain = uxTaskGetStackHighWaterMark(MainCmdProcessor.task);
+			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%u],freeHeap:[%u], stackHighWaterMarkApp:[%u],stackHighWaterMarkMain:[%u]\r\n", everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain);
+#endif
+
 		}
 
 	}

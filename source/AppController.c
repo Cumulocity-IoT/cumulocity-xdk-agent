@@ -128,9 +128,7 @@ static void AppController_StartLEDBlinkTimer(int);
 static char clientId[] = WIFI_DEFAULT_MAC_CLIENTID;
 char deviceId[] = DEVICE_ID;
 
-static xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application controller to be used by run-time blocking threads */
-
-
+xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application controller to be used by run-time blocking threads */
 
 /* global variables ********************************************************* */
 APP_STATUS app_status;
