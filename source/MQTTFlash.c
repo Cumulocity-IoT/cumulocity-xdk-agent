@@ -92,7 +92,7 @@ APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* bootstatus) {
 		}
 
 	}
-	LOG_AT_ERROR(("MQTTFlash: Read using FAT file system failed!\r\n"));
+	LOG_AT_ERROR(("MQTTFlash: Read using flash file system failed!\r\n"));
 	Retcode_RaiseError(retcode);
 	return APP_RESULT_FILE_MISSING;
 }
