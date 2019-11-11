@@ -249,12 +249,20 @@ The rule "On measurement explicit threshold create alarm" is using the measureme
 For TLS the certificate of the CA has to be flashed to the XDK.  
 This certificate in included in the header file source\ServerCA.h in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com.  
 If your CA is different this needs to be changed.
+
+## Rotation widget
+
+Using the Cumulocity custom widget published on the github: https://github.com/SoftwareAG/cumulocity-collada-3d-widget you can view the rotation of the XDK
+![Rotation Widget](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/feature_orientation/resources/XDK_collada.png)  
+
+After installation of the collada widget you will need to upload the 3D model of the XDk. This is available `resources/XDK.dae`. The following screenshots shows the required configuration:
+![Configuration_Rotation Widget](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/feature_orientation/resources/XDK_collada_config.png)  
+
 ______________________
 These tools are provided as-is and without warranty or support. They do not constitute part of the Software AG product suite. Users are free to use, fork and modify them, subject to the license agreement. While Software AG welcomes contributions, we cannot guarantee to include every contribution in the master project.	
 ______________________
 For more information you can Ask a Question in the [TECHcommunity Forums](http://tech.forums.softwareag.com/techjforum/forums/list.page?product=cumulocity).
 
 You can find additional information in the [Software AG TECHcommunity](http://techcommunity.softwareag.com/home/-/product/name/cumulocity).
-
 _________________
 Contact us at [TECHcommunity](mailto:technologycommunity@softwareag.com?subject=Github/SoftwareAG) if you have any questions.
