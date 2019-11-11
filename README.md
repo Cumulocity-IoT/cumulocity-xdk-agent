@@ -73,6 +73,12 @@ The following commands are supported:
 	* `stop`
 	* `start`
 
+### Events
+You can view the last events transmitted form the XDK by accessing the app `Device management` and follow: Device Management>Devices>All Devices. Then choose your XDK and select the `Events` template  
+You can see events like::
+1. XDK started!
+2. Publish stopped!
+3. Publish stated!
 	
 ### Buttons
 The buttons have following on the XDK have the following functions:
