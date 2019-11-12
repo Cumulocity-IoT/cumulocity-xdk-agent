@@ -138,25 +138,6 @@ INFO | XDK DEVICE 1:         11 [SSL:1] Sec_receiveCB: HORRIBLE Buffer full stat
 Increase MBEDTLS_SSL_MAX_CONTENT_LEN macro value from 4850 to 5950 in Common/config/MbedTLS/ MbedtlsConfigTLS.h in line 2921.
 The macro MBEDTLS_SSL_MAX_CONTENT_LEN determines the size of both the incoming and outgoing TLS I/O buffer used by MbedTLS library.
 
-> NOTE: You have to increase the heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h`.
-
-In order to avoid a heap issue, as seen in the following error message:
-
-```
-INFO | XDK DEVICE 2: MQTTOperation_Init: Reading boot status: [0]
-INFO | XDK DEVICE 2: SntpSentCallback : Success
-INFO | XDK DEVICE 2: SntpTimeCallback : received
-INFO | XDK DEVICE 2: ----- HEAP ISSUE ----
-INFO | XDK DEVICE 2: MQTT_ConnectToBroker_Z: Failed since Connect event was not received 
-INFO | XDK DEVICE 2: MQTTOperation: MQTT connection to the broker failed  [0] time, try again ... 
-```
-
-Increase heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h`:
-
-```
-#define configTOTAL_HEAP_SIZE                     (( size_t )(72 * 1024 )) # old value is (( size_t )(70 * 1024 ))
-```
-
 
 ## 4. Prepare project 
 
@@ -227,6 +208,25 @@ Connection to port 'COM9' established
 ```
 If this doesn't help pls. flash a standard click app to the device, e.g `LedsandButtons`. If this works try to flash the device agent again.
 
+### Log in XDK Workbench shows `----- HEAP ISSUE ----`
+When you see an exception as below, then you should increase the heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h`.
+
+```
+INFO | XDK DEVICE 2: MQTTOperation_Init: Reading boot status: [0]
+INFO | XDK DEVICE 2: SntpSentCallback : Success
+INFO | XDK DEVICE 2: SntpTimeCallback : received
+INFO | XDK DEVICE 2: ----- HEAP ISSUE ----
+INFO | XDK DEVICE 2: MQTT_ConnectToBroker_Z: Failed since Connect event was not received 
+INFO | XDK DEVICE 2: MQTTOperation: MQTT connection to the broker failed  [0] time, try again ... 
+```
+
+Increase heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h` by changing the following value:
+
+```
+#define configTOTAL_HEAP_SIZE                     (( size_t )(72 * 1024 )) # old value is (( size_t )(70 * 1024 ))
+```
+
+
 ### Config file cannot be pared
 Please verify if you used Linux line endings `\n`  
 
@@ -244,9 +244,9 @@ Dashboard from above is build using the following standard Cumulocity widgets:
 The rule "On measurement explicit threshold create alarm" is using the measurement `c8y_Light` with min 50000 and max 100000
 4. Data point widget with data points `c8y_acceleration=>accelerationX`, `c8y_acceleration=>accelerationY` and `c8y_acceleration=>accelerationZ`
 
-## TLS Certificate
+## Define Root Certificate for TLS
 
-For TLS the certificate of the CA has to be flashed to the XDK.  
+For TLS the root certificate of the CA has to be flashed to the XDK.  
 This certificate in included in the header file source\ServerCA.h in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com.  
 If your CA is different this needs to be changed.
 
