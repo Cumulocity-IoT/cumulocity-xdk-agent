@@ -34,7 +34,8 @@ The XDK agents supports device registration as described in the Cumulocity docum
 After successful registration - vales for `MQTTUSER`, `MQTTPASSWORD` are received and saved in `config.txt` - the XDK restarts automatically.
 After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect to Cumulocity and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
 
-Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell .
+Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell .  
+[back to content](#content)
 
 ## Register XDK in C8Y tenant
 
@@ -98,7 +99,9 @@ NOTE: connect your XDK using USB cable to get debug messages.
 
 1. Delete entries MQTTUSER und MQTTPASSWORD from the file `config.txt` stored on the SD card
 2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
-3. Restart XDK and register XDKs again as before
+3. Restart XDK and register XDKs again as before  
+
+[back to content](#content)
 
 ## Operate XDK
 This section contains all information that is relevant once the XDK is registered in Cumulocity
@@ -180,11 +183,15 @@ In addition to the above listed measurements the battery staus is send ervery mi
 | Off      | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
 | Off      | Off      | On       | Registration             | Running - Registration successful   |                                  |
 
+[back to content](#content)
+
 ## Define Root Certificate for TLS
 
 For TLS the root certificate of the CA has to be flashed to the XDK.  
 This certificate in included in the header file source\ServerCA.h in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com.  
-If your CA is different this needs to be changed.
+If your CA is different this needs to be changed.  
+
+[back to content](#content)
 
 ## Troubleshooting
 
@@ -249,7 +256,9 @@ Increase heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConf
 ```
 
 ### Config file cannot be pared
-Please verify if you used Linux line endings `\n`  
+Please verify if you used Linux line endings `\n` 
+
+[back to content](#content)
 
 ## Sample dashboards
 
@@ -273,8 +282,9 @@ Using the Cumulocity custom widget published on the github: https://github.com/S
 ![Rotation Widget](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/feature_orientation/resources/XDK_collada.png)  
 
 After installation of the collada widget you will need to upload the 3D model of the XDk. This is available `resources/XDK.dae`. The following screenshots shows the required configuration:
-![Configuration_Rotation Widget](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/feature_orientation/resources/XDK_collada_config.png)  
+![Configuration_Rotation Widget](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/feature_orientation/resources/XDK_collada_config.png) 
 
+[back to content](#content)
 ______________________
 These tools are provided as-is and without warranty or support. They do not constitute part of the Software AG product suite. Users are free to use, fork and modify them, subject to the license agreement. While Software AG welcomes contributions, we cannot guarantee to include every contribution in the master project.	
 ______________________
