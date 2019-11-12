@@ -10,8 +10,10 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 - Control & monitor lighting in building -> digital light sensor
 - Control & monitor machine -> acceleration sensor
 
+# Content
+1. [Overview](#overview-of-features-XDK-device-agent)
 
-## Overview of features XDK device agent
+# Overview of features XDK device agent
 
 The agent runs in either of two modes: REGISTRATION or OPERATION mode.
 When the device agent starts the first time it is in REGISTRATION mode (this mode is recognized when no `MQTTUSER`, `MQTTPASSWORD` is defined in `config.txt`).
