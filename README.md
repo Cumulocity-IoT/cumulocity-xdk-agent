@@ -12,14 +12,17 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 
 # Content
 1. [Overview](#overview-of-features-XDK-device-agent)
-2. [Register XDK in Cumulocity](#Steps-to-register-XDK-in-C8Y-tenant)
-3. Operate XDK
-3.1 [Execute operations on device](#execute-operations-on-device)
-3.2 [View events sent from device](#view-events-sent-from-device)
-3.3 [Detailed configuration](#detailed-configuration)
-3.4 [Buttons](#buttons)
-3.5 [Status indicated by LEDs](#status-indicated-by-leds)
+2. [Register XDK in Cumulocity](#steps-to-register-xdk-in-c8y-tenant)
+3. Operate XDK  
+3.1 [Execute operations on device](#execute-operations-on-device)  
+3.2 [View events sent from device](#view-events-sent-from-device)  
+3.3 [Detailed configuration](#detailed-configuration)  
+3.4 [Buttons](#buttons)  
+3.5 [Status indicated by LEDs](#status-indicated-by-leds)  
+3.6 [Define Root Certificate for TLS](#define-root-certificate-for-tls)  
 4. [Troubleshooting](#troubleshooting)
+5. [Sample dashboards](#sample-dashboards)
+
 
 ## Overview of features XDK device agent
 
@@ -39,21 +42,22 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 2. Register XDK in Cumulocity & Upload SMART Rest Template
 3. Install XDK Workbench: https://xdk.bosch-connectivity.com/de/software-downloads
 4. Prepare project 
-5. Flash your C8Y Device Agent on your XDK		
+5. Flash your C8Y Device Agent on your XDK
+6. Procedure when re-registering device in Cumulocity tenant
 		
-## 1. Prepare SD card
+### 1. Prepare SD card
 > NOTE: Make sure your SD card is smaller 32GB, otherwise it can't be formatted in the FAT filesystem format		
 1. Format SD in FAT format
 2. Adapt settings in `config.txt` and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
 
-## 2. Register XDK in Cumulocity & upload SMART Rest Template
+### 2. Register XDK in Cumulocity & upload SMART Rest Template
 
 1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant. Pls. see https://www.cumulocity.com/guides/users-guide/device-management.
 2. The agent uses the MAC of the WLAN chip. Pls. check on sticker on the bottom side of your XDK under `WLAN: 7C_7C_7C_7C_7C_7C` , e.g. `XDK_7C_7C_7C_7C_7C_7C`
 > NOTE: prepend `XDK_` before WLAN MAC adress
 3. Upload SMART Rest Template "XDK_Template_Collection.json" from folder resources/XDK_Template_Collection.json to your C8Y tenant. Pls see https://www.cumulocity.com/guides/users-guide/device-management for required steps
 
-## 3. Install XDK Workbench 
+### 3. Install XDK Workbench 
 
 Install  XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
 > NOTE: Installation path must not contains blanks 
@@ -71,7 +75,7 @@ Increase MBEDTLS_SSL_MAX_CONTENT_LEN macro value from 4850 to 5950 in Common/con
 The macro MBEDTLS_SSL_MAX_CONTENT_LEN determines the size of both the incoming and outgoing TLS I/O buffer used by MbedTLS library.
 
 
-## 4. Prepare project 
+### 4. Prepare project 
 
 1. Clone git repository
 ```
@@ -81,7 +85,7 @@ git clone https://github.com/SoftwareAG/cumulocity-xdk-agent.git
 3. In XDK Workbench: project clean and project build
 4. Connect XDK over USB cable
 
-## 5. Flash your C8Y Device Agent to your XDK
+### 5. Flash your C8Y Device Agent to your XDK
 
 NOTE: connect your XDK using USB cable to get debug messages.
  
@@ -90,7 +94,7 @@ NOTE: connect your XDK using USB cable to get debug messages.
 3. After accepting the registration in C8Y the XDK agent receives device credentials and stores these on the SD card.
 4. The XDK restarts and runs now in "Operation Mode". After this you should see measurements in C8Y.
 
-## Procedure when re-registering device in Cumulocity tenant
+### 6. Procedure when re-registering device in Cumulocity tenant
 
 1. Delete entries MQTTUSER und MQTTPASSWORD from the file `config.txt` stored on the SD card
 2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
@@ -173,6 +177,11 @@ In addition to the above listed measurements the battery staus is send ervery mi
 | Off      | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
 | Off      | Off      | On       | Registration             | Running - Registration successful   |                                  |
 
+## Define Root Certificate for TLS
+
+For TLS the root certificate of the CA has to be flashed to the XDK.  
+This certificate in included in the header file source\ServerCA.h in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com.  
+If your CA is different this needs to be changed.
 
 ## Troubleshooting
 
@@ -236,11 +245,12 @@ Increase heap size in `xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConf
 #define configTOTAL_HEAP_SIZE                     (( size_t )(72 * 1024 )) # old value is (( size_t )(70 * 1024 ))
 ```
 
-
 ### Config file cannot be pared
 Please verify if you used Linux line endings `\n`  
 
-## Sample dashboard
+## Sample dashboards
+
+### Dashboard with SCADA widget
 
 A sample dashboard can be build using the resources/Container_V01.svg.   
 Please see: https://www.cumulocity.com/guides/users-guide/optional-services/ for a documentation on how to use the svg in a SCADA widget.
@@ -254,13 +264,7 @@ Dashboard from above is build using the following standard Cumulocity widgets:
 The rule "On measurement explicit threshold create alarm" is using the measurement `c8y_Light` with min 50000 and max 100000
 4. Data point widget with data points `c8y_acceleration=>accelerationX`, `c8y_acceleration=>accelerationY` and `c8y_acceleration=>accelerationZ`
 
-## Define Root Certificate for TLS
-
-For TLS the root certificate of the CA has to be flashed to the XDK.  
-This certificate in included in the header file source\ServerCA.h in PEM format. The currently included certificate from "Go Daddy Class 2 Certification Authority" is used for tenants *.cumulcity.com.  
-If your CA is different this needs to be changed.
-
-## Rotation widget
+### Rotation widget
 
 Using the Cumulocity custom widget published on the github: https://github.com/SoftwareAG/cumulocity-collada-3d-widget you can view the rotation of the XDK
 ![Rotation Widget](https://github.com/SoftwareAG/cumulocity-xdk-agent/blob/feature_orientation/resources/XDK_collada.png)  
