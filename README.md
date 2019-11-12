@@ -12,8 +12,8 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 
 # Content
 1. [Overview](#overview-of-features-XDK-device-agent)
-2. [Register XDK in Cumulocity](#steps-to-register-xdk-in-c8y-tenant)
-3. Operate XDK  
+2. [Register XDK in Cumulocity](#register-xdk-in-c8y-tenant)
+3. [Operate XDK](#operate-xdk)  
 3.1 [Execute operations on device](#execute-operations-on-device)  
 3.2 [View events sent from device](#view-events-sent-from-device)  
 3.3 [Detailed configuration](#detailed-configuration)  
@@ -36,7 +36,7 @@ After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect
 
 Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell .
 
-## Steps to register XDK in C8Y tenant
+## Register XDK in C8Y tenant
 
 1. Prepare SD card
 2. Register XDK in Cumulocity & Upload SMART Rest Template
@@ -99,6 +99,9 @@ NOTE: connect your XDK using USB cable to get debug messages.
 1. Delete entries MQTTUSER und MQTTPASSWORD from the file `config.txt` stored on the SD card
 2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
 3. Restart XDK and register XDKs again as before
+
+## Operate XDK
+This section contains all information that is relevant once the XDK is registered in Cumulocity
 
 ### Execute operations on device
 The XDK can receive operations and messages initiated in your C8Y tenant. Operations to the XDK can either be issued by using:
