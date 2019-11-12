@@ -12,6 +12,14 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 
 # Content
 1. [Overview](#overview-of-features-XDK-device-agent)
+2. [Register XDK in Cumulocity](#Steps-to-register-XDK-in-C8Y-tenant)
+3. Operate XDK
+3.1 [Execute operations on device](#execute-operations-on-device)
+3.2 [View events sent from device](#view-events-sent-from-device)
+3.3 [Detailed configuration](#detailed-configuration)
+3.4 [Buttons](#buttons)
+3.5 [Status indicated by LEDs](#status-indicated-by-leds)
+4. [Troubleshooting](#troubleshooting)
 
 ## Overview of features XDK device agent
 
@@ -25,85 +33,7 @@ After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect
 
 Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell .
 
-### Configuration
-
-The C8Y Agent for XDK sends the following sensor measurements to C8Y:
-* `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit g
-* `GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `MAGENATBLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit temp C, pressure hPa
-* `LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit Lux
-* `NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false` #
-
-with the defined streamrate:
-* `STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000`
-
-Measurements types can be switched on/off in `config.txt` by setting the value to `TRUE`, `FALSE`. 
-> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise the config file cannot be parsed correctly.  
-> NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required.  
-
-The configuration for the XDK uses two sources:
-* file `config.txt` on the SDCard
-* file `config.txt`on the filesystem of the WIFI chip  
-
-When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the`MQTTUSER`, `MQTTPASSWORD` are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
-Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SD and thus overwrite settings stored on the file system of the WIFI chip.
-The values defined in the config on the SDCard always take precedence.  
-
-> NOTE: When setting up a hot spot for the WIFI connection, mak esure you use a network band of 2.4GHz, the XDK only supports this band.
-
-In addition to the above listed measurements the battery staus is send ervery minute.
-
-### Operations
-The XDK can receive operations and messages initiated in your C8Y tenant. Operations to the XDK can either be issued by using:
-1. shell: see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell.
-2. message widget: see https://www.cumulocity.com/guides/users-guide/cockpit/#widgets.
-3. drop-down menue in app Devicemanagment: from the Cumulocity app `cockpit` and execute "Restart device" from dropdown-menue "More"
-
-The following commands are supported:
-* change streaming rate at which XDK publishes measurements, issued by shell (option 1.): 
-	* `speed 1000`: to publish measurements every 1000 m, changing the speed is written to the config file on the WIFI chip
-* toggle yellow light on/off, initiated by command from shell (option 1.):
-	* `toggle`
-* enable/disable sensor, initiated by command from shell (option 1.):
-	* `sensor NOISEENABELED TRUE` or `sensor NOISEENABELED TRUE`: to enable/disable the noise sensor. To tkae effect an restart is required. Enabling/disabling the sensor is written to the config file on the WIFI chip
-* restart XDK from C8Y, issued by option in drop-down menue (option 3.):
-	* select XD: device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"	
-* toggle yellow light on/off, initiated from message (any text) widget (option 2.):
-	* add "Message Widget" to dashboard, use your connected XDK device as destination and send any text to this XDK  
-* stop/start publishing measurements:
-	* `stop`
-	* `start`
-
-### Events
-You can view the last events transmitted form the XDK by accessing the app `Device management` and follow: Device Management>Devices>All Devices. Then choose your XDK and select the `Events` template  
-You can see events like::
-1. XDK started!
-2. Publish stopped!
-3. Publish stated!
-	
-### Buttons
-The buttons have following on the XDK have the following functions:
-
-* Button one dot: stop/start sending measurements to Cumulocity
-* Button two dots: 
-	* if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
-	* if pressed shortly prints the configuration currently stored in the `config.txt` file on the filesystem of the WIFI chip
-	* if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
-
-### Status indicated by LEDs
-| Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
-| :------: | :------: | :------: |------------------------- |------------------------------------ |--------------------------------- |
-| Blinking | Off      | Off      | Operation & Registration | Starting                            |                                  |
-| On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access, SNTP server not reachable |
-| Off      | Blinking | Off      | Operation                | Running - Publishing                |                                  |
-| Off      | On	      | Off      | Operation                | Running - Publishing stopped        |                                  |
-| Blinking | Blinking | Off      | Operation                | Restarting                          |                                  |   
-| Off      | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
-| Off      | Off      | On       | Registration             | Running - Registration successful   |                                  |
-
-		
-## Steps required to register and operate XDK device in C8Y tenant
+## Steps to register XDK in C8Y tenant
 
 1. Prepare SD card
 2. Register XDK in Cumulocity & Upload SMART Rest Template
@@ -165,6 +95,84 @@ NOTE: connect your XDK using USB cable to get debug messages.
 1. Delete entries MQTTUSER und MQTTPASSWORD from the file `config.txt` stored on the SD card
 2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
 3. Restart XDK and register XDKs again as before
+
+### Execute operations on device
+The XDK can receive operations and messages initiated in your C8Y tenant. Operations to the XDK can either be issued by using:
+1. shell: see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell.
+2. message widget: see https://www.cumulocity.com/guides/users-guide/cockpit/#widgets.
+3. drop-down menue in app Devicemanagment: from the Cumulocity app `cockpit` and execute "Restart device" from dropdown-menue "More"
+
+The following commands are supported:
+* change streaming rate at which XDK publishes measurements, issued by shell (option 1.): 
+	* `speed 1000`: to publish measurements every 1000 m, changing the speed is written to the config file on the WIFI chip
+* toggle yellow light on/off, initiated by command from shell (option 1.):
+	* `toggle`
+* enable/disable sensor, initiated by command from shell (option 1.):
+	* `sensor NOISEENABELED TRUE` or `sensor NOISEENABELED TRUE`: to enable/disable the noise sensor. To tkae effect an restart is required. Enabling/disabling the sensor is written to the config file on the WIFI chip
+* restart XDK from C8Y, issued by option in drop-down menue (option 3.):
+	* select XD: device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"	
+* toggle yellow light on/off, initiated from message (any text) widget (option 2.):
+	* add "Message Widget" to dashboard, use your connected XDK device as destination and send any text to this XDK  
+* stop/start publishing measurements:
+	* `stop`
+	* `start`
+
+### View events send from device
+You can view the last events transmitted form the XDK by accessing the app `Device management` and follow: Device Management>Devices>All Devices. Then choose your XDK and select the `Events` template  
+You can see events like::
+1. XDK started!
+2. Publish stopped!
+3. Publish stated!
+	
+### Buttons
+The buttons have following on the XDK have the following functions:
+
+* Button one dot: stop/start sending measurements to Cumulocity
+* Button two dots: 
+	* if pressed for longer than 3 seconds resets boot status stored on device flash to "NOT_IN_BOOT_PROCESS"
+	* if pressed shortly prints the configuration currently stored in the `config.txt` file on the filesystem of the WIFI chip
+	* if pressed during the startup process of the XDK the configuration stored on the WIFI chip is deleted
+
+### Detailed configuration
+
+The C8Y Agent for XDK sends the following sensor measurements to C8Y:
+* `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit g
+* `GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `MAGENATBLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit temp C, pressure hPa
+* `LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit Lux
+* `NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false` #
+
+with the defined streamrate:
+* `STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000`
+
+Measurements types can be switched on/off in `config.txt` by setting the value to `TRUE`, `FALSE`. 
+> NOTE: Make sure you use Unix line endings instead of Windows line endings. Otherwise the config file cannot be parsed correctly.  
+> NOTE: Don't use blanks anywhere in the file. After the last config line a newline is required.  
+
+The configuration for the XDK uses two sources:
+* file `config.txt` on the SDCard
+* file `config.txt`on the filesystem of the WIFI chip  
+
+When registering the XDK a config on an SD card has to be inserted in the XDK. Upon sucessful registration, i.e. device receives credentials from Cumulocity, the config value including the`MQTTUSER`, `MQTTPASSWORD` are written to the config file on WIFI. From then on the XDK can operate without an SDCard.  
+Nevertheless in certain situations it is helpful to only change the WIFI settings and keep all the other settings. Then one can set values for `WIFISSID`,`WIFIPASSWORD` in the `config.txt` on SD and thus overwrite settings stored on the file system of the WIFI chip.
+The values defined in the config on the SDCard always take precedence.  
+
+> NOTE: When setting up a hot spot for the WIFI connection, mak esure you use a network band of 2.4GHz, the XDK only supports this band.
+
+In addition to the above listed measurements the battery staus is send ervery minute.
+
+### Status indicated by LEDs
+| Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
+| :------: | :------: | :------: |------------------------- |------------------------------------ |--------------------------------- |
+| Blinking | Off      | Off      | Operation & Registration | Starting                            |                                  |
+| On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access, SNTP server not reachable |
+| Off      | Blinking | Off      | Operation                | Running - Publishing                |                                  |
+| Off      | On	      | Off      | Operation                | Running - Publishing stopped        |                                  |
+| Blinking | Blinking | Off      | Operation                | Restarting                          |                                  |   
+| Off      | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
+| Off      | Off      | On       | Registration             | Running - Registration successful   |                                  |
+
 
 ## Troubleshooting
 
