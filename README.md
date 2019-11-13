@@ -1,11 +1,10 @@
 # Cumulocity agent for Bosch XDK rapid prototype device
 
-This project is a device agent to connect the [Bosch XDK](https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit) to Cumulocity (C8Y Agent for XDK).
+This project is a device agent to connect the [Bosch XDK](https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit) to Cumulocity (C8Y Agent for XDK). The XDK is a quick and professional prototyping platform for prototyping IoT use cases.
 
 For this demo a Cumulocity tenant and an XDK device is required. For a free trial tenant you can register [here](https://www.softwareag.cloud/site/product/cumulocity-iot.html#/).
-The XDK is a quick and professional prototyping platform for prototyping IoT use cases.
 
-When the XDK is registered to the Cumulocity tenant environmental sensor readings are sent to the Cumulocity IoT cloud. Potential use cases are:
+When the XDK is registered in a Cumulocity tenant the environmental sensor readings measured by the XDK are sent to the Cumulocity IoT cloud. Potential use cases are:
 - Control & monitor heating -> temperature sensor, acoustic sensor
 - Control & monitor lighting in building -> digital light sensor
 - Control & monitor machine -> acceleration sensor
@@ -26,9 +25,9 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 
 ## Overview of features XDK device agent
 
-The device agent allows to send measurements from the XDK to yout Cumulocity tenant. These measurements can be visualised in dashboards.
-The device managment app in Cumulocity supports to send operation commands to the XDK: change configuration of sensors, stop/start publishing measurements and restarting the device.  
-The device agent sends its current configuration to the tenant. So in the devicemanagment app you can view always the currently active configuration.
+The device agent allows to send measurements from the XDK to your Cumulocity tenant. These measurements can be visualised in dashboards.
+In the downstream direction  operation commands can be sent to the XDK using the device managment app in Cumulocity: change configuration of sensors, stop/start publishing measurements and restarting the device.  
+To get an idea of the currently active configuration the device agent sends its current configuration to the tenant. So in the devicemanagment app you can view always the currently active configuration.
 
 But before running the XDK in OPERATION mode you have to register the device in your Cumulocity tenant. Initially the XDK is in REGISTRATION mode. The registration is achieved automatically through the bootstrap meachnism. This is described in further detail [here](https://cumulocity.com/guides/rest/device-integration/).  
 
