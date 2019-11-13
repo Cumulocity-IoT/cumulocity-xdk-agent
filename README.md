@@ -1,12 +1,12 @@
 # Cumulocity agent for Bosch XDK rapid prototype device
 
-This project is a device agent to connect the Bosch XDK https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit/ to Cumulocity (C8Y Agent for XDK).
+This project is a device agent to connect the [Bosch XDK](https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit) to Cumulocity (C8Y Agent for XDK).
 
-For this demo a Cumulocity tenant: https://cumulocity.com/try-for-free/ and an XDK device is required.  
+For this demo a Cumulocity tenant and an XDK device is required. For a free trial tenant you can register [here](https://www.softwareag.cloud/site/product/cumulocity-iot.html#/).
 The XDK is a quick and professional prototyping platform for prototyping IoT use cases.
 
 When the XDK is registered to the Cumulocity tenant environmental sensor readings are sent to the Cumulocity IoT cloud. Potential use cases are:
-- Control & monitor heating -> tempmerature sensor, acoustic sensor
+- Control & monitor heating -> temperature sensor, acoustic sensor
 - Control & monitor lighting in building -> digital light sensor
 - Control & monitor machine -> acceleration sensor
 
@@ -26,15 +26,15 @@ When the XDK is registered to the Cumulocity tenant environmental sensor reading
 
 ## Overview of features XDK device agent
 
-The agent runs in either of two modes: REGISTRATION or OPERATION mode.
-When the device agent starts the first time it is in REGISTRATION mode (this mode is recognized when no `MQTTUSER`, `MQTTPASSWORD` is defined in `config.txt`).
+The device agent allows to send measurements from the XDK to yout Cumulocity tenant. These measurements can be visualised in dashboards.
+The device managment app in Cumulocity supports to send operation commands to the XDK: change configuration of sensors, stop/start publishing measurements and restarting the device.  
+The device agent sends its current configuration to the tenant. So in the devicemanagment app you can view always the currently active configuration.
 
-The XDK agents supports device registration as described in the Cumulocity documentation: https://cumulocity.com/guides/rest/device-integration/
+But before running the XDK in OPERATION mode you have to register the device in your Cumulocity tenant. Initially the XDK is in REGISTRATION mode. The registration is achieved automatically through the bootstrap meachnism. This is described in further detail [here](https://cumulocity.com/guides/rest/device-integration/).  
 
-After successful registration - vales for `MQTTUSER`, `MQTTPASSWORD` are received and saved in `config.txt` - the XDK restarts automatically.
-After restarting the agent uses values for `MQTTUSER`, `MQTTPASSWORD` to connect to Cumulocity and runs in OPERATION mode. In this mode configured sensor measurements are sent to C8Y.
-
+After successful registration - device credentials are received by the XDK - the XDK restarts automatically.
 Commands can be send from the Cumulocity App Devicemanagement to change the sensor speed, toogle an LED or switch on/off sensors, see documentation https://www.cumulocity.com/guides/users-guide/device-management/#shell .  
+
 [back to content](#content)
 
 ## Register XDK in C8Y tenant
@@ -47,23 +47,23 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 6. Procedure when re-registering device in Cumulocity tenant
 		
 ### 1. Prepare SD card
-> NOTE: Make sure your SD card is smaller 32GB, otherwise it can't be formatted in the FAT filesystem format		
+> NOTE: Make sure your SD card is smaller than 32GB, otherwise it can't be formatted in the FAT filesystem format		
 1. Format SD in FAT format
-2. Adapt settings in `config.txt` and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources"
+2. Adapt settings in `config.txt` and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources". Ideally you only need to change `WIFISSID` and `WIFIPASSWORD`.
 
 ### 2. Register XDK in Cumulocity & upload SMART Rest Template
 
-1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant. Pls. see https://www.cumulocity.com/guides/users-guide/device-management.
-2. The agent uses the MAC of the WLAN chip. Pls. check on sticker on the bottom side of your XDK under `WLAN: 7C_7C_7C_7C_7C_7C` , e.g. `XDK_7C_7C_7C_7C_7C_7C`
+1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant, please see [here](https://www.cumulocity.com/guides/users-guide/device-management for a detailed description. For this resgitration you need the external device ID. This is decribed in the next step.
+2. The agent uses the MAC of the WLAN chip as an external device ID. You have to check the sticker on the bottom side of your XDK under `WLAN: 7C_7C_7C_7C_7C_7C` , e.g. `XDK_7C_7C_7C_7C_7C_7C`
 > NOTE: prepend `XDK_` before WLAN MAC adress
 3. Upload SMART Rest Template "XDK_Template_Collection.json" from folder resources/XDK_Template_Collection.json to your C8Y tenant. Pls see https://www.cumulocity.com/guides/users-guide/device-management for required steps
 
 ### 3. Install XDK Workbench 
 
-Install  XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
-> NOTE: Installation path must not contains blanks 
+Install the XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
+> NOTE: The installation path must not contains blanks. 
 
-> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificate being used for Cumulocity.
+> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificate being used for Cumulocity. Therefore the buffer has to be increased.
 
 In order to avoid a buffer overflow, as seen in the following error message:
 
@@ -99,7 +99,8 @@ NOTE: connect your XDK using USB cable to get debug messages.
 
 1. Delete entries MQTTUSER und MQTTPASSWORD from the file `config.txt` stored on the SD card
 2. Delete XDK from Cumulocity Tenant. Navigate to the device in the Cockpit and delete device
-3. Restart XDK and register XDKs again as before  
+3. Restart XDK and keep the button with 2 dots pressed for deleting the configuration on the WIFI flash, see as well handing of [buttons](#buttons).
+4. Register XDK again as before.
 
 [back to content](#content)
 
@@ -127,7 +128,7 @@ The following commands are supported:
 	* `stop`
 	* `start`
 
-### View events send from device
+### View events sent from device
 You can view the last events transmitted form the XDK by accessing the app `Device management` and follow: Device Management>Devices>All Devices. Then choose your XDK and select the `Events` template  
 You can see events like::
 1. XDK started!
