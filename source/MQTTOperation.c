@@ -524,7 +524,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
 		LOG_AT_DEBUG(("MQTTOperation_Init: Confirm successful reboot\r\n"));
 		rebootProgress = DEVICE_OPERATION_SUCCESSFUL;
-		MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
+		//MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
 	}
 
 	if (MqttSetupInfo.IsSecure == true) {
@@ -656,7 +656,6 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	// counter to send every 60 seconds a keep alive msg.
 	static uint32_t keepAlive = 0;
 	static uint32_t mvoltage = 0, battery = 0;
-    Retcode_T returnCode = RETCODE_FAILURE;
 
 	LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
 
@@ -750,6 +749,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"503,c8y_Restart\r\n");
+				MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
 				break;
 			}
 
