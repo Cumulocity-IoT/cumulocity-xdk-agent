@@ -94,7 +94,7 @@
 #define CFG_FORCE_MOUNT                 UINT8_C(1)      /**< Macro to define force mount */
 #define CFG_SEEK_FIRST_LOCATION         UINT8_C(0)      /**< File seek to the first location */
 #define CFG_MAX_LINE_SIZE               UINT8_C(65)
-#define ATT_IDX_SIZE					UINT8_C(17)
+#define ATT_IDX_SIZE					UINT8_C(20)
 
 #define CFG_NUMBER_UINT8_ZERO           UINT8_C(0)    /**< Zero value */
 
@@ -130,6 +130,9 @@ static ConfigLine_T ConfigStructure[ATT_IDX_SIZE] = {
 		{ A14Name, BOOL_TO_STR(DEFAULT_NOISEENABELED), CFG_FALSE, CFG_FALSE, AttValues[14]},
 		{ A15Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
 		{ A16Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
+		{ A17Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[17]},
+		{ A18Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[18]},
+		{ A19Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[19]},
 };
 
 
@@ -585,6 +588,31 @@ void MQTTCfgParser_FLWriteConfig(void) {
 	memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
 	MQTTFlash_FLWriteConfig(&localbuffer);
+}
+
+
+const char *MQTTCfgParser_GetFirmwareName(void) {
+	return getAttValue(ATT_IDX_FIRMWARENAME);
+}
+
+const char *MQTTCfgParser_GetFirmwareVersion(void) {
+	return getAttValue(ATT_IDX_FIRMWAREVERSION);
+}
+
+const char *MQTTCfgParser_GetFirmwareURL(void) {
+	return getAttValue(ATT_IDX_FIRMWAREURL);
+}
+
+void MQTTCfgParser_SetFirmwareName(char * name) {
+	setAttValue(ATT_IDX_FIRMWARENAME, name);
+}
+
+void MQTTCfgParser_SetFirmwareVersion(char * name) {
+	setAttValue(ATT_IDX_FIRMWAREVERSION, name);
+}
+
+void MQTTCfgParser_SetFirmwareURL(char * name) {
+	setAttValue(ATT_IDX_FIRMWAREURL, name);
 }
 
 /**

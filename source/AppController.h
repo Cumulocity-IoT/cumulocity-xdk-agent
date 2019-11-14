@@ -243,6 +243,7 @@ typedef enum {
 #define DEFAULT_MQTTANONYMOUS	   false
 #define DEFAULT_MQTTUSERNAME       "REGISTRATION"
 #define DEFAULT_MQTTPASSWORD	   "REGISTRATION"
+#define DEFAULT_FIRMWARE			"TBD"
 
 #define DEFAULT_STR_STREAMRATE           "5000"			   /**< Stream Data Rate in MS */
 #define DEFAULT_ACCELENABELED            true               /**< Accelerometer Data Enable */
@@ -256,11 +257,12 @@ typedef enum {
 
 
 /* Sensor type and macro definitions */
-#define SIZE_XXLARGE_BUF  512
-#define SIZE_XLARGE_BUF   300
+#define SIZE_XXLARGE_BUF  550
+#define SIZE_XLARGE_BUF   400
 #define SIZE_LARGE_BUF    256
 #define SIZE_SMALL_BUF    128
 #define SIZE_XSMALL_BUF    64
+#define SIZE_XXSMALL_BUF   32
 
 typedef struct {
 	uint32_t length;

@@ -113,6 +113,8 @@ const char * const commands[] = {
 		"c8y_Command",
 		"c8y_Command",
 		"c8y_Command",
+		"c8y_Firmware",
+		"c8y_Command",
 };
 
 /**
@@ -148,14 +150,14 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			strlen(TOPIC_DOWNSTREAM_STANDARD)) == 0)) {
 		// split payload into tokens
 		int token_pos = 0;
-		int command_pos = 0;
 		int sensor_index = 0;
 		int command_complete = 0;
+		char config_value[SIZE_XXSMALL_BUF] = {0};
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
-			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], command_pos: %i, token_pos: %i \r\n",
-					token, command_pos, token_pos));
+			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: %i \r\n",
+					token, token_pos));
 
 			switch (token_pos) {
 			case 0:
@@ -172,97 +174,113 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					MQTTOperation_StartRestartTimer(REBOOT_DELAY);
 					LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
 				} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
-					command_pos = 1;  // mark that we are in a command
 					if (commandProgress == DEVICE_OPERATION_WAITING) {
 						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
 					}
 					command = CMD_COMMAND;
+				} else if (strcmp(token, TEMPLATE_STD_FIRMWARE) == 0) {
+					if (commandProgress == DEVICE_OPERATION_WAITING) {
+						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
+					}
+					command = CMD_FIRMWARE;
+				} else {
+					command = CMD_UNKNOWN;
 				}
 				break;
 			case 1:
 				//do nothing, ignore the device ID
 				break;
 			case 2:
-				if (strcmp(token, "speed") == 0 && command_pos == 1) {
-					command_pos = 2;  // prepare to read the speed
-					LOG_AT_TRACE(("MQTTOperation: Phase command speed: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
-					command = CMD_SPEED;
-				} else if (strcmp(token, "toggle") == 0 && command_pos == 1) {
-					BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-					command = CMD_TOGGLE;
-					command_complete = 1;
-					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
-					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					LOG_AT_DEBUG(("MQTTOperation: Phase command toggle: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
-				} else if (strcmp(token, "start") == 0 && command_pos == 1) {
-					MQTTOperation_StartTimer(null,0);
-					command = CMD_START;
-					command_complete = 1;
-					// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
-					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					LOG_AT_DEBUG(("MQTTOperation: Phase command start: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
-				} else if (strcmp(token, "stop") == 0 && command_pos == 1) {
-					MQTTOperation_StopTimer(null,0);
-					command = CMD_STOP;
-					command_complete = 1;
-					// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
-					commandProgress = DEVICE_OPERATION_IMMEDIATE;
-					LOG_AT_DEBUG(("MQTTOperation: Phase command stop: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
-				} else if (strcmp(token, "sensor") == 0 && command_pos == 1) {
-					command_pos = 2;  // prepare to read the speed
-					LOG_AT_DEBUG(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i \r\n", command_pos, token_pos));
-					command = CMD_SENSOR;
-				} else {
-					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-					LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
+				if (command == CMD_COMMAND) {
+					if (strcmp(token, "speed") == 0) {
+						LOG_AT_TRACE(("MQTTOperation: Phase command speed: token_pos: %i\r\n", token_pos));
+						command = CMD_SPEED;
+					} else if (strcmp(token, "toggle") == 0) {
+						BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+						command = CMD_TOGGLE;
+						command_complete = 1;
+						// skip phase BEFORE_EXECUTING, because LED is switched on immediately
+						commandProgress = DEVICE_OPERATION_IMMEDIATE;
+						LOG_AT_DEBUG(("MQTTOperation: Phase command toggle: token_pos: %i\r\n", token_pos));
+					} else if (strcmp(token, "start") == 0) {
+						MQTTOperation_StartTimer(null,0);
+						command = CMD_START;
+						command_complete = 1;
+						// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
+						commandProgress = DEVICE_OPERATION_IMMEDIATE;
+						LOG_AT_DEBUG(("MQTTOperation: Phase command start: token_pos: %i\r\n", token_pos));
+					} else if (strcmp(token, "stop") == 0) {
+						MQTTOperation_StopTimer(null,0);
+						command = CMD_STOP;
+						command_complete = 1;
+						// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
+						commandProgress = DEVICE_OPERATION_IMMEDIATE;
+						LOG_AT_DEBUG(("MQTTOperation: Phase command stop: token_pos: %i\r\n", token_pos));
+					} else if (strcmp(token, "sensor") == 0) {
+						LOG_AT_DEBUG(("MQTTOperation: Phase command sensor: token_pos: %i \r\n", token_pos));
+						command = CMD_SENSOR;
+					} else {
+						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+						LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
+					}
+				} else if (command == CMD_FIRMWARE){
+					LOG_AT_DEBUG(("MQTTOperation: Phase command firmware name: token_pos: %i\r\n", token_pos));
+					snprintf(config_value, SIZE_XXSMALL_BUF, token);
+					MQTTCfgParser_SetFirmwareName(config_value);
 				}
 				break;
 			case 3:
-				if (command_pos == 2) {
-					if (command == CMD_SPEED){
-						LOG_AT_TRACE(("MQTTOperation: Phase execute: command_pos %i token_pos: %i\r\n", command_pos,
-								token_pos));
-						int speed = strtol(token, (char **) NULL, 10);
-						speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
-						LOG_AT_DEBUG(("MQTTOperation: New speed: %i\r\n", speed));
-						tickRateMS = (int) pdMS_TO_TICKS(speed);
-						xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
-						MQTTCfgParser_SetStreamRate(speed);
-						MQTTCfgParser_FLWriteConfig();
-						configDirty = true;
-						command_complete = 1;
-					} else if (command == CMD_SENSOR) {
-						command_pos = 3; // prepare to read next paramaeter TRUE or FALSE
-						LOG_AT_DEBUG(("MQTTOperation: Phase command sensor: command_pos %i token_pos: %i\r\n", command_pos, token_pos));
-						if (strcmp(token, A14Name) == 0) {
-							sensor_index= ATT_IDX_NOISEENABLED;
-						} else if (strcmp(token, A13Name) == 0) {
-							sensor_index= ATT_IDX_LIGHTENABLED;
-						} else if (strcmp(token, A12Name) == 0) {
-							sensor_index= ATT_IDX_ENVENABLED;
-						} else if (strcmp(token, A11Name) == 0) {
-							sensor_index= ATT_IDX_MAGENABLED;
-						} else if (strcmp(token, A10Name) == 0) {
-							sensor_index= ATT_IDX_GYROENABLED;
-						} else if (strcmp(token, A09Name) == 0) {
-							sensor_index= ATT_IDX_ACCELENABLED;
-						} else {
-							commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-							LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
-						}
+				if (command == CMD_SPEED){
+					LOG_AT_TRACE(("MQTTOperation: Phase execute: token_pos: %i\r\n", token_pos));
+					int speed = strtol(token, (char **) NULL, 10);
+					speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
+					LOG_AT_DEBUG(("MQTTOperation: New speed: %i\r\n", speed));
+					tickRateMS = (int) pdMS_TO_TICKS(speed);
+					xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
+					MQTTCfgParser_SetStreamRate(speed);
+					MQTTCfgParser_FLWriteConfig();
+					configDirty = true;
+					command_complete = 1;
+				} else if (command == CMD_SENSOR) {
+					LOG_AT_DEBUG(("MQTTOperation: Phase command sensor: token_pos: %i\r\n", token_pos));
+					if (strcmp(token, A14Name) == 0) {
+						sensor_index= ATT_IDX_NOISEENABLED;
+					} else if (strcmp(token, A13Name) == 0) {
+						sensor_index= ATT_IDX_LIGHTENABLED;
+					} else if (strcmp(token, A12Name) == 0) {
+						sensor_index= ATT_IDX_ENVENABLED;
+					} else if (strcmp(token, A11Name) == 0) {
+						sensor_index= ATT_IDX_MAGENABLED;
+					} else if (strcmp(token, A10Name) == 0) {
+						sensor_index= ATT_IDX_GYROENABLED;
+					} else if (strcmp(token, A09Name) == 0) {
+						sensor_index= ATT_IDX_ACCELENABLED;
+					} else {
+						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+						LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
 					}
+				} else if (command == CMD_FIRMWARE) {
+					LOG_AT_DEBUG(("MQTTOperation: Phase command firmware version: token_pos: %i\r\n", token_pos));
+					memset(config_value, 0x00, sizeof (config_value));
+					snprintf(config_value, SIZE_XXSMALL_BUF, token);
+					MQTTCfgParser_SetFirmwareVersion(config_value);
 				}
 				break;
 			case 4:
-				if (command_pos == 3) {
-					if (command == CMD_SENSOR){
-						LOG_AT_TRACE(("MQTTOperation: Phase execute: command_pos %i token_pos: %i\r\n", command_pos,
-								token_pos));
-						MQTTCfgParser_SetSensor(token, sensor_index);
-						MQTTCfgParser_FLWriteConfig();
-						configDirty = true;
-						command_complete = 1;
-					}
+				if (command == CMD_SENSOR){
+					LOG_AT_TRACE(("MQTTOperation: Phase execute: token_pos: %i\r\n", token_pos));
+					MQTTCfgParser_SetSensor(token, sensor_index);
+					MQTTCfgParser_FLWriteConfig();
+					configDirty = true;
+					command_complete = 1;
+				} else if (command == CMD_FIRMWARE) {
+					LOG_AT_DEBUG(("MQTTOperation: Phase command firmware url: token_pos: %i\r\n", token_pos));
+					memset(config_value, 0x00, sizeof (config_value));
+					snprintf(config_value, SIZE_XXSMALL_BUF, token);
+					MQTTCfgParser_SetFirmwareURL(config_value);
+					MQTTCfgParser_FLWriteConfig();
+					configDirty = true;
+					command_complete = 1;
 				}
 				break;
 			default:
@@ -652,7 +670,10 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"114,c8y_Restart,c8y_Message,c8y_Command\r\n");
+					"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 					"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\r\n",
@@ -673,7 +694,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			Utils_GetXdkVersionString((uint8_t *) readbuffer);
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"115,XDK,%s\r\n", readbuffer);
+					"110,%s,XDK,%s\r\n", deviceId, readbuffer);
 		} else {
 			switch (commandProgress) {
 			case DEVICE_OPERATION_BEFORE_EXECUTING:
@@ -732,23 +753,35 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 				break;
 			}
 
-			switch (configDirty) {
-			case true:
-				configDirty = false;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\r\n",
-						A08Name, tickRateMS,
-						A09Name, MQTTCfgParser_IsAccelEnabled(),
-						A10Name, MQTTCfgParser_IsGyroEnabled(),
-						A11Name, MQTTCfgParser_IsMagnetEnabled(),
-						A12Name, MQTTCfgParser_IsEnvEnabled(),
-						A13Name, MQTTCfgParser_IsLightEnabled(),
-						A14Name, MQTTCfgParser_IsNoiseEnabled());
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
-				break;
+			if (configDirty) {
+				switch (command){
+				case CMD_FIRMWARE:
+						configDirty = false;
+						assetStreamBuffer.length += snprintf(
+								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+								"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
+						assetStreamBuffer.length += snprintf(
+								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+								"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
+						break;
+				default:
+						configDirty = false;
+						assetStreamBuffer.length += snprintf(
+								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+								"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\r\n",
+								A08Name, tickRateMS,
+								A09Name, MQTTCfgParser_IsAccelEnabled(),
+								A10Name, MQTTCfgParser_IsGyroEnabled(),
+								A11Name, MQTTCfgParser_IsMagnetEnabled(),
+								A12Name, MQTTCfgParser_IsEnvEnabled(),
+								A13Name, MQTTCfgParser_IsLightEnabled(),
+								A14Name, MQTTCfgParser_IsNoiseEnabled());
+						assetStreamBuffer.length += snprintf(
+								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+								"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
+						break;
+				}
+
 			}
 
 		}

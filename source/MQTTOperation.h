@@ -27,6 +27,7 @@
 #define TEMPLATE_STD_CREDENTIALS  	"70"
 #define TEMPLATE_STD_RESTART    	"510"
 #define TEMPLATE_STD_COMMAND    	"511"
+#define TEMPLATE_STD_FIRMWARE    	"515"
 
 
 //Cumulocity topics to send data
@@ -70,6 +71,8 @@ typedef enum
 	CMD_COMMAND=INT8_C(5),
 	CMD_START=INT8_C(6),
 	CMD_STOP=INT8_C(7),
+	CMD_FIRMWARE=INT8_C(8),
+	CMD_UNKNOWN=INT8_C(9),
 } C8Y_COMMAND;
 
 /* global variable declarations */

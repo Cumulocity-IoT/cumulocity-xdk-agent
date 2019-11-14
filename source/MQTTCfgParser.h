@@ -71,6 +71,9 @@ static const char A13Name[] = "LIGHTENABLED";
 static const char A14Name[] = "NOISEENABLED";
 static const char A15Name[] = "SNTPNAME";
 static const char A16Name[] = "SNTPPORT";
+static const char A17Name[] = "FIRMWARENAME";
+static const char A18Name[] = "FIRMWAREVERSION";
+static const char A19Name[] = "FIRMWAREURL";
 enum AttributesIndex_E
 {
     ATT_IDX_WIFISSID,
@@ -90,6 +93,9 @@ enum AttributesIndex_E
     ATT_IDX_NOISEENABLED,
 	ATT_IDX_SNTPNAME,
 	ATT_IDX_SNTPPORT,
+	ATT_IDX_FIRMWARENAME,
+	ATT_IDX_FIRMWAREVERSION,
+	ATT_IDX_FIRMWAREURL
 };
 
 typedef enum AttributesIndex_E AttributesIndex_T;
@@ -229,6 +235,18 @@ bool MQTTCfgParser_IsNoiseEnabled(void);
 void MQTTCfgParser_FLWriteConfig(void);
 
 const char *MQTTCfgParser_GetSntpName(void);
+
+void MQTTCfgParser_SetFirmwareName(char * name);
+
+void MQTTCfgParser_SetFirmwareVersion(char * name);
+
+void MQTTCfgParser_SetFirmwareURL(char * name);
+
+const char *MQTTCfgParser_GetFirmwareName(void);
+
+const char *MQTTCfgParser_GetFirmwareVersion(void);
+
+const char *MQTTCfgParser_GetFirmwareURL(void);
 
 int32_t MQTTCfgParser_GetSntpPort(void);
 
