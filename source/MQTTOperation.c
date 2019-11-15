@@ -362,43 +362,11 @@ static void MQTTOperation_ClientPublish(void) {
 
 		/* Check whether the WLAN network connection is available */
 		retcode = MQTTOperation_ValidateWLANConnectivity(false);
-		if  (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
-			AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
-			if (RETCODE_OK == retcode) {
-				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
-				if (pdPASS == semaphoreResult) {
-					measurementCounter++;
-					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s\r\n",
-								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
-					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
-					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
-					retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
-					memset(sensorStreamBuffer.data, 0x00,
-							sensorStreamBuffer.length);
-					sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
-				}
-				xSemaphoreGive(semaphoreSensorBuffer);
-
-				if (RETCODE_OK != retcode) {
-					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
-					retcode = MQTTOperation_ValidateWLANConnectivity(true);
-					Retcode_RaiseError(retcode);
-				}
-
-
-			} else {
-				// ignore previous measurements in order to prevent buffer overrun
-				memset(sensorStreamBuffer.data, 0x00,
-						sensorStreamBuffer.length);
-				sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
-			}
-		}
-
 		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
-					LOG_AT_INFO((	"MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
+					LOG_AT_INFO(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
 								assetStreamBuffer.length, assetStreamBuffer.data));
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
@@ -435,6 +403,40 @@ static void MQTTOperation_ClientPublish(void) {
 				}
 			}
 		}
+
+		if  (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
+			AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
+			if (RETCODE_OK == retcode) {
+				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
+				if (pdPASS == semaphoreResult) {
+					measurementCounter++;
+					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s\r\n",
+								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
+					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
+					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
+					retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
+					memset(sensorStreamBuffer.data, 0x00,
+							sensorStreamBuffer.length);
+					sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
+				}
+				xSemaphoreGive(semaphoreSensorBuffer);
+
+				if (RETCODE_OK != retcode) {
+					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
+					retcode = MQTTOperation_ValidateWLANConnectivity(true);
+					Retcode_RaiseError(retcode);
+				}
+
+
+			} else {
+				// ignore previous measurements in order to prevent buffer overrun
+				memset(sensorStreamBuffer.data, 0x00,
+						sensorStreamBuffer.length);
+				sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
+			}
+		}
+
+
 		vTaskDelay(pdMS_TO_TICKS(MINIMAL_SPEED));
 	}
 
@@ -674,7 +676,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\r\n",
+					"113,\"%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\"\r\n",
 					A08Name, tickRateMS,
 					A09Name, MQTTCfgParser_IsAccelEnabled(),
 					A10Name, MQTTCfgParser_IsGyroEnabled(),

@@ -13,7 +13,7 @@ curl -X POST \
   -H 'Accept: application/json' \
   --user "$USER" \
   -H 'Content-Type: application/json' \
-  -d '{"type":"c8y_DeviceShellTemplate","c8y_Global":{},"deviceType":"c8y_XDKDevice","name":"enable/disable sensor ... TRUE/FALSE","command":"sensor NOISE TRUE","category":"sensor"}'
+  -d '{"type":"c8y_DeviceShellTemplate","c8y_Global":{},"deviceType":"c8y_XDKDevice","name":"enable/disable sensor ... TRUE/FALSE, possible sensors are ACCEL, GYRO, MAG, ENV, LIGHT, NOISE","command":"sensor NOISE TRUE","category":"sensor"}'
   
 curl -X POST \
   "$URL" \
