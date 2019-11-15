@@ -47,12 +47,12 @@
  * MQTTSECURE=<TRUE FOR TLS, FALSE OTHERWISE>
  * MQTTANONYMOUS=FALSE #this property is lony meant to test the agent with other mqtt brokers, cumulocity always requires username password
  * STREAMRATE=<RATE TO SEND MEASUREMENTS TO C(Y IN MILISECONDS>
- * ACCELENABLED=<TRUE TO SEND,FALSE OTHERWISE>
- * GYROENABLED=<TRUE TO SEND,FALSE OTHERWISE>
- * MAGENABLED=<TRUE TO SEND,FALSE OTHERWISE>
- * ENVENABLED=<TRUE TO SEND,FALSE OTHERWISE>
- * LIGHTENABLED=<TRUE TO SEND,FALSE OTHERWISE>
- * NOISEENABLED=<TRUE TO SEND,FALSE OTHERWISE>
+ * ACCEL=<TRUE TO SEND,FALSE OTHERWISE>
+ * GYRO=<TRUE TO SEND,FALSE OTHERWISE>
+ * MAG=<TRUE TO SEND,FALSE OTHERWISE>
+ * ENV=<TRUE TO SEND,FALSE OTHERWISE>
+ * LIGHT=<TRUE TO SEND,FALSE OTHERWISE>
+ * NOISE=<TRUE TO SEND,FALSE OTHERWISE>
  * SNTPNAME=<NAME/IP OF SNTP SERVER>
  * SNTPPORT=<PORT SNTP SEVER>
  * MQTTUSER=<USESNAME IN THE FORM TENANT/USER, RECEIVED IN REGISTRATION>
@@ -122,12 +122,12 @@ static ConfigLine_T ConfigStructure[ATT_IDX_SIZE] = {
 		{ A06Name, DEFAULT_MQTTPASSWORD, CFG_FALSE, CFG_FALSE,AttValues[6] },
 		{ A07Name, BOOL_TO_STR(DEFAULT_MQTTANONYMOUS), CFG_FALSE, CFG_FALSE,AttValues[7] },
 		{ A08Name, DEFAULT_STR_STREAMRATE, CFG_FALSE, CFG_FALSE, AttValues[8] },
-		{ A09Name, BOOL_TO_STR(DEFAULT_ACCELENABELED), CFG_FALSE, CFG_FALSE, AttValues[9] },
-		{ A10Name, BOOL_TO_STR(DEFAULT_GYROENABELED), CFG_FALSE, CFG_FALSE, AttValues[10] },
-		{ A11Name, BOOL_TO_STR(DEFAULT_MAGENABELED), CFG_FALSE, CFG_FALSE, AttValues[11] },
-		{ A12Name, BOOL_TO_STR(DEFAULT_ENVENABELED), CFG_FALSE, CFG_FALSE, AttValues[12] },
-		{ A13Name, BOOL_TO_STR(DEFAULT_LIGHTENABELED), CFG_FALSE, CFG_FALSE, AttValues[13]},
-		{ A14Name, BOOL_TO_STR(DEFAULT_NOISEENABELED), CFG_FALSE, CFG_FALSE, AttValues[14]},
+		{ A09Name, BOOL_TO_STR(DEFAULT_ACCEL), CFG_FALSE, CFG_FALSE, AttValues[9] },
+		{ A10Name, BOOL_TO_STR(DEFAULT_GYRO), CFG_FALSE, CFG_FALSE, AttValues[10] },
+		{ A11Name, BOOL_TO_STR(DEFAULT_MAG), CFG_FALSE, CFG_FALSE, AttValues[11] },
+		{ A12Name, BOOL_TO_STR(DEFAULT_ENV), CFG_FALSE, CFG_FALSE, AttValues[12] },
+		{ A13Name, BOOL_TO_STR(DEFAULT_LIGHT), CFG_FALSE, CFG_FALSE, AttValues[13]},
+		{ A14Name, BOOL_TO_STR(DEFAULT_NOISE), CFG_FALSE, CFG_FALSE, AttValues[14]},
 		{ A15Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
 		{ A16Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
 		{ A17Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[17]},
@@ -532,7 +532,7 @@ void MQTTCfgParser_SetSensor(const char* value, int index) {
 }
 
 bool MQTTCfgParser_IsAccelEnabled(void) {
-	const char* value = getAttValue(ATT_IDX_ACCELENABLED);
+	const char* value = getAttValue(ATT_IDX_ACCEL);
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
 		return true;
 	else
@@ -540,7 +540,7 @@ bool MQTTCfgParser_IsAccelEnabled(void) {
 }
 
 bool MQTTCfgParser_IsGyroEnabled(void) {
-	const char* value = getAttValue(ATT_IDX_GYROENABLED);
+	const char* value = getAttValue(ATT_IDX_GYRO);
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
 		return true;
 	else
@@ -548,7 +548,7 @@ bool MQTTCfgParser_IsGyroEnabled(void) {
 }
 
 bool MQTTCfgParser_IsMagnetEnabled(void) {
-	const char* value = getAttValue(ATT_IDX_MAGENABLED);
+	const char* value = getAttValue(ATT_IDX_MAG);
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
 		return true;
 	else
@@ -556,7 +556,7 @@ bool MQTTCfgParser_IsMagnetEnabled(void) {
 }
 
 bool MQTTCfgParser_IsEnvEnabled(void) {
-	const char* value = getAttValue(ATT_IDX_ENVENABLED);
+	const char* value = getAttValue(ATT_IDX_ENV);
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
 		return true;
 	else
@@ -564,7 +564,7 @@ bool MQTTCfgParser_IsEnvEnabled(void) {
 }
 
 bool MQTTCfgParser_IsLightEnabled(void) {
-	const char* value = getAttValue(ATT_IDX_LIGHTENABLED);
+	const char* value = getAttValue(ATT_IDX_LIGHT);
 	bool res = false;
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
 		res = true;
@@ -574,7 +574,7 @@ bool MQTTCfgParser_IsLightEnabled(void) {
 }
 
 bool MQTTCfgParser_IsNoiseEnabled(void) {
-	const char* value = getAttValue(ATT_IDX_NOISEENABLED);
+	const char* value = getAttValue(ATT_IDX_NOISE);
 	if (strcmp(value,"TRUE") == 0 || strcmp(value,"1") == 0 )
 		return true;
 	else

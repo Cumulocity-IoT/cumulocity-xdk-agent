@@ -339,12 +339,12 @@ static void AppController_SetClientId(void) {
 
 	memset(clientId, NUMBER_UINT8_ZERO, strlen(clientId));
 	//changed
-	sprintf(clientId, "d:XDK_%02X_%02X_%02X_%02X_%02X_%02X", _macVal[0],
+	sprintf(clientId, "d:%02X%02X%02X%02X%02X%02X", _macVal[0],
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 
 	memset(deviceId, NUMBER_UINT8_ZERO, strlen(deviceId));
 	//changed
-	sprintf(deviceId, "XDK_%02X_%02X_%02X_%02X_%02X_%02X", _macVal[0],
+	sprintf(deviceId, "%02X%02X%02X%02X%02X%02X", _macVal[0],
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 
 	MqttConnectInfo.ClientId = clientId;

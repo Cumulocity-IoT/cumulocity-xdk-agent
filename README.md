@@ -53,8 +53,8 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 ### 2. Register XDK in Cumulocity & upload SMART Rest Template
 
 1. Before starting the XDK a C8Y device registration for the XDK has to be created in your C8Y tenant, please see [here](https://www.cumulocity.com/guides/users-guide/device-management for a detailed description. For this resgitration you need the external device ID. This is decribed in the next step.
-2. The agent uses the MAC of the WLAN chip as an external device ID. You have to check the sticker on the bottom side of your XDK under `WLAN: 7C_7C_7C_7C_7C_7C` , e.g. `XDK_7C_7C_7C_7C_7C_7C`
-> NOTE: prepend `XDK_` before WLAN MAC adress
+2. The agent uses the MAC of the WLAN chip as an external device ID. You have to check the sticker on the bottom side of your XDK under `WLAN: 7C_7C_7C_7C_7C_7C` , e.g. `7C7C7C7C7C7C`
+> NOTE: remove the `_` form the WLAN MAC adress
 3. Upload SMART Rest Template "XDK_Template_Collection.json" from folder resources/XDK_Template_Collection.json to your C8Y tenant. Pls see https://www.cumulocity.com/guides/users-guide/device-management for required steps
 
 ### 3. Install XDK Workbench 
@@ -146,12 +146,12 @@ The buttons have following on the XDK have the following functions:
 ### Detailed configuration
 
 The C8Y Agent for XDK sends the following sensor measurements to C8Y:
-* `ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit g
-* `GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `MAGENATBLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
-* `ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit temp C, pressure hPa
-* `LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit Lux
-* `NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false` #
+* `ACCEL=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit g
+* `GYRO=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `MAG=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true`
+* `ENV=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit temp C, pressure hPa
+* `LIGHT=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true` # unit Lux
+* `NOISE=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false` #
 
 with the defined streamrate:
 * `STREAMRATE=<SPEED TO SEND MEASUREMENTS TO C8Y IN MILLISECONDS> | default-value 5000`

@@ -239,17 +239,17 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				} else if (command == CMD_SENSOR) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: %i\r\n", token_pos));
 					if (strcmp(token, A14Name) == 0) {
-						sensor_index= ATT_IDX_NOISEENABLED;
+						sensor_index= ATT_IDX_NOISE;
 					} else if (strcmp(token, A13Name) == 0) {
-						sensor_index= ATT_IDX_LIGHTENABLED;
+						sensor_index= ATT_IDX_LIGHT;
 					} else if (strcmp(token, A12Name) == 0) {
-						sensor_index= ATT_IDX_ENVENABLED;
+						sensor_index= ATT_IDX_ENV;
 					} else if (strcmp(token, A11Name) == 0) {
-						sensor_index= ATT_IDX_MAGENABLED;
+						sensor_index= ATT_IDX_MAG;
 					} else if (strcmp(token, A10Name) == 0) {
-						sensor_index= ATT_IDX_GYROENABLED;
+						sensor_index= ATT_IDX_GYRO;
 					} else if (strcmp(token, A09Name) == 0) {
-						sensor_index= ATT_IDX_ACCELENABLED;
+						sensor_index= ATT_IDX_ACCEL;
 					} else {
 						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 						LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));

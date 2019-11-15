@@ -137,8 +137,8 @@
 #define APP_MQTT_DATA_PUBLISH_PERIODICITY   UINT32_C(1000)
 
 /* public type and macro definitions */
-#define WIFI_DEFAULT_MAC_CLIENTID	"d:XDK_00_00_00_00_00_00"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
-#define DEVICE_ID					"XDK_00_00_00_00_00_00"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
+#define WIFI_DEFAULT_MAC_CLIENTID	"d:000000000000"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
+#define DEVICE_ID					"000000000000"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
 
 #define WIFI_MAC_ADDR_LEN 	   		UINT8_C(6)                  /**< Macro used to specify MAC address length*/
 
@@ -246,12 +246,12 @@ typedef enum {
 #define DEFAULT_FIRMWARE			"TBD"
 
 #define DEFAULT_STR_STREAMRATE           "5000"			   /**< Stream Data Rate in MS */
-#define DEFAULT_ACCELENABELED            true               /**< Accelerometer Data Enable */
-#define DEFAULT_GYROENABELED            true               /**< Gyroscope Data Enable */
-#define DEFAULT_MAGENABELED             true               /**< Magnetometer Data Enable */
-#define DEFAULT_ENVENABELED             true               /**< Environmental Data Enable */
-#define DEFAULT_LIGHTENABELED            true               /**< Ambient Light Data Enable */
-#define DEFAULT_NOISEENABELED            false               /**< Noise Data Enable */
+#define DEFAULT_ACCEL            true               /**< Accelerometer Data Enable */
+#define DEFAULT_GYRO            true               /**< Gyroscope Data Enable */
+#define DEFAULT_MAG             true               /**< Magnetometer Data Enable */
+#define DEFAULT_ENV             true               /**< Environmental Data Enable */
+#define DEFAULT_LIGHT            true               /**< Ambient Light Data Enable */
+#define DEFAULT_NOISE            false               /**< Noise Data Enable */
 
 #define REBOOT_DELAY 		5000			   /**< Delay reboot so that device can send back "reboot is in progress" */
 

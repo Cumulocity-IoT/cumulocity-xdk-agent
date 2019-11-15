@@ -63,12 +63,12 @@ static const char A05Name[] = "MQTTUSER";
 static const char A06Name[] = "MQTTPASSWORD";
 static const char A07Name[] = "MQTTANONYMOUS";
 static const char A08Name[] = "STREAMRATE";
-static const char A09Name[] = "ACCELENABLED";
-static const char A10Name[] = "GYROENABLED";
-static const char A11Name[] = "MAGENABLED";
-static const char A12Name[] = "ENVENABLED";
-static const char A13Name[] = "LIGHTENABLED";
-static const char A14Name[] = "NOISEENABLED";
+static const char A09Name[] = "ACCEL";
+static const char A10Name[] = "GYRO";
+static const char A11Name[] = "MAG";
+static const char A12Name[] = "ENV";
+static const char A13Name[] = "LIGHT";
+static const char A14Name[] = "NOISE";
 static const char A15Name[] = "SNTPNAME";
 static const char A16Name[] = "SNTPPORT";
 static const char A17Name[] = "FIRMWARENAME";
@@ -85,12 +85,12 @@ enum AttributesIndex_E
     ATT_IDX_MQTTPASSWORD,
     ATT_IDX_MQTTANONYMOUS,
     ATT_IDX_STREAMRATE,
-    ATT_IDX_ACCELENABLED,
-    ATT_IDX_GYROENABLED,
-    ATT_IDX_MAGENABLED,
-    ATT_IDX_ENVENABLED,
-    ATT_IDX_LIGHTENABLED,
-    ATT_IDX_NOISEENABLED,
+    ATT_IDX_ACCEL,
+    ATT_IDX_GYRO,
+    ATT_IDX_MAG,
+    ATT_IDX_ENV,
+    ATT_IDX_LIGHT,
+    ATT_IDX_NOISE,
 	ATT_IDX_SNTPNAME,
 	ATT_IDX_SNTPPORT,
 	ATT_IDX_FIRMWARENAME,
