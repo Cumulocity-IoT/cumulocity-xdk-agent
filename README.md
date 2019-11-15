@@ -126,7 +126,7 @@ The following commands are supported:
 * toggle yellow light on/off, initiated by command from shell (option 1.):
 	* `toggle`
 * enable/disable sensor, initiated by command from shell (option 1.):
-	* `sensor NOISEENABELED TRUE` or `sensor NOISEENABELED TRUE`: to enable/disable the noise sensor. To tkae effect an restart is required. Enabling/disabling the sensor is written to the config file on the WIFI chip
+	* `sensor NOISE TRUE` or `sensor NOISE TRUE`: to enable/disable the noise sensor. To tkae effect an restart is required. Enabling/disabling the sensor is written to the config file on the WIFI chip
 * restart XDK from C8Y, issued by option in drop-down menue (option 3.):
 	* select XD: device in C8Y cockpit and execute "Restart device" from dropdown-menue "More"	
 * toggle yellow light on/off, initiated from message (any text) widget (option 2.):
