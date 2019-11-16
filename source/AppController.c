@@ -132,6 +132,7 @@ xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application con
 
 /* global variables ********************************************************* */
 APP_STATUS app_status;
+APP_STATUS cmd_status;
 /* inline functions ********************************************************* */
 
 /* local functions ********************************************************** */
@@ -393,7 +394,22 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 		default:
 			LOG_AT_WARNING(("AppController: Unknown status\n"));
 			break;
-
+	}
+	switch(cmd_status) {
+		case APP_STATUS_COMMAND_RECEIVED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			cmd_status = APP_STATUS_COMMAND_CONFIRMED;
+			break;
+		case APP_STATUS_COMMAND_CONFIRMED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			cmd_status = APP_STATUS_STARTED;
+			break;
+		case APP_STATUS_STARTED:
+			// do nothing
+			break;
+		default:
+			LOG_AT_WARNING(("AppController: Unknown status\n"));
+			break;
 	}
 }
 
@@ -452,6 +468,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 
 	// start status LED indicator
 	AppController_SetStatus(APP_STATUS_STARTED);
+	AppController_SetCmdStatus(APP_STATUS_STARTED);
 	AppController_StartLEDBlinkTimer (500);
 
 	// init battery monitor
@@ -481,5 +498,12 @@ uint8_t AppController_GetStatus(void) {
 	return app_status;
 }
 
+void AppController_SetCmdStatus( uint8_t status) {
+		cmd_status = status;
+}
+
+uint8_t AppController_GetCmdStatus(void) {
+	return cmd_status;
+}
 
 

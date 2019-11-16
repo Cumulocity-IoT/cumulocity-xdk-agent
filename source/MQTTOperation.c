@@ -309,8 +309,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		if ( command_complete == 0) {
 			commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 			LOG_AT_ERROR(("MQTTOperation: Incomplete command!\r\n"));
-		}
-
+		} else
+			AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
 	}
 
 }
@@ -778,22 +778,18 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			break;
 		case DEVICE_OPERATION_IMMEDIATE_CMD:
 			commandProgress = DEVICE_OPERATION_WAITING;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
 
 			switch (command){
 			case CMD_START :
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
 				break;
 			case CMD_STOP:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");

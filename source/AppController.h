@@ -227,6 +227,8 @@ typedef enum {
 	APP_STATUS_REBOOT = INT8_C(4),
 	APP_STATUS_REGISTERING = INT8_C(5),
 	APP_STATUS_REGISTERED = INT8_C(6),
+	APP_STATUS_COMMAND_RECEIVED = INT8_C(7),
+	APP_STATUS_COMMAND_CONFIRMED = INT8_C(8),
 
 } APP_STATUS;
 
@@ -293,6 +295,8 @@ typedef struct {
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
 void AppController_SetStatus(uint8_t status);
 uint8_t AppController_GetStatus(void);
+void AppController_SetCmdStatus(uint8_t status);
+uint8_t AppController_GetCmdStatus(void);
 Retcode_T AppController_SyncTime(void);
 
 #endif /* APPCONTROLLER_H_ */
