@@ -181,16 +181,16 @@ The values defined in the config on the SDCard always take precedence.
 In addition to the above listed measurements the battery staus is send ervery minute.
 
 ### Status indicated by LEDs
-| Red      | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
+| Red           | Orange   | Yellow   |Mode                      | Status                              | Possible Cause                   |
 | :------: | :------: | :------: |------------------------- |------------------------------------ |--------------------------------- |
-| Blinking | Off      | Off      | Operation & Registration | Starting                            |                                  |
-| On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access, SNTP server not reachable |
-| Blinking once | Off      | Off      | Operation  | Received command                            |                                  |
-| Off      | Blinking | Off      | Operation                | Running - Publishing                |                                  |
-| Off      | On	      | Off      | Operation                | Running - Publishing stopped        |                                  |
-| Blinking | Blinking | Off      | Operation                | Restarting                          |                                  |   
-| Off      | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
-| Off      | Off      | On       | Registration             | Running - Registration successful   |                                  |
+| Blinking      | Off      | Off      | Operation & Registration | Starting                            |                                  |
+| On            | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access, SNTP server not reachable |
+| Blinking once | Any      | Any      | Operation                | Received command                    |                                  |
+| Off           | Blinking | Any      | Operation                | Running - Publishing                |                                  |
+| Off           | On	   | Any      | Operation                | Running - Publishing stopped        |                                  |
+| Blinking      | Blinking | Any      | Operation                | Restarting                          |                                  |   
+| Off           | Off      | Blinking | Registration             | Running - Waiting for credentials   |                                  |
+| Off           | Off      | On       | Registration             | Running - Registration successful   |                                  |
 
 [back to content](#content)
 
