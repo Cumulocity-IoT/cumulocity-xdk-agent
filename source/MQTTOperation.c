@@ -103,22 +103,6 @@ static MQTT_Credentials_TZ MqttCredentials;
 static Sensor_Setup_T SensorSetup;
 
 
-const char * const commands[] = {
-		"c8y_Command",
-		"c8y_Restart",
-		"c8y_Command",
-		"c8y_Message",
-		"c8y_Command",
-		"c8y_Command",
-		"c8y_Command",
-		"c8y_Command",
-		"c8y_Command",
-		"c8y_Firmware",
-		"c8y_Command",
-		"c8y_Command",
-		"c8y_Command",
-};
-
 /**
  * @brief callback function for subriptions
  *        toggles LEDS or sets read data flag
@@ -205,13 +189,9 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					} else if (strcmp(token, "start") == 0) {
 						MQTTOperation_StartTimer(null,0);
 						command_complete = 1;
-						// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
-						commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					} else if (strcmp(token, "stop") == 0) {
 						MQTTOperation_StopTimer(null,0);
 						command_complete = 1;
-						// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
-						commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					} else if (strcmp(token, "sensor") == 0) {
 						command = CMD_SENSOR;
 					} else if (strcmp(token, "config") == 0) {
@@ -240,19 +220,13 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					command_complete = 1;
 				} else if (command == CMD_SENSOR) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: %i\r\n", token_pos));
-					if (strcmp(token, ATT_KEY_NAME[14]) == 0) {
-						config_index= ATT_IDX_NOISE;
-					} else if (strcmp(token, ATT_KEY_NAME[13]) == 0) {
-						config_index= ATT_IDX_LIGHT;
-					} else if (strcmp(token, ATT_KEY_NAME[12]) == 0) {
-						config_index= ATT_IDX_ENV;
-					} else if (strcmp(token, ATT_KEY_NAME[11]) == 0) {
-						config_index= ATT_IDX_MAG;
-					} else if (strcmp(token, ATT_KEY_NAME[10]) == 0) {
-						config_index= ATT_IDX_GYRO;
-					} else if (strcmp(token, ATT_KEY_NAME[9]) == 0) {
-						config_index= ATT_IDX_ACCEL;
-					} else {
+					for (int var = ATT_IDX_ACCEL; var <= ATT_IDX_NOISE; ++var) {
+						if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
+							config_index= var;
+							break;
+						}
+					}
+					if (config_index == -1) {
 						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 						LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
 					}

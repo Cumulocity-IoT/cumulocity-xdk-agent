@@ -62,7 +62,6 @@ typedef enum
 	DEVICE_OPERATION_BEFORE_SUCCESSFUL = INT16_C(599),
 } DEVICE_OPERATION;
 
-
 typedef enum
 {
 	CMD_TOGGLE,
@@ -78,6 +77,19 @@ typedef enum
 	CMD_UNKNOWN,
 } C8Y_COMMAND;
 
+static const char * const commands[] = {
+		"c8y_Command",
+		"c8y_Restart",
+		"c8y_Command",
+		"c8y_Message",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Firmware",
+		"c8y_Command",
+};
 
 /* global variable declarations */
 
