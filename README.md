@@ -185,6 +185,7 @@ In addition to the above listed measurements the battery staus is send ervery mi
 | :------: | :------: | :------: |------------------------- |------------------------------------ |--------------------------------- |
 | Blinking | Off      | Off      | Operation & Registration | Starting                            |                                  |
 | On       | Off      | Off      | Operation & Registration | Error                               | wrong config, no Wifi access, SNTP server not reachable |
+| Blinking once | Off      | Off      | Operation  | Received command                            |                                  |
 | Off      | Blinking | Off      | Operation                | Running - Publishing                |                                  |
 | Off      | On	      | Off      | Operation                | Running - Publishing stopped        |                                  |
 | Blinking | Blinking | Off      | Operation                | Restarting                          |                                  |   
