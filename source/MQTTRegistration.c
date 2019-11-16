@@ -138,7 +138,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 
 		// append credentials at the end of config.txt
 		char credentials[SIZE_SMALL_BUF] = {0};
-		snprintf(credentials,SIZE_SMALL_BUF,"\n%s=%s\n%s=%s\n", A05Name, username, A06Name, password );
+		snprintf(credentials,SIZE_SMALL_BUF,"\n%s=%s\n%s=%s\n", ATT_KEY_NAME[5], username, ATT_KEY_NAME[6], password );
 		MQTTFlash_SDAppendCredentials(credentials);
 
 		MQTTCfgParser_SetMqttUser(username);

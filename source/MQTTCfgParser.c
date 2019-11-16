@@ -94,7 +94,7 @@
 #define CFG_FORCE_MOUNT                 UINT8_C(1)      /**< Macro to define force mount */
 #define CFG_SEEK_FIRST_LOCATION         UINT8_C(0)      /**< File seek to the first location */
 #define CFG_MAX_LINE_SIZE               UINT8_C(65)
-#define ATT_IDX_SIZE					UINT8_C(20)
+
 
 #define CFG_NUMBER_UINT8_ZERO           UINT8_C(0)    /**< Zero value */
 
@@ -112,27 +112,29 @@ static char *itoa (int value, char *result, int base);
 /*
  * Configuration holder structure array
  */
+
+
 static ConfigLine_T ConfigStructure[ATT_IDX_SIZE] = {
-		{ A00Name, WLAN_SSID,CFG_FALSE, CFG_FALSE, AttValues[0] },
-		{ A01Name, WLAN_PSK, CFG_FALSE, CFG_FALSE, AttValues[1] },
-		{ A02Name, MQTT_BROKER_HOST_NAME, CFG_FALSE, CFG_FALSE, AttValues[2] },
-		{ A03Name, STR_MQTT_BROKER_HOST_PORT, CFG_FALSE, CFG_FALSE,	AttValues[3] },
-		{ A04Name, BOOL_TO_STR(DEFAULT_MQTTSECURE), CFG_FALSE, CFG_FALSE, AttValues[4] },
-		{ A05Name, DEFAULT_MQTTUSERNAME, CFG_FALSE, CFG_FALSE,AttValues[5] },
-		{ A06Name, DEFAULT_MQTTPASSWORD, CFG_FALSE, CFG_FALSE,AttValues[6] },
-		{ A07Name, BOOL_TO_STR(DEFAULT_MQTTANONYMOUS), CFG_FALSE, CFG_FALSE,AttValues[7] },
-		{ A08Name, DEFAULT_STR_STREAMRATE, CFG_FALSE, CFG_FALSE, AttValues[8] },
-		{ A09Name, BOOL_TO_STR(DEFAULT_ACCEL), CFG_FALSE, CFG_FALSE, AttValues[9] },
-		{ A10Name, BOOL_TO_STR(DEFAULT_GYRO), CFG_FALSE, CFG_FALSE, AttValues[10] },
-		{ A11Name, BOOL_TO_STR(DEFAULT_MAG), CFG_FALSE, CFG_FALSE, AttValues[11] },
-		{ A12Name, BOOL_TO_STR(DEFAULT_ENV), CFG_FALSE, CFG_FALSE, AttValues[12] },
-		{ A13Name, BOOL_TO_STR(DEFAULT_LIGHT), CFG_FALSE, CFG_FALSE, AttValues[13]},
-		{ A14Name, BOOL_TO_STR(DEFAULT_NOISE), CFG_FALSE, CFG_FALSE, AttValues[14]},
-		{ A15Name, SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
-		{ A16Name, STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
-		{ A17Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[17]},
-		{ A18Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[18]},
-		{ A19Name, DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[19]},
+		{ ATT_KEY_NAME[0], WLAN_SSID,CFG_FALSE, CFG_FALSE, AttValues[0] },
+		{ ATT_KEY_NAME[1], WLAN_PSK, CFG_FALSE, CFG_FALSE, AttValues[1] },
+		{ ATT_KEY_NAME[2], MQTT_BROKER_HOST_NAME, CFG_FALSE, CFG_FALSE, AttValues[2] },
+		{ ATT_KEY_NAME[3], STR_MQTT_BROKER_HOST_PORT, CFG_FALSE, CFG_FALSE,	AttValues[3] },
+		{ ATT_KEY_NAME[4], BOOL_TO_STR(DEFAULT_MQTTSECURE), CFG_FALSE, CFG_FALSE, AttValues[4] },
+		{ ATT_KEY_NAME[5], DEFAULT_MQTTUSERNAME, CFG_FALSE, CFG_FALSE,AttValues[5] },
+		{ ATT_KEY_NAME[6], DEFAULT_MQTTPASSWORD, CFG_FALSE, CFG_FALSE,AttValues[6] },
+		{ ATT_KEY_NAME[7], BOOL_TO_STR(DEFAULT_MQTTANONYMOUS), CFG_FALSE, CFG_FALSE,AttValues[7] },
+		{ ATT_KEY_NAME[8], DEFAULT_STR_STREAMRATE, CFG_FALSE, CFG_FALSE, AttValues[8] },
+		{ ATT_KEY_NAME[9], BOOL_TO_STR(DEFAULT_ACCEL), CFG_FALSE, CFG_FALSE, AttValues[9] },
+		{ ATT_KEY_NAME[10], BOOL_TO_STR(DEFAULT_GYRO), CFG_FALSE, CFG_FALSE, AttValues[10] },
+		{ ATT_KEY_NAME[11], BOOL_TO_STR(DEFAULT_MAG), CFG_FALSE, CFG_FALSE, AttValues[11] },
+		{ ATT_KEY_NAME[12], BOOL_TO_STR(DEFAULT_ENV), CFG_FALSE, CFG_FALSE, AttValues[12] },
+		{ ATT_KEY_NAME[13], BOOL_TO_STR(DEFAULT_LIGHT), CFG_FALSE, CFG_FALSE, AttValues[13]},
+		{ ATT_KEY_NAME[14], BOOL_TO_STR(DEFAULT_NOISE), CFG_FALSE, CFG_FALSE, AttValues[14]},
+		{ ATT_KEY_NAME[15], SNTP_SERVER_URL, CFG_FALSE, CFG_FALSE, AttValues[15]},
+		{ ATT_KEY_NAME[16], STR_SNTP_SERVER_PORT, CFG_FALSE, CFG_FALSE, AttValues[16]},
+		{ ATT_KEY_NAME[17], DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[17]},
+		{ ATT_KEY_NAME[18], DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[18]},
+		{ ATT_KEY_NAME[19], DEFAULT_FIRMWARE, CFG_FALSE, CFG_FALSE, AttValues[19]},
 };
 
 
@@ -154,7 +156,7 @@ static const char* getAttValue(int index) {
 	return "";
 }
 
-static void setAttValue(int index, char* value) {
+static void setAttValue(int index, const char* value) {
 	if (0 <= index && index < ATT_IDX_SIZE) {
 		LOG_AT_TRACE(("MQTTCfgParser: Debugging attribute set: %i / %s \r\n",
 				ConfigStructure[index].defined, ConfigStructure[index].attValue ));
@@ -615,6 +617,11 @@ void MQTTCfgParser_SetFirmwareURL(char * name) {
 	setAttValue(ATT_IDX_FIRMWAREURL, name);
 }
 
+void MQTTCfgParser_SetConfig(const char * value, int index) {
+	setAttValue(index, value);
+}
+
+
 /**
  * @brief returns the Server name for SNTP defined at the configuration file
  *
@@ -647,7 +654,7 @@ APP_RESULT MQTTCfgParser_Init(void) {
 
 	if (APP_RESULT_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
 	{
-		LOG_AT_ERROR(("MQTTCfgParser: Config file is not correct. Please give a proper config file and reboot the device!\r\n"));
+		LOG_AT_ERROR(("MQTTCfgParser: Config file is not correct. Please fix config file and reboot the device!\r\n"));
 		return APP_RESULT_ERROR;
 	}
 

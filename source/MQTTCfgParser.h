@@ -35,6 +35,9 @@
 #define CFG_TESTMODE_ON                  UINT8_C(1)
 #define CFG_TESTMODE_MIX                 UINT8_C(2)
 
+#define ATT_IDX_SIZE					UINT8_C(20)
+#define ATT_KEY_LENGTH					UINT8_C(20)
+
 #define BOOL_TO_STR(x) ((x) ? "TRUE" : "FALSE")
 /**
  * Configuration array cell element
@@ -54,26 +57,35 @@ typedef struct ConfigLine_S ConfigLine_T;
  * INDEX at the configuration array
  */
 
-static const char A00Name[] = "WIFISSID";
-static const char A01Name[] = "WIFIPASSWORD";
-static const char A02Name[] = "MQTTBROKERNAME";
-static const char A03Name[] = "MQTTBROKERPORT";
-static const char A04Name[] = "MQTTSECURE";
-static const char A05Name[] = "MQTTUSER";
-static const char A06Name[] = "MQTTPASSWORD";
-static const char A07Name[] = "MQTTANONYMOUS";
-static const char A08Name[] = "STREAMRATE";
-static const char A09Name[] = "ACCEL";
-static const char A10Name[] = "GYRO";
-static const char A11Name[] = "MAG";
-static const char A12Name[] = "ENV";
-static const char A13Name[] = "LIGHT";
-static const char A14Name[] = "NOISE";
-static const char A15Name[] = "SNTPNAME";
-static const char A16Name[] = "SNTPPORT";
-static const char A17Name[] = "FIRMWARENAME";
-static const char A18Name[] = "FIRMWAREVERSION";
-static const char A19Name[] = "FIRMWAREURL";
+//static const char A00Name[] = "WIFISSID";
+//static const char A01Name[] = "WIFIPASSWORD";
+//static const char A02Name[] = "MQTTBROKERNAME";
+//static const char A03Name[] = "MQTTBROKERPORT";
+//static const char A04Name[] = "MQTTSECURE";
+//static const char A05Name[] = "MQTTUSER";
+//static const char A06Name[] = "MQTTPASSWORD";
+//static const char A07Name[] = "MQTTANONYMOUS";
+//static const char A08Name[] = "STREAMRATE";
+//static const char A09Name[] = "ACCEL";
+//static const char A10Name[] = "GYRO";
+//static const char A11Name[] = "MAG";
+//static const char A12Name[] = "ENV";
+//static const char A13Name[] = "LIGHT";
+//static const char A14Name[] = "NOISE";
+//static const char A15Name[] = "SNTPNAME";
+//static const char A16Name[] = "SNTPPORT";
+//static const char A17Name[] = "FIRMWARENAME";
+//static const char A18Name[] = "FIRMWAREVERSION";
+//static const char A19Name[] = "FIRMWAREURL";
+
+static const char ATT_KEY_NAME[ATT_IDX_SIZE][ATT_KEY_LENGTH] = {
+		"WIFISSID","WIFIPASSWORD","MQTTBROKERNAME","MQTTBROKERPORT",
+		"MQTTSECURE","MQTTUSER","MQTTPASSWORD","MQTTANONYMOUS",
+		"STREAMRATE","ACCEL","GYRO","MAG",
+		"ENV", "LIGHT","NOISE","SNTPNAME",
+		"SNTPPORT","FIRMWARENAME","FIRMWAREVERSION","FIRMWAREURL"};
+
+
 enum AttributesIndex_E
 {
     ATT_IDX_WIFISSID,
@@ -241,6 +253,8 @@ void MQTTCfgParser_SetFirmwareName(char * name);
 void MQTTCfgParser_SetFirmwareVersion(char * name);
 
 void MQTTCfgParser_SetFirmwareURL(char * name);
+
+void MQTTCfgParser_SetConfig(const char * value, int index);
 
 const char *MQTTCfgParser_GetFirmwareName(void);
 

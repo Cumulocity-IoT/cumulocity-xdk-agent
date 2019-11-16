@@ -51,8 +51,7 @@ float aku340ConversionRatio = pow(10,(-38/20));
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
 static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 static int tickRateMS;
-static bool configDirty = false;
-static APP_ASSET_STATUS assetUpdate = APP_ASSET_WAITING;
+static APP_ASSET_STATUS assetUpdate = APP_ASSET_INITIAL;
 static SensorDataBuffer sensorStreamBuffer;
 static AssetDataBuffer assetStreamBuffer;
 static DEVICE_OPERATION rebootProgress = DEVICE_OPERATION_WAITING;
@@ -113,7 +112,10 @@ const char * const commands[] = {
 		"c8y_Command",
 		"c8y_Command",
 		"c8y_Command",
+		"c8y_Command",
 		"c8y_Firmware",
+		"c8y_Command",
+		"c8y_Command",
 		"c8y_Command",
 };
 
@@ -143,14 +145,14 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y,
 				(uint32_t) BSP_LED_COMMAND_TOGGLE);
 		if (commandProgress == DEVICE_OPERATION_WAITING) {
-			commandProgress = DEVICE_OPERATION_IMMEDIATE;
+			commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 			command = CMD_MESSAGE;
 		}
 	} else if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_STANDARD,
 			strlen(TOPIC_DOWNSTREAM_STANDARD)) == 0)) {
 		// split payload into tokens
 		int token_pos = 0;
-		int sensor_index = 0;
+		int config_index = -1;
 		int command_complete = 0;
 		char config_value[SIZE_XXSMALL_BUF] = {0};
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
@@ -199,21 +201,21 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						command = CMD_TOGGLE;
 						command_complete = 1;
 						// skip phase BEFORE_EXECUTING, because LED is switched on immediately
-						commandProgress = DEVICE_OPERATION_IMMEDIATE;
+						commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					} else if (strcmp(token, "start") == 0) {
 						MQTTOperation_StartTimer(null,0);
-						command = CMD_START;
 						command_complete = 1;
 						// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
-						commandProgress = DEVICE_OPERATION_IMMEDIATE;
+						commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					} else if (strcmp(token, "stop") == 0) {
 						MQTTOperation_StopTimer(null,0);
-						command = CMD_STOP;
 						command_complete = 1;
 						// skip phase BEFORE_EXECUTING, because publishinh is switched on/off immediately
-						commandProgress = DEVICE_OPERATION_IMMEDIATE;
+						commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					} else if (strcmp(token, "sensor") == 0) {
 						command = CMD_SENSOR;
+					} else if (strcmp(token, "config") == 0) {
+						command = CMD_CONFIG;
 					} else {
 						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 						LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
@@ -234,22 +236,22 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
 					MQTTCfgParser_SetStreamRate(speed);
 					MQTTCfgParser_FLWriteConfig();
-					configDirty = true;
+					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
 				} else if (command == CMD_SENSOR) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: %i\r\n", token_pos));
-					if (strcmp(token, A14Name) == 0) {
-						sensor_index= ATT_IDX_NOISE;
-					} else if (strcmp(token, A13Name) == 0) {
-						sensor_index= ATT_IDX_LIGHT;
-					} else if (strcmp(token, A12Name) == 0) {
-						sensor_index= ATT_IDX_ENV;
-					} else if (strcmp(token, A11Name) == 0) {
-						sensor_index= ATT_IDX_MAG;
-					} else if (strcmp(token, A10Name) == 0) {
-						sensor_index= ATT_IDX_GYRO;
-					} else if (strcmp(token, A09Name) == 0) {
-						sensor_index= ATT_IDX_ACCEL;
+					if (strcmp(token, ATT_KEY_NAME[14]) == 0) {
+						config_index= ATT_IDX_NOISE;
+					} else if (strcmp(token, ATT_KEY_NAME[13]) == 0) {
+						config_index= ATT_IDX_LIGHT;
+					} else if (strcmp(token, ATT_KEY_NAME[12]) == 0) {
+						config_index= ATT_IDX_ENV;
+					} else if (strcmp(token, ATT_KEY_NAME[11]) == 0) {
+						config_index= ATT_IDX_MAG;
+					} else if (strcmp(token, ATT_KEY_NAME[10]) == 0) {
+						config_index= ATT_IDX_GYRO;
+					} else if (strcmp(token, ATT_KEY_NAME[9]) == 0) {
+						config_index= ATT_IDX_ACCEL;
 					} else {
 						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 						LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
@@ -259,14 +261,32 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					memset(config_value, 0x00, sizeof (config_value));
 					snprintf(config_value, SIZE_XXSMALL_BUF, token);
 					MQTTCfgParser_SetFirmwareVersion(config_value);
+				} else if (command == CMD_CONFIG) {
+					LOG_AT_DEBUG(("MQTTOperation: Phase parse command config: token_pos: %i\r\n", token_pos));
+					for (int var = 0; var < ATT_IDX_SIZE; ++var) {
+						if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
+							config_index= var;
+							break;
+						}
+					}
+					if (config_index == -1) {
+						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+						LOG_AT_WARNING(("MQTTOperation: Config change not supported: %s\r\n", token));
+					}
 				}
 				break;
 			case 4:
 				if (command == CMD_SENSOR){
 					LOG_AT_DEBUG(("MQTTOperation: Phase execute command sensor: token_pos: %i\r\n", token_pos));
-					MQTTCfgParser_SetSensor(token, sensor_index);
+					MQTTCfgParser_SetSensor(token, config_index);
 					MQTTCfgParser_FLWriteConfig();
-					configDirty = true;
+					assetUpdate = APP_ASSET_WAITING;
+					command_complete = 1;
+				} else if (command == CMD_CONFIG){
+					LOG_AT_DEBUG(("MQTTOperation: Phase execute command config: token_pos: %i\r\n", token_pos));
+					MQTTCfgParser_SetConfig(token, config_index);
+					MQTTCfgParser_FLWriteConfig();
+					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
 				} else if (command == CMD_FIRMWARE) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: %i\r\n", token_pos));
@@ -274,7 +294,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					snprintf(config_value, SIZE_XXSMALL_BUF, token);
 					MQTTCfgParser_SetFirmwareURL(config_value);
 					MQTTCfgParser_FLWriteConfig();
-					configDirty = true;
+					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
 				}
 				break;
@@ -451,11 +471,16 @@ static void MQTTOperation_ClientPublish(void) {
  */
 void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
-	BCDS_UNUSED(param2);
+	//BCDS_UNUSED(param2);
 
-	commandProgress = DEVICE_OPERATION_IMMEDIATE;
+	// when publish is stopped by invoking  button no cmd acknowledgment needs to be sent to C8Y
+	if (param2 == 0)
+		commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+	else
+		commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+
 	command = CMD_START;
-	LOG_AT_INFO(("MQTTOperation: Start publishing ...\r\n"));
+	LOG_AT_INFO(("MQTTOperation: Start publishing: [%lu] ...\r\n", param2));
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
 	return;
@@ -467,11 +492,16 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
  */
 void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
-	BCDS_UNUSED(param2);
+	//BCDS_UNUSED(param2);
 
-	commandProgress = DEVICE_OPERATION_IMMEDIATE;
+	// when publish is stopped by invoking  button no cmd acknowledgment needs to be sent to C8Y
+	if (param2 == 0)
+		commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+	else
+		commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+
 	command = CMD_STOP;
-	LOG_AT_INFO(("MQTTOperation: Stopped publishing!\r\n"));
+	LOG_AT_INFO(("MQTTOperation: Stopped publishing: [%lu] !\r\n", param2));
 	xTimerStop(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
 	return;
@@ -644,6 +674,20 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 	return retcode;
 }
 
+void MQTTOperation_PrepareAssetUpdate() {
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length,
+			sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
+			"113,\"%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\"\r\n",
+			ATT_KEY_NAME[8], tickRateMS,
+			ATT_KEY_NAME[9], MQTTCfgParser_IsAccelEnabled(),
+			ATT_KEY_NAME[10], MQTTCfgParser_IsGyroEnabled(),
+			ATT_KEY_NAME[11], MQTTCfgParser_IsMagnetEnabled(),
+			ATT_KEY_NAME[12], MQTTCfgParser_IsEnvEnabled(),
+			ATT_KEY_NAME[13], MQTTCfgParser_IsLightEnabled(),
+			ATT_KEY_NAME[14], MQTTCfgParser_IsNoiseEnabled());
+}
+
 /**
  * @brief Read the sensors and fill the stream data buffer
  *
@@ -663,128 +707,132 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
 
-		if (assetUpdate == APP_ASSET_WAITING) {
-			assetUpdate = APP_ASSET_PUBLISHED;
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"113,\"%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\n%s=%i\"\r\n",
-					A08Name, tickRateMS,
-					A09Name, MQTTCfgParser_IsAccelEnabled(),
-					A10Name, MQTTCfgParser_IsGyroEnabled(),
-					A11Name, MQTTCfgParser_IsMagnetEnabled(),
-					A12Name, MQTTCfgParser_IsEnvEnabled(),
-					A13Name, MQTTCfgParser_IsLightEnabled(),
-					A14Name, MQTTCfgParser_IsNoiseEnabled());
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\r\n");
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"400,xdk_StartEvent,\"XDK started!\"\r\n");
-
-			char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
-			Utils_GetXdkVersionString((uint8_t *) readbuffer);
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"110,%s,XDK,%s\r\n", deviceId, readbuffer);
-		} else {
-			switch (commandProgress) {
-			case DEVICE_OPERATION_BEFORE_EXECUTING:
-				commandProgress = DEVICE_OPERATION_EXECUTING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-				break;
-			case DEVICE_OPERATION_BEFORE_FAILED:
-				commandProgress = DEVICE_OPERATION_FAILED;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-				break;
-			case DEVICE_OPERATION_FAILED:
-				commandProgress = DEVICE_OPERATION_WAITING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\r\n",commands[command]);
-				break;
-			case DEVICE_OPERATION_EXECUTING:
-				commandProgress = DEVICE_OPERATION_WAITING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
-				break;
-			case DEVICE_OPERATION_IMMEDIATE:
-				commandProgress = DEVICE_OPERATION_WAITING;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
-				switch (command){
-				case CMD_START:
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-							"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
-					break;
-				case CMD_STOP:
-					assetStreamBuffer.length += snprintf(
-							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-							"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
-					break;
-				}
-				break;
-			}
-
-			switch (rebootProgress) {
-			case DEVICE_OPERATION_BEFORE_EXECUTING:
-				rebootProgress = DEVICE_OPERATION_EXECUTING;
+		switch (assetUpdate) {
+			case APP_ASSET_INITIAL:
+				assetUpdate = APP_ASSET_PUBLISHED;
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"501,c8y_Restart\r\n");
-				break;
-			case DEVICE_OPERATION_BEFORE_SUCCESSFUL:
-				rebootProgress = DEVICE_OPERATION_SUCCESSFUL;
+						"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
+
+				char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
+				Utils_GetXdkVersionString((uint8_t *) readbuffer);
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"503,c8y_Restart\r\n");
+						"110,%s,XDK,%s\r\n", deviceId, readbuffer);
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\r\n");
+				MQTTOperation_PrepareAssetUpdate();
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_StartEvent,\"XDK started!\"\r\n");
 				break;
-			}
-
-			if (configDirty) {
-				switch (command){
-				case CMD_FIRMWARE:
-						configDirty = false;
-						assetStreamBuffer.length += snprintf(
-								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-								"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
-						assetStreamBuffer.length += snprintf(
-								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-								"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
-						break;
-				default:
-						configDirty = false;
-						assetStreamBuffer.length += snprintf(
-								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-								"113,\"%s = %i ms\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\n%s = %i\"\r\n",
-								A08Name, tickRateMS,
-								A09Name, MQTTCfgParser_IsAccelEnabled(),
-								A10Name, MQTTCfgParser_IsGyroEnabled(),
-								A11Name, MQTTCfgParser_IsMagnetEnabled(),
-								A12Name, MQTTCfgParser_IsEnvEnabled(),
-								A13Name, MQTTCfgParser_IsLightEnabled(),
-								A14Name, MQTTCfgParser_IsNoiseEnabled());
-						assetStreamBuffer.length += snprintf(
-								assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-								"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
-						break;
-				}
-
-			}
-
+			case APP_ASSET_WAITING:
+					switch (command){
+					case CMD_FIRMWARE:
+							assetUpdate = APP_ASSET_COMPLETED;
+							assetStreamBuffer.length += snprintf(
+									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+									"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
+							assetStreamBuffer.length += snprintf(
+									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+									"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
+							break;
+					default:
+							assetUpdate = APP_ASSET_COMPLETED;
+							MQTTOperation_PrepareAssetUpdate();
+							assetStreamBuffer.length += snprintf(
+									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+									"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
+							break;
+					}
+					break;
 		}
+
+
+		switch (commandProgress) {
+		case DEVICE_OPERATION_BEFORE_EXECUTING:
+			commandProgress = DEVICE_OPERATION_EXECUTING;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+			break;
+		case DEVICE_OPERATION_BEFORE_FAILED:
+			commandProgress = DEVICE_OPERATION_FAILED;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+			break;
+		case DEVICE_OPERATION_FAILED:
+			commandProgress = DEVICE_OPERATION_WAITING;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "502,%s,\"Command unknown\"\r\n",commands[command]);
+			break;
+		case DEVICE_OPERATION_EXECUTING:
+			commandProgress = DEVICE_OPERATION_WAITING;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+			break;
+		case DEVICE_OPERATION_IMMEDIATE_CMD:
+			commandProgress = DEVICE_OPERATION_WAITING;
+
+			switch (command){
+			case CMD_START :
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
+				break;
+			case CMD_STOP:
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
+				break;
+			}
+			break;
+		case DEVICE_OPERATION_IMMEDIATE_BUTTON:
+			commandProgress = DEVICE_OPERATION_WAITING;
+
+			switch (command){
+			case CMD_START :
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
+				break;
+			case CMD_STOP:
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
+				break;
+			}
+			break;
+		}
+
+		switch (rebootProgress) {
+		case DEVICE_OPERATION_BEFORE_EXECUTING:
+			rebootProgress = DEVICE_OPERATION_EXECUTING;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"501,c8y_Restart\r\n");
+			break;
+		case DEVICE_OPERATION_BEFORE_SUCCESSFUL:
+			rebootProgress = DEVICE_OPERATION_SUCCESSFUL;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"503,c8y_Restart\r\n");
+			break;
+		}
+
 		// send keep alive message every 60 seconds
 		keepAlive++;
 		if ( keepAlive >= 60) {
