@@ -45,7 +45,7 @@
 
 static const int MINIMAL_SPEED = 50;
 /* constant definitions ***************************************************** */
-float aku340ConversionRatio = pow(10,(-38/20));
+const float aku340ConversionRatio = 0.01258925411794167210423954106396;  //pow(10,(-38/20));
 /* local variables ********************************************************** */
 // Buffers
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
@@ -139,7 +139,6 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		int token_pos = 0;
 		int config_index = -1;
 		int command_complete = 0;
-		char config_value[SIZE_XXSMALL_BUF] = {0};
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
@@ -202,8 +201,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					LOG_AT_DEBUG(("MQTTOperation: Token: [%s] recognized as command: [%i]\r\n", token, command));
 				} else if (command == CMD_FIRMWARE){
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse command firmware name: token_pos: [%i]\r\n", token_pos));
-					snprintf(config_value, SIZE_XXSMALL_BUF, token);
-					MQTTCfgParser_SetFirmwareName(config_value);
+					MQTTCfgParser_SetFirmwareName(token);
 				}
 				break;
 			case 3:
@@ -231,9 +229,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					}
 				} else if (command == CMD_FIRMWARE) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase execute command firmware version: token_pos: %i\r\n", token_pos));
-					memset(config_value, 0x00, sizeof (config_value));
-					snprintf(config_value, SIZE_XXSMALL_BUF, token);
-					MQTTCfgParser_SetFirmwareVersion(config_value);
+					MQTTCfgParser_SetFirmwareVersion(token);
 				} else if (command == CMD_CONFIG) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse command config: token_pos: %i\r\n", token_pos));
 					for (int var = 0; var < ATT_IDX_SIZE; ++var) {
@@ -263,9 +259,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					command_complete = 1;
 				} else if (command == CMD_FIRMWARE) {
 					LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: %i\r\n", token_pos));
-					memset(config_value, 0x00, sizeof (config_value));
-					snprintf(config_value, SIZE_XXSMALL_BUF, token);
-					MQTTCfgParser_SetFirmwareURL(config_value);
+					MQTTCfgParser_SetFirmwareURL(token);
 					MQTTCfgParser_FLWriteConfig();
 					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
