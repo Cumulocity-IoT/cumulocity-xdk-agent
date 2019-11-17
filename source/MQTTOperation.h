@@ -27,6 +27,7 @@
 #define TEMPLATE_STD_CREDENTIALS  	"70"
 #define TEMPLATE_STD_RESTART    	"510"
 #define TEMPLATE_STD_COMMAND    	"511"
+#define TEMPLATE_STD_FIRMWARE    	"515"
 
 
 //Cumulocity topics to send data
@@ -56,21 +57,39 @@ typedef enum
 	DEVICE_OPERATION_EXECUTING = INT16_C(501),
 	DEVICE_OPERATION_FAILED = INT16_C(502),
 	DEVICE_OPERATION_SUCCESSFUL = INT16_C(503),
-	DEVICE_OPERATION_IMMEDIATE= INT16_C(599),
+	DEVICE_OPERATION_IMMEDIATE_BUTTON= INT16_C(597),
+	DEVICE_OPERATION_IMMEDIATE_CMD= INT16_C(598),
+	DEVICE_OPERATION_BEFORE_SUCCESSFUL = INT16_C(599),
 } DEVICE_OPERATION;
-
 
 typedef enum
 {
-	CMD_TOGGLE= INT8_C(0),
-	CMD_RESTART = INT8_C(1),
-	CMD_SPEED= INT8_C(2),
-	CMD_MESSAGE= INT8_C(3),
-	CMD_SENSOR= INT8_C(4),
-	CMD_COMMAND=INT8_C(5),
-	CMD_START=INT8_C(6),
-	CMD_STOP=INT8_C(7),
+	CMD_TOGGLE,
+	CMD_RESTART,
+	CMD_SPEED,
+	CMD_MESSAGE,
+	CMD_SENSOR,
+	CMD_COMMAND,
+	CMD_START,
+	CMD_STOP,
+	CMD_CONFIG,
+	CMD_FIRMWARE,
+	CMD_UNKNOWN,
 } C8Y_COMMAND;
+
+static const char * const commands[] = {
+		"c8y_Command",
+		"c8y_Restart",
+		"c8y_Command",
+		"c8y_Message",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Command",
+		"c8y_Firmware",
+		"c8y_Command",
+};
 
 /* global variable declarations */
 

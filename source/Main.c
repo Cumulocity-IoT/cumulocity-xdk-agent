@@ -35,7 +35,7 @@
 /* own header files */
 
 /* global variables ********************************************************* */
-static CmdProcessor_T MainCmdProcessor;
+CmdProcessor_T MainCmdProcessor;
 
 /* functions */
 

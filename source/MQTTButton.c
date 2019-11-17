@@ -56,24 +56,16 @@ static CmdProcessor_T *AppCmdProcessor; /**< Application Command Processor Insta
 
 static void processbuttonCallback1 (void * param1, uint32_t buttonstatus)
 {
-	static uint8_t toogleButton_1 = 0;
 	BCDS_UNUSED(param1);
 
-	LOG_AT_TRACE(("MQTTButton: Status button %d %lu %i\r\n", toogleButton_1, buttonstatus, BSP_XDK_BUTTON_PRESS));
+	LOG_AT_TRACE(("MQTTButton: Status button %d %lu %i\r\n", AppController_GetStatus(), buttonstatus, BSP_XDK_BUTTON_PRESS));
 
 	// only use button 1 when in operation mode
-	if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED || AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
-		if (BSP_XDK_BUTTON_PRESSED == buttonstatus ) {
-			if (toogleButton_1 == 0) {
-				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StopTimer, NULL, buttonstatus);
-			} else {
-				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StartTimer, NULL, buttonstatus);
-			}
-			toogleButton_1 =! toogleButton_1;
-		}
-	}
+	if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED && BSP_XDK_BUTTON_PRESSED == buttonstatus)
+		CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StopTimer, NULL, buttonstatus);
+	if (AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED && BSP_XDK_BUTTON_PRESSED == buttonstatus)
+		CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StartTimer, NULL, buttonstatus);
 }
-
 
 
 static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
@@ -91,14 +83,14 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
 		} else {
 			ConfigDataBuffer localbuffer;
 			localbuffer.length = NUMBER_UINT32_ZERO;
-			memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
+			memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 			MQTTFlash_FLReadConfig(&localbuffer);
-			LOG_AT_TRACE(("MQTTButton: Current configuration in flash:\r\n%s\r\n", localbuffer.data));
+			LOG_AT_DEBUG(("MQTTButton: Current configuration in flash:\r\n%s\r\n", localbuffer.data));
 
 			localbuffer.length = NUMBER_UINT32_ZERO;
-			memset(localbuffer.data, 0x00, SIZE_XLARGE_BUF);
+			memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 			MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-			LOG_AT_TRACE(("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data));
+			LOG_AT_DEBUG(("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data));
 			LOG_AT_TRACE(("MQTTButton: Button pressed for: %lu\r\n", time_passed));
 		}
 	}

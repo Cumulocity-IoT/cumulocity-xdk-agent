@@ -51,6 +51,9 @@
 #include "MQTTOperation.h"
 #include "MQTTButton.h"
 
+#include "XdkSensorHandle.h"
+#include "BCDS_Orientation.h"
+
 /* constant definitions ***************************************************** */
 
 /* local variables ********************************************************** */
@@ -125,12 +128,11 @@ static void AppController_StartLEDBlinkTimer(int);
 static char clientId[] = WIFI_DEFAULT_MAC_CLIENTID;
 char deviceId[] = DEVICE_ID;
 
-static xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application controller to be used by run-time blocking threads */
-
-
+xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application controller to be used by run-time blocking threads */
 
 /* global variables ********************************************************* */
 APP_STATUS app_status;
+APP_STATUS cmd_status;
 /* inline functions ********************************************************* */
 
 /* local functions ********************************************************** */
@@ -221,6 +223,9 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		SensorSetup.Enable.Temp = MQTTCfgParser_IsEnvEnabled();
 		SensorSetup.Enable.Noise = MQTTCfgParser_IsNoiseEnabled();
 		retcode = Sensor_Setup(&SensorSetup);
+#if ENABLE_SENSOR_TOOLBOX
+		retcode = Orientation_init(xdkOrientationSensor_Handle);
+#endif
 	}
 	//delay start
 	vTaskDelay(pdMS_TO_TICKS(4000));
@@ -320,7 +325,6 @@ static void AppController_Fire(void* pvParameters)
 		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
 		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
 		MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
-
 	} else {
 		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
 	}
@@ -336,12 +340,12 @@ static void AppController_SetClientId(void) {
 
 	memset(clientId, NUMBER_UINT8_ZERO, strlen(clientId));
 	//changed
-	sprintf(clientId, "d:XDK_%02X_%02X_%02X_%02X_%02X_%02X", _macVal[0],
+	sprintf(clientId, "d:%02X%02X%02X%02X%02X%02X", _macVal[0],
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 
 	memset(deviceId, NUMBER_UINT8_ZERO, strlen(deviceId));
 	//changed
-	sprintf(deviceId, "XDK_%02X_%02X_%02X_%02X_%02X_%02X", _macVal[0],
+	sprintf(deviceId, "%02X%02X%02X%02X%02X%02X", _macVal[0],
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 
 	MqttConnectInfo.ClientId = clientId;
@@ -390,7 +394,22 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 		default:
 			LOG_AT_WARNING(("AppController: Unknown status\n"));
 			break;
-
+	}
+	switch(cmd_status) {
+		case APP_STATUS_COMMAND_RECEIVED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			cmd_status = APP_STATUS_COMMAND_CONFIRMED;
+			break;
+		case APP_STATUS_COMMAND_CONFIRMED:
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+			cmd_status = APP_STATUS_STARTED;
+			break;
+		case APP_STATUS_STARTED:
+			// do nothing
+			break;
+		default:
+			LOG_AT_WARNING(("AppController: Unknown status\n"));
+			break;
 	}
 }
 
@@ -404,7 +423,38 @@ static void AppController_StartLEDBlinkTimer(int period) {
 	xTimerStart(timerHandle, UINT32_C(0xffff));
 }
 
-
+Retcode_T AppController_SyncTime() {
+	uint64_t sntpTimeStampFromServer = 0UL;
+	uint16_t sntpAttemps = 0UL;
+	Retcode_T retcode = RETCODE_OK;
+	/* We Synchronize the node with the SNTP server for time-stamp.
+	 * Since there is no point in doing a HTTPS communication without a valid time */
+	do {
+		retcode = SNTP_GetTimeFromServer(&sntpTimeStampFromServer,
+				APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
+		if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
+			LOG_AT_WARNING(
+					("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
+		}
+		sntpAttemps++;
+		vTaskDelay(pdMS_TO_TICKS(2000));
+	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 5 times
+	if (0UL == sntpTimeStampFromServer) {
+		sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
+		SNTP_SetTime(sntpTimeStampFromServer);
+		LOG_AT_WARNING(
+				("MQTTOperation: Using fixed timestamp 1. Nov 2019 00:00:00 UTC, SNTP sync not possible\r\n"));
+		retcode = RETCODE_OK; // clear return code
+	}
+	//uint8_t * timeBuffer = (uint8_t *) &sntpTimeStampFromServer;
+	//LOG_AT_TRACE(("MQTTOperation: SNTP time: %d,%d,%d,%d,%d,%d,%d,%d\r\n", timeBuffer[0], timeBuffer[1], timeBuffer[2], timeBuffer[3],timeBuffer[4],timeBuffer[5],timeBuffer[6],timeBuffer[7]));
+	struct tm time;
+	char timezoneISO8601format[40];
+	TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
+	TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
+	BCDS_UNUSED(sntpTimeStampFromServer); /* Copy of sntpTimeStampFromServer will be used be HTTPS for TLS handshake */
+	return retcode;
+}
 
 /* global functions ********************************************************* */
 
@@ -418,6 +468,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 
 	// start status LED indicator
 	AppController_SetStatus(APP_STATUS_STARTED);
+	AppController_SetCmdStatus(APP_STATUS_STARTED);
 	AppController_StartLEDBlinkTimer (500);
 
 	// init battery monitor
@@ -447,5 +498,12 @@ uint8_t AppController_GetStatus(void) {
 	return app_status;
 }
 
+void AppController_SetCmdStatus( uint8_t status) {
+		cmd_status = status;
+}
+
+uint8_t AppController_GetCmdStatus(void) {
+	return cmd_status;
+}
 
 

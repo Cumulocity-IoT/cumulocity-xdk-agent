@@ -1,28 +1,11 @@
-##
-# IMPORTANT: 
-# * values to the right side can't be blank, instead type EMPTY if not used, otherwise bootstrap fails
-# * variables not defined explcitly  their default-value is used
-# * length of file must not excceed 512 bytes
-##
-WIFISSID=<SSID> | must be defined
-WIFIPASSWORD=<PASSWORD OF WIFI> | must be defined
-MQTTBROKERNAME=<BROKER NAME>| default-value mqtt.cumulocity.com
-MQTTBROKERPORT=<PORT OF MQTT CUMULOCITY BROKER, 8883 FOR TLS, 1883 NO TLS>| default-value 8883
-MQTTSECURE=<TRUE FOR TLS, FALSE OTHERWISE> | default-value TRUE
-MQTTANONYMOUS=<this property is lony meant to test the agent with other mqtt brokers, cumulocity always requires username password>| default-value FALSE
-STREAMRATE=<RATE TO SEND MEASUREMENTS TO C8Y IN MILISECONDS>| default-value 5000
-ACCELENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-GYROENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-MAGENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-ENVENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-LIGHTENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value true
-NOISEENABLED=<TRUE TO SEND MEASUREMENTS, FALSE OTHERWISE> | default-value false
-SNTPNAME=<NAME/IP OF SNTP SERVER>| default-value 0.de.pool.ntp.org
-SNTPPORT=<PORT SNTP SEVER>| default-value 123
-##
-# IMPORTANT: 
-# * MQTTUSER and MQTTPASSWORD are added as part of the bootstrap mechanism during device registration
-# Variables need not be added manually
-##
-MQTTUSER=<USESNAME IN THE FORM TENANT/USER, RECEIVED IN REGISTRATION>
-MQTTPASSWORD=<PASSWORD, RECEIVED IN REGISTRATION>
+WIFISSID=<SSID>
+WIFIPASSWORD=<PASSWORD OF WIFI>
+MQTTBROKERNAME=mqtt.cumulocity.com
+MQTTBROKERPORT=8883
+STREAMRATE=1000
+ACCEL=FALSE
+GYRO=FALSE
+MAG=FALSE
+ENV=TRUE
+LIGHT=TRUE
+NOISE=TRUE

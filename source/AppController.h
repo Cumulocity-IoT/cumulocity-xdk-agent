@@ -30,6 +30,14 @@
 
 /* local type and macro definitions */
 
+/**
+ * define if XDK Sensor Toolbox featue: Orentation,StepCounter, ... should be used
+ * in this case the value configTOTAL_HEAP_SIZE for the heap size has to be increased
+ * to (( size_t )(72 * 1024 )) in the file .../SDK/xdk110/Common/config/AmazonFreeRTOS/FreeRTOS/FreeRTOSConfig.h
+ */
+#define ENABLE_SENSOR_TOOLBOX				1
+
+
 /* WLAN configurations ****************************************************** */
 
 /**
@@ -129,8 +137,9 @@
 #define APP_MQTT_DATA_PUBLISH_PERIODICITY   UINT32_C(1000)
 
 /* public type and macro definitions */
-#define WIFI_DEFAULT_MAC_CLIENTID	"d:XDK_00_00_00_00_00_00"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
-#define DEVICE_ID					"XDK_00_00_00_00_00_00"   /**< Macro used to specify the Default MAC Address as input for clientId, cumulocity doesn't allow : n clientId*/
+
+#define WIFI_DEFAULT_MAC_CLIENTID	"d:000000000000"
+#define DEVICE_ID					"000000000000"
 
 #define WIFI_MAC_ADDR_LEN 	   		UINT8_C(6)                  /**< Macro used to specify MAC address length*/
 
@@ -152,12 +161,12 @@
 /* local function prototype declarations */
 
 /* local module global variable declarations */
-//
+
+
 #define NUMBER_UINT8_ZERO		     UINT8_C(0)     /**< Zero value */
 #define NUMBER_UINT32_ZERO 		     UINT32_C(0)    /**< Zero value */
 #define NUMBER_UINT16_ZERO 		     UINT16_C(0)    /**< Zero value */
 #define NUMBER_INT16_ZERO 		     INT16_C(0)     /**< Zero value */
-//
 
 #define LOG_TRACE			1
 #define LOG_DEBUG			2
@@ -218,15 +227,16 @@ typedef enum {
 	APP_STATUS_REBOOT = INT8_C(4),
 	APP_STATUS_REGISTERING = INT8_C(5),
 	APP_STATUS_REGISTERED = INT8_C(6),
+	APP_STATUS_COMMAND_RECEIVED = INT8_C(7),
+	APP_STATUS_COMMAND_CONFIRMED = INT8_C(8),
 
 } APP_STATUS;
 
 typedef enum {
-
-	APP_ASSET_WAITING = INT8_C(1),
-	APP_ASSET_PUBLISHED = INT8_C(2),
-	APP_ASSET_COMPLETED = INT8_C(3),
-
+	APP_ASSET_INITIAL,
+	APP_ASSET_WAITING,
+	APP_ASSET_PUBLISHED,
+	APP_ASSET_COMPLETED,
 } APP_ASSET_STATUS;
 
 /* Default values for C8Y MQTT configuration*/
@@ -235,36 +245,40 @@ typedef enum {
 #define DEFAULT_MQTTUSERNAME       "REGISTRATION"
 #define DEFAULT_MQTTPASSWORD	   "REGISTRATION"
 
-#define DEFAULT_STR_STREAMRATE           "5000"			   /**< Stream Data Rate in MS */
-#define DEFAULT_ACCELENABELED            true               /**< Accelerometer Data Enable */
-#define DEFAULT_GYROENABELED            true               /**< Gyroscope Data Enable */
-#define DEFAULT_MAGENABELED             true               /**< Magnetometer Data Enable */
-#define DEFAULT_ENVENABELED             true               /**< Environmental Data Enable */
-#define DEFAULT_LIGHTENABELED            true               /**< Ambient Light Data Enable */
-#define DEFAULT_NOISEENABELED            false               /**< Noise Data Enable */
+#define DEFAULT_FIRMWARE			"TBD"
+#define DEFAULT_STR_STREAMRATE      "5000"			   /**< Stream Data Rate in MS */
+#define DEFAULT_ACCEL            true               /**< Accelerometer Data Enable */
+#define DEFAULT_GYRO            true               /**< Gyroscope Data Enable */
+#define DEFAULT_MAG             true               /**< Magnetometer Data Enable */
+#define DEFAULT_ENV             true               /**< Environmental Data Enable */
+#define DEFAULT_LIGHT            true               /**< Ambient Light Data Enable */
+#define DEFAULT_NOISE            false               /**< Noise Data Enable */
 
 #define REBOOT_DELAY 		5000			   /**< Delay reboot so that device can send back "reboot is in progress" */
 
 
 /* Sensor type and macro definitions */
-#define SIZE_XLARGE_BUF   512
+
+#define SIZE_XXLARGE_BUF  550
+#define SIZE_XLARGE_BUF   400
 #define SIZE_LARGE_BUF    256
 #define SIZE_SMALL_BUF    128
 #define SIZE_XSMALL_BUF    64
+#define SIZE_XXSMALL_BUF   32
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_XLARGE_BUF];
+	char data[SIZE_XXLARGE_BUF];
 } SensorDataBuffer;
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_LARGE_BUF];
+	char data[SIZE_XLARGE_BUF];
 } AssetDataBuffer;
 
 typedef struct {
 	uint32_t length;
-	char data[SIZE_XLARGE_BUF];
+	char data[SIZE_XXLARGE_BUF];
 } ConfigDataBuffer;
 
 /* local inline function definitions */
@@ -281,6 +295,9 @@ typedef struct {
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
 void AppController_SetStatus(uint8_t status);
 uint8_t AppController_GetStatus(void);
+void AppController_SetCmdStatus(uint8_t status);
+uint8_t AppController_GetCmdStatus(void);
+Retcode_T AppController_SyncTime(void);
 
 #endif /* APPCONTROLLER_H_ */
 

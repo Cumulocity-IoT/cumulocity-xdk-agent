@@ -35,6 +35,9 @@
 #define CFG_TESTMODE_ON                  UINT8_C(1)
 #define CFG_TESTMODE_MIX                 UINT8_C(2)
 
+#define ATT_IDX_SIZE					UINT8_C(20)
+#define ATT_KEY_LENGTH					UINT8_C(20)
+
 #define BOOL_TO_STR(x) ((x) ? "TRUE" : "FALSE")
 /**
  * Configuration array cell element
@@ -54,23 +57,14 @@ typedef struct ConfigLine_S ConfigLine_T;
  * INDEX at the configuration array
  */
 
-static const char A00Name[] = "WIFISSID";
-static const char A01Name[] = "WIFIPASSWORD";
-static const char A02Name[] = "MQTTBROKERNAME";
-static const char A03Name[] = "MQTTBROKERPORT";
-static const char A04Name[] = "MQTTSECURE";
-static const char A05Name[] = "MQTTUSER";
-static const char A06Name[] = "MQTTPASSWORD";
-static const char A07Name[] = "MQTTANONYMOUS";
-static const char A08Name[] = "STREAMRATE";
-static const char A09Name[] = "ACCELENABLED";
-static const char A10Name[] = "GYROENABLED";
-static const char A11Name[] = "MAGENABLED";
-static const char A12Name[] = "ENVENABLED";
-static const char A13Name[] = "LIGHTENABLED";
-static const char A14Name[] = "NOISEENABLED";
-static const char A15Name[] = "SNTPNAME";
-static const char A16Name[] = "SNTPPORT";
+static const char ATT_KEY_NAME[ATT_IDX_SIZE][ATT_KEY_LENGTH] = {
+		"WIFISSID","WIFIPASSWORD","MQTTBROKERNAME","MQTTBROKERPORT",
+		"MQTTSECURE","MQTTUSER","MQTTPASSWORD","MQTTANONYMOUS",
+		"STREAMRATE","ACCEL","GYRO","MAG",
+		"ENV", "LIGHT","NOISE","SNTPNAME",
+		"SNTPPORT","FIRMWARENAME","FIRMWAREVERSION","FIRMWAREURL"};
+
+
 enum AttributesIndex_E
 {
     ATT_IDX_WIFISSID,
@@ -82,14 +76,17 @@ enum AttributesIndex_E
     ATT_IDX_MQTTPASSWORD,
     ATT_IDX_MQTTANONYMOUS,
     ATT_IDX_STREAMRATE,
-    ATT_IDX_ACCELENABLED,
-    ATT_IDX_GYROENABLED,
-    ATT_IDX_MAGENABLED,
-    ATT_IDX_ENVENABLED,
-    ATT_IDX_LIGHTENABLED,
-    ATT_IDX_NOISEENABLED,
+    ATT_IDX_ACCEL,
+    ATT_IDX_GYRO,
+    ATT_IDX_MAG,
+    ATT_IDX_ENV,
+    ATT_IDX_LIGHT,
+    ATT_IDX_NOISE,
 	ATT_IDX_SNTPNAME,
 	ATT_IDX_SNTPPORT,
+	ATT_IDX_FIRMWARENAME,
+	ATT_IDX_FIRMWAREVERSION,
+	ATT_IDX_FIRMWAREURL
 };
 
 typedef enum AttributesIndex_E AttributesIndex_T;
@@ -229,6 +226,20 @@ bool MQTTCfgParser_IsNoiseEnabled(void);
 void MQTTCfgParser_FLWriteConfig(void);
 
 const char *MQTTCfgParser_GetSntpName(void);
+
+void MQTTCfgParser_SetFirmwareName(char * name);
+
+void MQTTCfgParser_SetFirmwareVersion(char * name);
+
+void MQTTCfgParser_SetFirmwareURL(char * name);
+
+void MQTTCfgParser_SetConfig(const char * value, int index);
+
+const char *MQTTCfgParser_GetFirmwareName(void);
+
+const char *MQTTCfgParser_GetFirmwareVersion(void);
+
+const char *MQTTCfgParser_GetFirmwareURL(void);
 
 int32_t MQTTCfgParser_GetSntpPort(void);
 
