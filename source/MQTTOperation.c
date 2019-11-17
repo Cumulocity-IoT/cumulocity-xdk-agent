@@ -119,6 +119,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
+	command = CMD_UNKNOWN;
+
 	LOG_AT_INFO(("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
 			(int) param.TopicLength, appIncomingMsgTopicBuffer,
 			(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
@@ -126,9 +128,8 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_CUSTOM,
 			strlen(TOPIC_DOWNSTREAM_CUSTOM)) == 0)) {
 		LOG_AT_TRACE(("MQTTOperation: Received command \r\n"));
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
 		if (commandProgress == DEVICE_OPERATION_WAITING) {
+			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 			command = CMD_MESSAGE;
 		}
@@ -142,19 +143,17 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
-			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: %i \r\n",
-					token, token_pos));
+			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: %i \r\n", token, token_pos));
 
 			switch (token_pos) {
 			case 0:
 				if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
-					LOG_AT_DEBUG(("MQTTOperation: Starting restart \r\n"));
-
-					AppController_SetStatus(APP_STATUS_REBOOT);
-					// set flag so that XDK acknowledges reboot command
-					command = CMD_RESTART;
-					command_complete = 1;
 					if (rebootProgress == DEVICE_OPERATION_WAITING) {
+						LOG_AT_DEBUG(("MQTTOperation: Starting restart \r\n"));
+						AppController_SetStatus(APP_STATUS_REBOOT);
+						// set flag so that XDK acknowledges reboot command
+						command = CMD_RESTART;
+						command_complete = 1;
 						rebootProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
 						MQTTOperation_StartRestartTimer(REBOOT_DELAY);
 						LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
@@ -162,13 +161,13 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
 					if (commandProgress == DEVICE_OPERATION_WAITING) {
 						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
+						command = CMD_COMMAND;
 					}
-					command = CMD_COMMAND;
 				} else if (strcmp(token, TEMPLATE_STD_FIRMWARE) == 0) {
 					if (commandProgress == DEVICE_OPERATION_WAITING) {
 						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
+						command = CMD_FIRMWARE;
 					}
-					command = CMD_FIRMWARE;
 				} else {
 					command = CMD_UNKNOWN;
 				}
