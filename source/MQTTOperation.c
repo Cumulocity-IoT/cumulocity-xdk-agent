@@ -132,6 +132,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 			command = CMD_MESSAGE;
+			AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
 		}
 	} else if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_STANDARD,
 			strlen(TOPIC_DOWNSTREAM_STANDARD)) == 0)) {
@@ -142,7 +143,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
 
 		while (token != NULL) {
-			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: %i \r\n", token, token_pos));
+			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: [%i] \r\n", token, token_pos));
 
 			switch (token_pos) {
 			case 0:
@@ -208,7 +209,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				if (command == CMD_SPEED){
 					int speed = strtol(token, (char **) NULL, 10);
 					speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command speed, new speed: token_pos: %i\r\n", speed));
+					LOG_AT_DEBUG(("MQTTOperation: Phase execute command speed, new speed: [%i]\r\n", speed));
 					tickRateMS = (int) pdMS_TO_TICKS(speed);
 					xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
 					MQTTCfgParser_SetStreamRate(speed);
@@ -216,7 +217,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
 				} else if (command == CMD_SENSOR) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: %i\r\n", token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: [%i]\r\n", token_pos));
 					for (int var = ATT_IDX_ACCEL; var <= ATT_IDX_NOISE; ++var) {
 						if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
 							config_index= var;
@@ -228,10 +229,10 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 						LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
 					}
 				} else if (command == CMD_FIRMWARE) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command firmware version: token_pos: %i\r\n", token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase execute command firmware version: token_pos: [%i]\r\n", token_pos));
 					MQTTCfgParser_SetFirmwareVersion(token);
 				} else if (command == CMD_CONFIG) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse command config: token_pos: %i\r\n", token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase parse command config: token_pos: [%i]\r\n", token_pos));
 					for (int var = 0; var < ATT_IDX_SIZE; ++var) {
 						if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
 							config_index= var;
@@ -246,19 +247,19 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 				break;
 			case 4:
 				if (command == CMD_SENSOR){
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command sensor: token_pos: %i\r\n", token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase execute command sensor: token_pos: [%i]\r\n", token_pos));
 					MQTTCfgParser_SetSensor(token, config_index);
 					MQTTCfgParser_FLWriteConfig();
 					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
 				} else if (command == CMD_CONFIG){
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command config: token_pos: %i\r\n", token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase execute command config: token_pos: [%i]\r\n", token_pos));
 					MQTTCfgParser_SetConfig(token, config_index);
 					MQTTCfgParser_FLWriteConfig();
 					assetUpdate = APP_ASSET_WAITING;
 					command_complete = 1;
 				} else if (command == CMD_FIRMWARE) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: %i\r\n", token_pos));
+					LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: [%i]\r\n", token_pos));
 					MQTTCfgParser_SetFirmwareURL(token);
 					MQTTCfgParser_FLWriteConfig();
 					assetUpdate = APP_ASSET_WAITING;
@@ -824,7 +825,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			//UBaseType_t stackHighWaterMark = 0;
 			UBaseType_t stackHighWaterMarkApp = uxTaskGetStackHighWaterMark(AppControllerHandle);
 			UBaseType_t stackHighWaterMarkMain = uxTaskGetStackHighWaterMark(MainCmdProcessor.task);
-			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%u],freeHeap:[%u], stackHighWaterMarkApp:[%u],stackHighWaterMarkMain:[%u]\r\n", everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain);
+			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%u], freeHeap:[%u], stackHighWaterMarkApp:[%u],stackHighWaterMarkMain:[%u]\r\n", everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain);
 #endif
 
 		}
