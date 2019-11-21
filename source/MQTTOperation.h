@@ -28,6 +28,7 @@
 #define TEMPLATE_STD_RESTART    	"510"
 #define TEMPLATE_STD_COMMAND    	"511"
 #define TEMPLATE_STD_FIRMWARE    	"515"
+#define TEMPLATE_CUS_MESSAGE    	"999"
 
 
 //Cumulocity topics to send data
@@ -47,6 +48,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ, MQTT_Connect_TZ, MQTT_Credentials_TZ, Sen
 void MQTTOperation_DeInit(void);
 void MQTTOperation_StartTimer(void *, uint32_t);
 void MQTTOperation_StopTimer(void *, uint32_t);
+void MQTTOperation_QueueCommand(void * param1, uint32_t param2);
 
 
 typedef enum
@@ -57,6 +59,9 @@ typedef enum
 	DEVICE_OPERATION_EXECUTING = INT16_C(501),
 	DEVICE_OPERATION_FAILED = INT16_C(502),
 	DEVICE_OPERATION_SUCCESSFUL = INT16_C(503),
+	DEVICE_OPERATION_BEFORE_PENDING = INT16_C(594),
+	DEVICE_OPERATION_PENDING= INT16_C(595),
+	DEVICE_OPERATION_AFTER_PENDING= INT16_C(596),
 	DEVICE_OPERATION_IMMEDIATE_BUTTON= INT16_C(597),
 	DEVICE_OPERATION_IMMEDIATE_CMD= INT16_C(598),
 	DEVICE_OPERATION_BEFORE_SUCCESSFUL = INT16_C(599),
@@ -74,7 +79,9 @@ typedef enum
 	CMD_STOP,
 	CMD_CONFIG,
 	CMD_FIRMWARE,
+	CMD_DEBUFFER,
 	CMD_UNKNOWN,
+	CMD_REQUEST,
 } C8Y_COMMAND;
 
 static const char * const commands[] = {
@@ -88,6 +95,8 @@ static const char * const commands[] = {
 		"c8y_Command",
 		"c8y_Command",
 		"c8y_Firmware",
+		"c8y_Command",
+		"c8y_Command",
 		"c8y_Command",
 };
 

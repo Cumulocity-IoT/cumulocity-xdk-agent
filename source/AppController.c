@@ -437,8 +437,8 @@ Retcode_T AppController_SyncTime() {
 					("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
 		}
 		sntpAttemps++;
-		vTaskDelay(pdMS_TO_TICKS(2000));
-	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 5 times
+		vTaskDelay(pdMS_TO_TICKS(1500));
+	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 3 times
 	if (0UL == sntpTimeStampFromServer) {
 		sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
 		SNTP_SetTime(sntpTimeStampFromServer);
@@ -505,5 +505,3 @@ void AppController_SetCmdStatus( uint8_t status) {
 uint8_t AppController_GetCmdStatus(void) {
 	return cmd_status;
 }
-
-

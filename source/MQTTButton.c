@@ -39,7 +39,6 @@
 /* local variables ********************************************************** */
 static CmdProcessor_T *AppCmdProcessor; /**< Application Command Processor Instance */
 
-
 /* global variables ********************************************************* */
 
 /* inline functions ********************************************************* */
@@ -57,14 +56,25 @@ static CmdProcessor_T *AppCmdProcessor; /**< Application Command Processor Insta
 static void processbuttonCallback1 (void * param1, uint32_t buttonstatus)
 {
 	BCDS_UNUSED(param1);
+	static TickType_t time_start = 0;
 
 	LOG_AT_TRACE(("MQTTButton: Status button %d %lu %i\r\n", AppController_GetStatus(), buttonstatus, BSP_XDK_BUTTON_PRESS));
-
-	// only use button 1 when in operation mode
-	if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED && BSP_XDK_BUTTON_PRESSED == buttonstatus)
-		CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StopTimer, NULL, buttonstatus);
-	if (AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED && BSP_XDK_BUTTON_PRESSED == buttonstatus)
-		CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_StartTimer, NULL, buttonstatus);
+	if (BSP_XDK_BUTTON_PRESSED == buttonstatus ) {
+		time_start = xTaskGetTickCountFromISR();
+	} else {
+		TickType_t time_passed = xTaskGetTickCountFromISR() - time_start;
+		if (time_passed > pdMS_TO_TICKS(3000)) {
+			CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_QueueCommand, "511,DUMMY,requestCommands", buttonstatus);
+			LOG_AT_TRACE(("MQTTButton: Button1 pressed long: %lu\r\n", time_passed));
+		} else {
+			// only use button 1 when in operation mode
+			if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED ) {
+				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_QueueCommand, "511,DUMMY,stopButton", buttonstatus);
+			} else if (AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
+				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_QueueCommand, "511,DUMMY,startButton", buttonstatus);
+			}
+		}
+	}
 }
 
 
@@ -79,7 +89,7 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
 		TickType_t time_passed = xTaskGetTickCountFromISR() - time_start;
 		if (time_passed > pdMS_TO_TICKS(3000)) {
 			MQTTFlash_FLWriteBootStatus((uint8_t*) NO_BOOT_PENDING);
-			LOG_AT_TRACE(("MQTTButton: Button pressed long: %lu\r\n", time_passed));
+			LOG_AT_TRACE(("MQTTButton: Button2 pressed long: %lu\r\n", time_passed));
 		} else {
 			ConfigDataBuffer localbuffer;
 			localbuffer.length = NUMBER_UINT32_ZERO;
@@ -91,7 +101,7 @@ static void processbuttonCallback2 (void * param1, uint32_t buttonstatus)
 			memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 			MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
 			LOG_AT_DEBUG(("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data));
-			LOG_AT_TRACE(("MQTTButton: Button pressed for: %lu\r\n", time_passed));
+			LOG_AT_TRACE(("MQTTButton: Button2 pressed for: %lu\r\n", time_passed));
 		}
 	}
 

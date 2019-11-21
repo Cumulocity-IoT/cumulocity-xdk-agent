@@ -35,11 +35,10 @@
 #include "semphr.h"
 #include "math.h"
 #include "Serval_Mqtt.h"
-#include <XDK_TimeStamp.h>
+#include "XDK_TimeStamp.h"
 #include "XDK_SNTP.h"
 #include "XDK_WLAN.h"
 #include "BatteryMonitor.h"
-
 #include "XdkSensorHandle.h"
 #include "BCDS_Orientation.h"
 
@@ -51,17 +50,17 @@ const float aku340ConversionRatio = 0.01258925411794167210423954106396;  //pow(1
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
 static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 static int tickRateMS;
-static APP_ASSET_STATUS assetUpdate = APP_ASSET_INITIAL;
-static SensorDataBuffer sensorStreamBuffer;
-static AssetDataBuffer assetStreamBuffer;
-static DEVICE_OPERATION rebootProgress = DEVICE_OPERATION_WAITING;
+static APP_ASSET_UPDATE_STATUS assetUpdateProcess = APP_ASSET_INITIAL;
 static DEVICE_OPERATION commandProgress = DEVICE_OPERATION_WAITING;
 static C8Y_COMMAND command;
+static SensorDataBuffer sensorStreamBuffer;
+static AssetDataBuffer assetStreamBuffer;
 static uint16_t connectAttemps = 0UL;
 static xTimerHandle timerHandleSensor;
 static xTimerHandle timerHandleAsset;
 SemaphoreHandle_t semaphoreAssetBuffer;
 SemaphoreHandle_t semaphoreSensorBuffer;
+QueueHandle_t commandQueue;
 
 /* global variables ********************************************************* */
 // Network and Client Configuration
@@ -82,6 +81,7 @@ static void MQTTOperation_RestartCallback(xTimerHandle xTimer);
 static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force);
 static void MQTTOperation_SensorUpdate(xTimerHandle xTimer);
 static float MQTTOperation_CalcSoundPressure(float acousticRawValue);
+static void MQTTOperation_ExecuteCommand(char * commandBuffer);
 
 static MQTT_Subscribe_TZ MqttSubscribeCommandInfo = { .Topic = TOPIC_DOWNSTREAM_CUSTOM,
 		.QoS = MQTT_QOS_AT_MOST_ONE, .IncomingPublishNotificationCB =
@@ -119,169 +119,193 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
-	command = CMD_UNKNOWN;
-
 	LOG_AT_INFO(("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
 			(int) param.TopicLength, appIncomingMsgTopicBuffer,
 			(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
 
-	if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_CUSTOM,
-			strlen(TOPIC_DOWNSTREAM_CUSTOM)) == 0)) {
-		LOG_AT_TRACE(("MQTTOperation: Received command \r\n"));
-		if (commandProgress == DEVICE_OPERATION_WAITING) {
-			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
-			command = CMD_MESSAGE;
-			AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
+	AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
+	// split batch of commands in single commands
+	char *token = strtok(appIncomingMsgPayloadBuffer, "\n");
+	while (token != NULL) {
+		LOG_AT_ERROR(("MQTTOperation: Try to place command [%s] in queue!\r\n", token));
+		if (xQueueSend(commandQueue,token, 0) != pdTRUE) {
+			LOG_AT_ERROR(("MQTTOperation: Could not buffer command!\r\n"));
+			break;
 		}
-	} else if ((strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_STANDARD,
-			strlen(TOPIC_DOWNSTREAM_STANDARD)) == 0)) {
-		// split payload into tokens
-		int token_pos = 0;
-		int config_index = -1;
-		int command_complete = 0;
-		char *token = strtok(appIncomingMsgPayloadBuffer, ",:");
-
-		while (token != NULL) {
-			LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: [%i] \r\n", token, token_pos));
-
-			switch (token_pos) {
-			case 0:
-				if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
-					if (rebootProgress == DEVICE_OPERATION_WAITING) {
-						LOG_AT_DEBUG(("MQTTOperation: Starting restart \r\n"));
-						AppController_SetStatus(APP_STATUS_REBOOT);
-						// set flag so that XDK acknowledges reboot command
-						command = CMD_RESTART;
-						command_complete = 1;
-						rebootProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
-						MQTTOperation_StartRestartTimer(REBOOT_DELAY);
-						LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
-					}
-				} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
-					if (commandProgress == DEVICE_OPERATION_WAITING) {
-						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
-						command = CMD_COMMAND;
-					}
-				} else if (strcmp(token, TEMPLATE_STD_FIRMWARE) == 0) {
-					if (commandProgress == DEVICE_OPERATION_WAITING) {
-						commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
-						command = CMD_FIRMWARE;
-					}
-				} else {
-					command = CMD_UNKNOWN;
-				}
-				break;
-			case 1:
-				//do nothing, ignore the device ID
-				break;
-			case 2:
-				if (command == CMD_COMMAND) {
-					if (strcmp(token, "speed") == 0) {
-						command = CMD_SPEED;
-					} else if (strcmp(token, "toggle") == 0) {
-						BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-						command = CMD_TOGGLE;
-						command_complete = 1;
-						// skip phase BEFORE_EXECUTING, because LED is switched on immediately
-						commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
-					} else if (strcmp(token, "start") == 0) {
-						MQTTOperation_StartTimer(null,0);
-						command_complete = 1;
-					} else if (strcmp(token, "stop") == 0) {
-						MQTTOperation_StopTimer(null,0);
-						command_complete = 1;
-					} else if (strcmp(token, "sensor") == 0) {
-						command = CMD_SENSOR;
-					} else if (strcmp(token, "config") == 0) {
-						command = CMD_CONFIG;
-					} else {
-						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-						LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
-					}
-					LOG_AT_DEBUG(("MQTTOperation: Token: [%s] recognized as command: [%i]\r\n", token, command));
-				} else if (command == CMD_FIRMWARE){
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse command firmware name: token_pos: [%i]\r\n", token_pos));
-					MQTTCfgParser_SetFirmwareName(token);
-				}
-				break;
-			case 3:
-				if (command == CMD_SPEED){
-					int speed = strtol(token, (char **) NULL, 10);
-					speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command speed, new speed: [%i]\r\n", speed));
-					tickRateMS = (int) pdMS_TO_TICKS(speed);
-					xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
-					MQTTCfgParser_SetStreamRate(speed);
-					MQTTCfgParser_FLWriteConfig();
-					assetUpdate = APP_ASSET_WAITING;
-					command_complete = 1;
-				} else if (command == CMD_SENSOR) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: [%i]\r\n", token_pos));
-					for (int var = ATT_IDX_ACCEL; var <= ATT_IDX_NOISE; ++var) {
-						if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
-							config_index= var;
-							break;
-						}
-					}
-					if (config_index == -1) {
-						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-						LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
-					}
-				} else if (command == CMD_FIRMWARE) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command firmware version: token_pos: [%i]\r\n", token_pos));
-					MQTTCfgParser_SetFirmwareVersion(token);
-				} else if (command == CMD_CONFIG) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse command config: token_pos: [%i]\r\n", token_pos));
-					for (int var = 0; var < ATT_IDX_SIZE; ++var) {
-						if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
-							config_index= var;
-							break;
-						}
-					}
-					if (config_index == -1) {
-						commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-						LOG_AT_WARNING(("MQTTOperation: Config change not supported: %s\r\n", token));
-					}
-				}
-				break;
-			case 4:
-				if (command == CMD_SENSOR){
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command sensor: token_pos: [%i]\r\n", token_pos));
-					MQTTCfgParser_SetSensor(token, config_index);
-					MQTTCfgParser_FLWriteConfig();
-					assetUpdate = APP_ASSET_WAITING;
-					command_complete = 1;
-				} else if (command == CMD_CONFIG){
-					LOG_AT_DEBUG(("MQTTOperation: Phase execute command config: token_pos: [%i]\r\n", token_pos));
-					MQTTCfgParser_SetConfig(token, config_index);
-					MQTTCfgParser_FLWriteConfig();
-					assetUpdate = APP_ASSET_WAITING;
-					command_complete = 1;
-				} else if (command == CMD_FIRMWARE) {
-					LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: [%i]\r\n", token_pos));
-					MQTTCfgParser_SetFirmwareURL(token);
-					MQTTCfgParser_FLWriteConfig();
-					assetUpdate = APP_ASSET_WAITING;
-					command_complete = 1;
-				}
-				break;
-			default:
-				LOG_AT_WARNING(("MQTTOperation: Error parsing command!\r\n"));
-				break;
-			}
-			token = strtok(NULL, ", ");
-			token_pos++;
-		}
-		// test if command was complete
-		if ( command_complete == 0) {
-			commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-			LOG_AT_ERROR(("MQTTOperation: Incomplete command!\r\n"));
-		} else
-			AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
+		token = strtok(NULL, "\n");
 	}
 
 }
+
+static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
+	/* Initialize Variables */
+
+	command = CMD_UNKNOWN;
+
+	LOG_AT_INFO(("MQTTOperation_ExecuteCommand: Processing command: [%s]\r\n", commandBuffer));
+
+	// split payload into tokens
+	int token_pos = 0;
+	int config_index = -1;
+	bool command_complete = false;
+	char *token = strtok(commandBuffer, ",:");
+
+	while (token != NULL) {
+		LOG_AT_TRACE(("MQTTOperation: Processing token: [%s], token_pos: [%i] \r\n", token, token_pos));
+
+		switch (token_pos) {
+		case 0:
+			if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
+				LOG_AT_DEBUG(("MQTTOperation: Starting restart \r\n"));
+				AppController_SetStatus(APP_STATUS_REBOOT);
+				// set flag so that XDK acknowledges reboot command
+				command = CMD_RESTART;
+				command_complete = true;
+				MQTTOperation_StartRestartTimer(REBOOT_DELAY);
+				LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
+			} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
+				command = CMD_COMMAND;
+			} else if (strcmp(token, TEMPLATE_STD_FIRMWARE) == 0) {
+				command = CMD_FIRMWARE;
+			} else if (strcmp(token, TEMPLATE_CUS_MESSAGE) == 0) {
+				command = CMD_MESSAGE;
+			} else {
+				// set command as unknown
+				command = CMD_UNKNOWN;
+			}
+			break;
+		case 1:
+			//do nothing, ignore the device ID
+			break;
+		case 2:
+			if (command == CMD_COMMAND) {
+				if (strcmp(token, "speed") == 0) {
+					command = CMD_SPEED;
+				} else if (strcmp(token, "toggle") == 0) {
+					BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+					command = CMD_TOGGLE;
+					command_complete = true;
+					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+				} else if (strcmp(token, "start") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+					command = CMD_START;
+					command_complete = true;
+					MQTTOperation_StartTimer(null, 0);
+				} else if (strcmp(token, "startButton") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					command = CMD_START;
+					command_complete = true;
+					MQTTOperation_StartTimer(null, 0);
+				} else if (strcmp(token, "stop") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+					command = CMD_STOP;
+					command_complete = true;
+					MQTTOperation_StopTimer(null,0);
+				} else if (strcmp(token, "stopButton") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					command = CMD_STOP;
+					command_complete = true;
+					MQTTOperation_StopTimer(null, 0);
+				} else if (strcmp(token, "requestCommands") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					command = CMD_REQUEST;
+					command_complete = true;
+				} else if (strcmp(token, "sensor") == 0) {
+					command = CMD_SENSOR;
+				} else if (strcmp(token, "config") == 0) {
+					command = CMD_CONFIG;
+				} else {
+					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+					LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
+				}
+				LOG_AT_DEBUG(("MQTTOperation: Token: [%s] recognized as command: [%i]\r\n", token, command));
+			} else if (command == CMD_FIRMWARE){
+				LOG_AT_DEBUG(("MQTTOperation: Phase parse command firmware name: token_pos: [%i]\r\n", token_pos));
+				MQTTCfgParser_SetFirmwareName(token);
+			} else if (command == CMD_MESSAGE) {
+				BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+				command_complete = true;
+				// skip phase BEFORE_EXECUTING, because LED is switched on immediately
+				commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+			}
+			break;
+		case 3:
+			if (command == CMD_SPEED){
+				int speed = strtol(token, (char **) NULL, 10);
+				speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
+				LOG_AT_DEBUG(("MQTTOperation: Phase execute command speed, new speed: [%i]\r\n", speed));
+				tickRateMS = (int) pdMS_TO_TICKS(speed);
+				xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
+				MQTTCfgParser_SetStreamRate(speed);
+				MQTTCfgParser_FLWriteConfig();
+				assetUpdateProcess = APP_ASSET_WAITING;
+				command_complete = true;
+			} else if (command == CMD_SENSOR) {
+				LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: [%i]\r\n", token_pos));
+				for (int var = ATT_IDX_ACCEL; var <= ATT_IDX_NOISE; ++var) {
+					if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
+						config_index= var;
+						break;
+					}
+				}
+				if (config_index == -1) {
+					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+					LOG_AT_WARNING(("MQTTOperation: Sensor not supported: %s\r\n", token));
+				}
+			} else if (command == CMD_FIRMWARE) {
+				LOG_AT_DEBUG(("MQTTOperation: Phase execute command firmware version: token_pos: [%i]\r\n", token_pos));
+				MQTTCfgParser_SetFirmwareVersion(token);
+			} else if (command == CMD_CONFIG) {
+				LOG_AT_DEBUG(("MQTTOperation: Phase parse command config: token_pos: [%i]\r\n", token_pos));
+				for (int var = 0; var < ATT_IDX_SIZE; ++var) {
+					if (strcmp(token, ATT_KEY_NAME[var]) == 0) {
+						config_index= var;
+						break;
+					}
+				}
+				if (config_index == -1) {
+					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+					LOG_AT_WARNING(("MQTTOperation: Config change not supported: %s\r\n", token));
+				}
+			}
+			break;
+		case 4:
+			if (command == CMD_SENSOR){
+				LOG_AT_DEBUG(("MQTTOperation: Phase execute command sensor: token_pos: [%i]\r\n", token_pos));
+				MQTTCfgParser_SetSensor(token, config_index);
+				MQTTCfgParser_FLWriteConfig();
+				assetUpdateProcess = APP_ASSET_WAITING;
+				command_complete = true;
+			} else if (command == CMD_CONFIG){
+				LOG_AT_DEBUG(("MQTTOperation: Phase execute command config: token_pos: [%i]\r\n", token_pos));
+				MQTTCfgParser_SetConfig(token, config_index);
+				MQTTCfgParser_FLWriteConfig();
+				assetUpdateProcess = APP_ASSET_WAITING;
+				command_complete = true;
+			} else if (command == CMD_FIRMWARE) {
+				LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: [%i]\r\n", token_pos));
+				MQTTCfgParser_SetFirmwareURL(token);
+				MQTTCfgParser_FLWriteConfig();
+				assetUpdateProcess = APP_ASSET_WAITING;
+				command_complete = true;
+			}
+			break;
+		default:
+			LOG_AT_WARNING(("MQTTOperation: Error parsing command!\r\n"));
+			break;
+		}
+		token = strtok(NULL, ", ");
+		token_pos++;
+	}
+	// test if command was complete
+	if ( command_complete == false) {
+		commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
+		LOG_AT_ERROR(("MQTTOperation: Incomplete command!\r\n"));
+	}
+
+}
+
 
 static void MQTTOperation_StartRestartTimer(int period) {
 	xTimerHandle timerHandle = xTimerCreate(
@@ -319,6 +343,7 @@ static void MQTTOperation_ClientPublish(void) {
 	xSemaphoreGive(semaphoreAssetBuffer);
 	semaphoreSensorBuffer = xSemaphoreCreateBinary();
 	xSemaphoreGive(semaphoreSensorBuffer);
+	commandQueue = xQueueCreate(4, SIZE_XSMALL_BUF);
 
 	Retcode_T retcode = RETCODE_OK;
 	// initialize buffers
@@ -372,7 +397,7 @@ static void MQTTOperation_ClientPublish(void) {
 					Retcode_RaiseError(retcode);
 				}
 
-				if (assetUpdate == APP_ASSET_PUBLISHED) {
+				if (assetUpdateProcess == APP_ASSET_PUBLISHED) {
 					// wait an extra tick rate until topic are created in Cumulocity
 					// topics are only created after the device is created
 					vTaskDelay(pdMS_TO_TICKS(3000));
@@ -381,13 +406,13 @@ static void MQTTOperation_ClientPublish(void) {
 						LOG_AT_ERROR(("MQTTOperation: MQTT subscription failed \r\n"));
 						retcode = MQTTOperation_ValidateWLANConnectivity(true);
 					} else {
-						assetUpdate = APP_ASSET_COMPLETED;
+						assetUpdateProcess = APP_ASSET_COMPLETED;
 					}
 				}
 
-				if ( rebootProgress == DEVICE_OPERATION_SUCCESSFUL) {
+				if (commandProgress == DEVICE_OPERATION_AFTER_PENDING ) {
 					MQTTFlash_FLWriteBootStatus( (uint8_t* ) NO_BOOT_PENDING);
-					rebootProgress = DEVICE_OPERATION_WAITING;
+					commandProgress = DEVICE_OPERATION_WAITING;
 				}
 			}
 		}
@@ -424,7 +449,17 @@ static void MQTTOperation_ClientPublish(void) {
 			}
 		}
 
-
+		char commandBuffer[SIZE_XSMALL_BUF] = {0};
+		// test if some commands are pending
+		if (uxQueueMessagesWaiting(commandQueue) > 0 && commandProgress == DEVICE_OPERATION_WAITING) {
+			if (xQueueReceive(commandQueue, &commandBuffer, 0) != pdTRUE)
+				LOG_AT_ERROR(("MQTTOperation: Could read command from buffer!\r\n"));
+			else {
+				commandProgress = DEVICE_OPERATION_BEFORE_EXECUTING;
+				LOG_AT_DEBUG(("MQTTOperation: Execute command from buffer: [%s]!\r\n", commandBuffer));
+				MQTTOperation_ExecuteCommand(commandBuffer);
+			}
+		}
 		vTaskDelay(pdMS_TO_TICKS(MINIMAL_SPEED));
 	}
 
@@ -439,16 +474,8 @@ static void MQTTOperation_ClientPublish(void) {
  */
 void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
-	//BCDS_UNUSED(param2);
-
-	// when publish is stopped by invoking  button no cmd acknowledgment needs to be sent to C8Y
-	if (param2 == 0)
-		commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
-	else
-		commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
-
-	command = CMD_START;
-	LOG_AT_INFO(("MQTTOperation: Start publishing: [%lu] ...\r\n", param2));
+	BCDS_UNUSED(param2);
+	LOG_AT_INFO(("MQTTOperation: Start publishing: ...\r\n"));
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
 	return;
@@ -460,18 +487,24 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
  */
 void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
-	//BCDS_UNUSED(param2);
-
-	// when publish is stopped by invoking  button no cmd acknowledgment needs to be sent to C8Y
-	if (param2 == 0)
-		commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
-	else
-		commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
-
-	command = CMD_STOP;
-	LOG_AT_INFO(("MQTTOperation: Stopped publishing: [%lu] !\r\n", param2));
+	BCDS_UNUSED(param2);
+	LOG_AT_INFO(("MQTTOperation: Stopped publishing!\r\n"));
 	xTimerStop(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
+	return;
+}
+
+/**
+ * @brief stops the data streaming timer
+ *
+ * @return NONE
+ */
+void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
+	//BCDS_UNUSED(param1);
+	BCDS_UNUSED(param2);
+	if (xQueueSend(commandQueue,(char *) param1, 0) != pdTRUE) {
+		LOG_AT_ERROR(("MQTTOperation_QueueCommand: Could not buffer command!\r\n"));
+	}
 	return;
 }
 
@@ -523,7 +556,8 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
 		LOG_AT_DEBUG(("MQTTOperation_Init: Have to confirm successful reboot\r\n"));
-		rebootProgress = DEVICE_OPERATION_BEFORE_SUCCESSFUL;
+		command = CMD_RESTART;
+		commandProgress = DEVICE_OPERATION_PENDING;
 	}
 
 	if (MqttSetupInfo.IsSecure == true) {
@@ -536,7 +570,7 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 			if (RETCODE_OK != retcode) {
-				LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed  [%hu] time, try again ... \r\n", connectAttemps ));
+				LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed [%hu] time, try again ... \r\n", connectAttemps ));
 				connectAttemps ++;
 			}
 		} while (RETCODE_OK != retcode && connectAttemps < 10 );
@@ -556,7 +590,6 @@ void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(60000));
 		BSP_Board_SoftReset();
-		//assert(0);
 	}
 }
 
@@ -675,9 +708,9 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
 
-		switch (assetUpdate) {
+		switch (assetUpdateProcess) {
 			case APP_ASSET_INITIAL:
-				assetUpdate = APP_ASSET_PUBLISHED;
+				assetUpdateProcess = APP_ASSET_PUBLISHED;
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
@@ -703,7 +736,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			case APP_ASSET_WAITING:
 					switch (command){
 					case CMD_FIRMWARE:
-							assetUpdate = APP_ASSET_COMPLETED;
+							assetUpdateProcess = APP_ASSET_COMPLETED;
 							assetStreamBuffer.length += snprintf(
 									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 									"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
@@ -712,7 +745,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 									"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
 							break;
 					default:
-							assetUpdate = APP_ASSET_COMPLETED;
+							assetUpdateProcess = APP_ASSET_COMPLETED;
 							MQTTOperation_PrepareAssetUpdate();
 							assetStreamBuffer.length += snprintf(
 									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
@@ -725,9 +758,14 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 		switch (commandProgress) {
 		case DEVICE_OPERATION_BEFORE_EXECUTING:
-			commandProgress = DEVICE_OPERATION_EXECUTING;
+			// if restart is triggered nothing else can be initiated
 			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+			if (command != CMD_RESTART) {
+				commandProgress = DEVICE_OPERATION_EXECUTING;
+			} else {
+				commandProgress = DEVICE_OPERATION_BEFORE_PENDING;
+			}
 			break;
 		case DEVICE_OPERATION_BEFORE_FAILED:
 			commandProgress = DEVICE_OPERATION_FAILED;
@@ -741,6 +779,12 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			break;
 		case DEVICE_OPERATION_EXECUTING:
 			commandProgress = DEVICE_OPERATION_WAITING;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
+
+			break;
+		case DEVICE_OPERATION_PENDING:
+			commandProgress = DEVICE_OPERATION_AFTER_PENDING;
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "503,%s\r\n", commands[command]);
 			break;
@@ -771,29 +815,18 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			case CMD_START :
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
-				break;
+						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");				break;
 			case CMD_STOP:
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
 				break;
+			case CMD_REQUEST:
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"500\r\n");
+				break;
 			}
-			break;
-		}
-
-		switch (rebootProgress) {
-		case DEVICE_OPERATION_BEFORE_EXECUTING:
-			rebootProgress = DEVICE_OPERATION_EXECUTING;
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"501,c8y_Restart\r\n");
-			break;
-		case DEVICE_OPERATION_BEFORE_SUCCESSFUL:
-			rebootProgress = DEVICE_OPERATION_SUCCESSFUL;
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"503,c8y_Restart\r\n");
 			break;
 		}
 

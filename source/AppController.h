@@ -237,7 +237,7 @@ typedef enum {
 	APP_ASSET_WAITING,
 	APP_ASSET_PUBLISHED,
 	APP_ASSET_COMPLETED,
-} APP_ASSET_STATUS;
+} APP_ASSET_UPDATE_STATUS;
 
 /* Default values for C8Y MQTT configuration*/
 #define DEFAULT_MQTTSECURE         true 						/**use MQTT over TLS */
@@ -259,8 +259,8 @@ typedef enum {
 
 /* Sensor type and macro definitions */
 
-#define SIZE_XXLARGE_BUF  550
-#define SIZE_XLARGE_BUF   400
+#define SIZE_XXLARGE_BUF  512
+#define SIZE_XLARGE_BUF   384
 #define SIZE_LARGE_BUF    256
 #define SIZE_SMALL_BUF    128
 #define SIZE_XSMALL_BUF    64

@@ -75,7 +75,7 @@ static MQTT_Credentials_TZ MqttCredentials = { .Username = MQTT_REGISTRATION_USE
 
 static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
 	(void) xTimer;
-	LOG_AT_DEBUG(("MQTTRegistration: Filling registration msg!\n\r"));
+	LOG_AT_DEBUG(("MQTTRegistration: requesting credentials ...\n\r"));
 	// send empty message to Cumulocity to trigger acceptance of the regitration in WebUI
 	assetStreamBuffer.length += snprintf(assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "  \n");
 }
