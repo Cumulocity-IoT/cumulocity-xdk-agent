@@ -77,6 +77,8 @@ static void MQTTOperation_ClientPublish(void);
 static void MQTTOperation_AssetUpdate(xTimerHandle xTimer);
 static Retcode_T MQTTOperation_SubscribeTopics(void);
 static void MQTTOperation_StartRestartTimer(int period);
+static void MQTTOperation_StartTimer(void);
+static void MQTTOperation_StopTimer(void);
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer);
 static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force);
 static void MQTTOperation_SensorUpdate(xTimerHandle xTimer);
@@ -191,22 +193,22 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					command = CMD_START;
 					command_complete = true;
-					MQTTOperation_StartTimer(null, 0);
+					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "startButton") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_START;
 					command_complete = true;
-					MQTTOperation_StartTimer(null, 0);
+					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "stop") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					command = CMD_STOP;
 					command_complete = true;
-					MQTTOperation_StopTimer(null,0);
+					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "stopButton") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_STOP;
 					command_complete = true;
-					MQTTOperation_StopTimer(null, 0);
+					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "requestCommands") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_REQUEST;
@@ -472,9 +474,7 @@ static void MQTTOperation_ClientPublish(void) {
  *
  * @return NONE
  */
-void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
-	BCDS_UNUSED(param1);
-	BCDS_UNUSED(param2);
+static void MQTTOperation_StartTimer(void) {
 	LOG_AT_INFO(("MQTTOperation: Start publishing: ...\r\n"));
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
@@ -485,9 +485,7 @@ void MQTTOperation_StartTimer(void * param1, uint32_t param2) {
  *
  * @return NONE
  */
-void MQTTOperation_StopTimer(void * param1, uint32_t param2) {
-	BCDS_UNUSED(param1);
-	BCDS_UNUSED(param2);
+static void MQTTOperation_StopTimer(void) {
 	LOG_AT_INFO(("MQTTOperation: Stopped publishing!\r\n"));
 	xTimerStop(timerHandleSensor, UINT32_C(0xffff));
 	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
