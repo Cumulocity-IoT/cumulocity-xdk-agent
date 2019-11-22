@@ -4,7 +4,7 @@
 
 > **CHANGES**  
   
-> **1. The format of the configuration in `config.txt` changed. From now on all parameters don't have 'ENABELED' in their name, e.g. `ACCELENABELED` becomes `ACCEL`**  
+> **1. The format of the configuration in `config.txt` changed. From now on all parameters don't have `ENABELED` in their name, e.g. `ACCELENABELED` becomes `ACCEL`**  
 > **2. The format of the device Id changed from `XDK_7C_7C_7C_7C_7C_7C` to `7C7C7C7C7C7C`. Where `7C7C7C7C7C7C` should be replaced by your MAC WLAN printed on the bottom sticker of your XDK**  
 > **Background: Since the memory of the XDK is limited changes were introduced to reduce the length of keys.**
 
