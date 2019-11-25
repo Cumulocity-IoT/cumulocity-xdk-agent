@@ -240,21 +240,21 @@ typedef enum {
 } APP_ASSET_UPDATE_STATUS;
 
 /* Default values for C8Y MQTT configuration*/
-#define DEFAULT_MQTTSECURE         true 						/**use MQTT over TLS */
-#define DEFAULT_MQTTANONYMOUS	   false
-#define DEFAULT_MQTTUSERNAME       "REGISTRATION"
-#define DEFAULT_MQTTPASSWORD	   "REGISTRATION"
+#define DEFAULT_MQTTSECURE          true 			   /**use MQTT over TLS */
+#define DEFAULT_MQTTANONYMOUS	    false
+#define DEFAULT_MQTTUSERNAME        "REGISTRATION"
+#define DEFAULT_MQTTPASSWORD	    "REGISTRATION"
 
 #define DEFAULT_FIRMWARE			"TBD"
-#define DEFAULT_STR_STREAMRATE      "5000"			   /**< Stream Data Rate in MS */
-#define DEFAULT_ACCEL            true               /**< Accelerometer Data Enable */
-#define DEFAULT_GYRO            true               /**< Gyroscope Data Enable */
-#define DEFAULT_MAG             true               /**< Magnetometer Data Enable */
-#define DEFAULT_ENV             true               /**< Environmental Data Enable */
-#define DEFAULT_LIGHT            true               /**< Ambient Light Data Enable */
-#define DEFAULT_NOISE            false               /**< Noise Data Enable */
+#define DEFAULT_STR_STREAMRATE      "5000"			  /**< Stream Data Rate in MS */
+#define DEFAULT_ACCEL               true              /**< Accelerometer Data Enable */
+#define DEFAULT_GYRO                true              /**< Gyroscope Data Enable */
+#define DEFAULT_MAG                 true              /**< Magnetometer Data Enable */
+#define DEFAULT_ENV                 true              /**< Environmental Data Enable */
+#define DEFAULT_LIGHT               true              /**< Ambient Light Data Enable */
+#define DEFAULT_NOISE               false             /**< Noise Data Enable */
 
-#define REBOOT_DELAY 		5000			   /**< Delay reboot so that device can send back "reboot is in progress" */
+#define REBOOT_DELAY 		        5000			  /**< Delay reboot so that device can send back "reboot is in progress" */
 
 
 /* Sensor type and macro definitions */

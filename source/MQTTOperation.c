@@ -84,6 +84,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force);
 static void MQTTOperation_SensorUpdate(xTimerHandle xTimer);
 static float MQTTOperation_CalcSoundPressure(float acousticRawValue);
 static void MQTTOperation_ExecuteCommand(char * commandBuffer);
+static void MQTTOperation_PrepareAssetUpdate(void);
 
 static MQTT_Subscribe_TZ MqttSubscribeCommandInfo = { .Topic = TOPIC_DOWNSTREAM_CUSTOM,
 		.QoS = MQTT_QOS_AT_MOST_ONE, .IncomingPublishNotificationCB =
@@ -467,8 +468,6 @@ static void MQTTOperation_ClientPublish(void) {
 
 }
 
-/* global functions ********************************************************* */
-
 /**
  * @brief starts the data streaming timer
  *
@@ -492,19 +491,7 @@ static void MQTTOperation_StopTimer(void) {
 	return;
 }
 
-/**
- * @brief stops the data streaming timer
- *
- * @return NONE
- */
-void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
-	//BCDS_UNUSED(param1);
-	BCDS_UNUSED(param2);
-	if (xQueueSend(commandQueue,(char *) param1, 0) != pdTRUE) {
-		LOG_AT_ERROR(("MQTTOperation_QueueCommand: Could not buffer command!\r\n"));
-	}
-	return;
-}
+
 
 static Retcode_T MQTTOperation_SubscribeTopics(void) {
 	Retcode_T retcode;
@@ -528,83 +515,6 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
 	return retcode;
 }
 
-
-/**
- * @brief Initializes the MQTT Paho Client, set up subscriptions and initializes the timers and tasks
- *
- * @return NONE
- */
-void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
-		MQTT_Connect_TZ MqttConnectInfo_P,
-		MQTT_Credentials_TZ MqttCredentials_P, Sensor_Setup_T SensorSetup_P) {
-
-	/* Initialize Variables */
-	MqttSetupInfo = MqttSetupInfo_P;
-	MqttConnectInfo = MqttConnectInfo_P;
-	MqttCredentials = MqttCredentials_P;
-	SensorSetup = SensorSetup_P;
-
-	Retcode_T retcode = RETCODE_OK;
-	tickRateMS = (int) pdMS_TO_TICKS(MQTTCfgParser_GetStreamRate());
-
-	// ckeck if reboot process is pending to be confirmed
-	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
-	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
-	LOG_AT_DEBUG(("MQTTOperation_Init: Reading boot status: [%s]\r\n", readbuffer));
-
-	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
-		LOG_AT_DEBUG(("MQTTOperation_Init: Have to confirm successful reboot\r\n"));
-		command = CMD_RESTART;
-		commandProgress = DEVICE_OPERATION_PENDING;
-	}
-
-	if (MqttSetupInfo.IsSecure == true) {
-		retcode = AppController_SyncTime();
-	}
-
-	if (RETCODE_OK == retcode) {
-		/*Connect to mqtt broker */
-		do {
-			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
-			if (RETCODE_OK != retcode) {
-				LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed [%hu] time, try again ... \r\n", connectAttemps ));
-				connectAttemps ++;
-			}
-		} while (RETCODE_OK != retcode && connectAttemps < 10 );
-
-		connectAttemps = 0UL;
-	}
-
-	if (RETCODE_OK == retcode) {
-		LOG_AT_DEBUG(("MQTTOperation: Successfully connected to [%s:%d]\r\n",
-				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
-		MQTTOperation_ClientPublish();
-	} else {
-		//reboot to recover
-		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
-		//MQTTOperation_DeInit();
-		AppController_SetStatus(APP_STATUS_ERROR);
-		// wait one minute before reboot
-		vTaskDelay(pdMS_TO_TICKS(60000));
-		BSP_Board_SoftReset();
-	}
-}
-
-/**
- * @brief Disconnect from the MQTT Client
- *
- * @return NONE
- */
-void MQTTOperation_DeInit(void) {
-	LOG_AT_DEBUG(("MQTTOperation: Calling DeInit\r\n"));
-	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeCommandInfo,
-			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
-	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeRestartInfo,
-			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
-	//ignore return code
-	Mqtt_DisconnectFromBroker_Z();
-}
 
 /**
  * @brief This will validate the WLAN network connectivity
@@ -673,7 +583,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 	return retcode;
 }
 
-void MQTTOperation_PrepareAssetUpdate() {
+static void MQTTOperation_PrepareAssetUpdate() {
 	assetStreamBuffer.length += snprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length,
 			sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
@@ -751,6 +661,8 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 							break;
 					}
 					break;
+			default:
+				break;
 		}
 
 
@@ -804,6 +716,8 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
 				break;
+			default:
+				break;
 			}
 			break;
 		case DEVICE_OPERATION_IMMEDIATE_BUTTON:
@@ -824,7 +738,11 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"500\r\n");
 				break;
+			default:
+				break;
 			}
+			break;
+		default:
 			break;
 		}
 
@@ -856,7 +774,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			//UBaseType_t stackHighWaterMark = 0;
 			UBaseType_t stackHighWaterMarkApp = uxTaskGetStackHighWaterMark(AppControllerHandle);
 			UBaseType_t stackHighWaterMarkMain = uxTaskGetStackHighWaterMark(MainCmdProcessor.task);
-			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%u], freeHeap:[%u], stackHighWaterMarkApp:[%u],stackHighWaterMarkMain:[%u]\r\n", everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain);
+			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%lu], freeHeap:[%lu], stackHighWaterMarkApp:[%lu],stackHighWaterMarkMain:[%lu]\r\n", everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain);
 #endif
 
 		}
@@ -976,4 +894,100 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 static float MQTTOperation_CalcSoundPressure(float acousticRawValue){
 	return (acousticRawValue/aku340ConversionRatio);
+}
+
+/* global functions ********************************************************* */
+
+
+/**
+ * @brief stops the data streaming timer
+ *
+ * @return NONE
+ */
+void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
+	//BCDS_UNUSED(param1);
+	BCDS_UNUSED(param2);
+	if (xQueueSend(commandQueue,(char *) param1, 0) != pdTRUE) {
+		LOG_AT_ERROR(("MQTTOperation_QueueCommand: Could not buffer command!\r\n"));
+	}
+	return;
+}
+
+
+
+/**
+ * @brief Initializes the MQTT Paho Client, set up subscriptions and initializes the timers and tasks
+ *
+ * @return NONE
+ */
+void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
+		MQTT_Connect_TZ MqttConnectInfo_P,
+		MQTT_Credentials_TZ MqttCredentials_P, Sensor_Setup_T SensorSetup_P) {
+
+	/* Initialize Variables */
+	MqttSetupInfo = MqttSetupInfo_P;
+	MqttConnectInfo = MqttConnectInfo_P;
+	MqttCredentials = MqttCredentials_P;
+	SensorSetup = SensorSetup_P;
+
+	Retcode_T retcode = RETCODE_OK;
+	tickRateMS = (int) pdMS_TO_TICKS(MQTTCfgParser_GetStreamRate());
+
+	// ckeck if reboot process is pending to be confirmed
+	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
+	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
+	LOG_AT_DEBUG(("MQTTOperation_Init: Reading boot status: [%s]\r\n", readbuffer));
+
+	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
+		LOG_AT_DEBUG(("MQTTOperation_Init: Have to confirm successful reboot\r\n"));
+		command = CMD_RESTART;
+		commandProgress = DEVICE_OPERATION_PENDING;
+	}
+
+	if (MqttSetupInfo.IsSecure == true) {
+		retcode = AppController_SyncTime();
+	}
+
+	if (RETCODE_OK == retcode) {
+		/*Connect to mqtt broker */
+		do {
+			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
+					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
+			if (RETCODE_OK != retcode) {
+				LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed [%hu] time, try again ... \r\n", connectAttemps ));
+				connectAttemps ++;
+			}
+		} while (RETCODE_OK != retcode && connectAttemps < 10 );
+
+		connectAttemps = 0UL;
+	}
+
+	if (RETCODE_OK == retcode) {
+		LOG_AT_DEBUG(("MQTTOperation: Successfully connected to [%s:%d]\r\n",
+				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
+		MQTTOperation_ClientPublish();
+	} else {
+		//reboot to recover
+		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
+		//MQTTOperation_DeInit();
+		AppController_SetStatus(APP_STATUS_ERROR);
+		// wait one minute before reboot
+		vTaskDelay(pdMS_TO_TICKS(60000));
+		BSP_Board_SoftReset();
+	}
+}
+
+/**
+ * @brief Disconnect from the MQTT Client
+ *
+ * @return NONE
+ */
+void MQTTOperation_DeInit(void) {
+	LOG_AT_DEBUG(("MQTTOperation: Calling DeInit\r\n"));
+	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeCommandInfo,
+			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
+	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeRestartInfo,
+			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
+	//ignore return code
+	Mqtt_DisconnectFromBroker_Z();
 }
