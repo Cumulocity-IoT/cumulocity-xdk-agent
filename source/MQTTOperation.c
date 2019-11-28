@@ -398,12 +398,13 @@ static void MQTTOperation_ClientPublish(void) {
 				if (RETCODE_OK != retcode) {
 					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
 					Retcode_RaiseError(retcode);
+					retcode = MQTTOperation_ValidateWLANConnectivity(true);
 				}
 
-				if (assetUpdateProcess == APP_ASSET_PUBLISHED) {
+				if (assetUpdateProcess == APP_ASSET_PUBLISHED && RETCODE_OK == retcode) {
 					// wait an extra tick rate until topic are created in Cumulocity
 					// topics are only created after the device is created
-					vTaskDelay(pdMS_TO_TICKS(3000));
+					vTaskDelay(pdMS_TO_TICKS(1000));
 					retcode = MQTTOperation_SubscribeTopics();
 					if (RETCODE_OK != retcode) {
 						LOG_AT_ERROR(("MQTTOperation: MQTT subscription failed \r\n"));
@@ -420,7 +421,7 @@ static void MQTTOperation_ClientPublish(void) {
 			}
 		}
 
-		if  (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
+		if (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
@@ -564,6 +565,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 		}
 		if (RETCODE_OK != retcode) {
 			LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps ));
+			vTaskDelay(pdMS_TO_TICKS(3000));
 		} else {
 			//reset connection counter
 			connectAttemps = 0L;
@@ -576,7 +578,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
 		//MQTTOperation_DeInit();
 		// wait one minute before reboot
-		vTaskDelay(pdMS_TO_TICKS(60000));
+		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();
 	}
 
@@ -795,9 +797,10 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 	if (RETCODE_OK == retcode) {
 		retcode = Sensor_GetData(&sensorValue);
 	}
-
+	//printf("MQTTOperation: Before Semi ... \r\n");
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
+		//printf("MQTTOperation: In Semi ... \r\n");
 
 #if ENABLE_SENSOR_TOOLBOX
 		// update inventory with latest measurements
@@ -887,8 +890,9 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "1998,%s,%.4f\r\n", deviceId, MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 		}
-	}
-	xSemaphoreGive(semaphoreAssetBuffer);
+	} // else
+	//	printf("MQTTOperation: Sorry Semi ... \r\n");
+	xSemaphoreGive(semaphoreSensorBuffer);
 
 }
 
@@ -989,5 +993,11 @@ void MQTTOperation_DeInit(void) {
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeRestartInfo,
 			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
 	//ignore return code
-	Mqtt_DisconnectFromBroker_Z();
+	Retcode_T retcode = RETCODE_OK;
+
+	retcode = Mqtt_DisconnectFromBroker_Z();
+	if ( retcode != RETCODE_OK) {
+		LOG_AT_DEBUG(("MQTTOperation: Error diconnecting from Broker\r\n"));
+		Retcode_RaiseError(retcode);
+	}
 }
