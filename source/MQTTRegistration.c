@@ -311,6 +311,9 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 			if (RETCODE_OK == retcode) {
 				isSntpDisabled = true;
 				retcode = WLAN_Reconnect();
+			} else {
+				// reconnecting might have failed since the connection is still active try to continue anyway
+				retcode = RETCODE_OK;
 			}
 			if (RETCODE_OK == retcode) {
 				retcode = SNTP_Enable();

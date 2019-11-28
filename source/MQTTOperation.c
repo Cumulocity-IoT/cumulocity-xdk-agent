@@ -382,7 +382,7 @@ static void MQTTOperation_ClientPublish(void) {
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
-					LOG_AT_INFO(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s\r\n",
+					LOG_AT_INFO(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s",
 								assetStreamBuffer.length, assetStreamBuffer.data));
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
@@ -427,7 +427,7 @@ static void MQTTOperation_ClientPublish(void) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					measurementCounter++;
-					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s\r\n",
+					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s",
 								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
@@ -548,6 +548,9 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 			if (RETCODE_OK == retcode) {
 				isSntpDisabled = true;
 				retcode = WLAN_Reconnect();
+			} else {
+				// reconnecting might have failed since the connection is still active try to continue anyway
+				retcode = RETCODE_OK;
 			}
 			if (RETCODE_OK == retcode) {
 				retcode = SNTP_Enable();
