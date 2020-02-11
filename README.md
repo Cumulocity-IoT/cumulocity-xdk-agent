@@ -204,6 +204,17 @@ If your CA is different this needs to be changed.
 
 ## Troubleshooting
 
+### Maximal allowed size of flashed binary is exceeded
+
+When you use a XDK with bootloader version 1.1.0 the maximal allowed size of the flashed binary  `cumulocity-xdk-agent.bin` can't exceed 600MB. In this case either:
+
+* flash a new bootloader version 1.2.0 or
+* disable the use of the `SENSOR_TOOLBOX` library in  `AppController.h`. This will reduce the size below 600MB
+```
+#define ENABLE_SENSOR_TOOLBOX				0
+```
+
+
 ### When the following error occusrs after building and flashing the project please clean, rebuild and flash project again:
 
 ```
