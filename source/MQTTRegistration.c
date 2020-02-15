@@ -47,11 +47,12 @@ static xTimerHandle clientRegistrationTimerHandle = NULL; // timer handle for da
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
 static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 static uint16_t connectAttemps = 0UL;
-static AssetDataBuffer assetStreamBuffer;
 
 /* global variables ********************************************************* */
-// Network and Client Configuration
-/* global variable declarations */
+extern AssetDataBuffer assetStreamBuffer;
+extern MQTT_Setup_TZ MqttSetupInfo;
+extern MQTT_Connect_TZ MqttConnectInfo;
+extern MQTT_Credentials_TZ MqttCredentials;
 
 /* inline functions ********************************************************* */
 
@@ -68,10 +69,6 @@ static MQTT_Subscribe_TZ MqttSubscribeInfo = { .Topic = TOPIC_CREDENTIAL, .QoS =
 
 static MQTT_Publish_TZ MqttPublishInfo = { .Topic = TOPIC_REGISTRATION, .QoS =
 		1UL, .Payload = NULL, .PayloadLength = 0UL, };/**< MQTT publish parameters */
-
-static MQTT_Setup_TZ MqttSetupInfo;
-static MQTT_Connect_TZ MqttConnectInfo;
-static MQTT_Credentials_TZ MqttCredentials = { .Username = MQTT_REGISTRATION_USERNAME, .Password = MQTT_REGISTRATION_PASSWORD,	};
 
 static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
 	(void) xTimer;
@@ -228,12 +225,7 @@ void MQTTRegistration_StartTimer(void){
  *
  * @return NONE
  */
-void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
-		MQTT_Connect_TZ MqttConnectInfo_P) {
-
-	/* Initialize Variables */
-	MqttSetupInfo = MqttSetupInfo_P;
-	MqttConnectInfo = MqttConnectInfo_P;
+void MQTTRegistration_Init() {
 
 	Retcode_T retcode = RETCODE_OK;
 

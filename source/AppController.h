@@ -104,7 +104,8 @@
  * APP_MQTT_BROKER_HOST_URL is the MQTT broker host address URL.
  */
 #define MQTT_BROKER_HOST_NAME              "mqtt.cumulocity.com"
-
+#define MQTT_REGISTRATION_USERNAME		   "management/devicebootstrap"
+#define MQTT_REGISTRATION_PASSWORD		   "Fhdt1bb1f"
 /**
  * APP_MQTT_BROKER_HOST_PORT is the MQTT broker host port.
  */

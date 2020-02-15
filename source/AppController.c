@@ -63,57 +63,8 @@ false, .SSID = WLAN_SSID, .Username = WLAN_PSK, .Password = WLAN_PSK,
 		.IsStatic = WLAN_STATIC_IP, .IpAddr = WLAN_IP_ADDR, .GwAddr =
 		WLAN_GW_ADDR, .DnsAddr = WLAN_DNS_ADDR, .Mask = WLAN_MASK, };/**< WLAN setup parameters */
 
-static Sensor_Setup_T SensorSetup = {
-		.CmdProcessorHandle = NULL,
-		.Enable = {
-				.Accel = false,
-				.Mag = false,
-				.Gyro = false,
-				.Humidity = false,
-				.Temp =	false,
-				.Pressure = false,
-				.Light = false,
-				.Noise = false, },
-		.Config = {
-				.Accel = {
-						.Type = SENSOR_ACCEL_BMA280,
-						.IsRawData = false,
-						.IsInteruptEnabled = false,
-						.Callback = NULL, },
-				.Gyro = {
-						.Type = SENSOR_GYRO_BMG160,
-						.IsRawData = false, },
-				.Mag = {
-						.IsRawData = false },
-				.Light = {
-						.IsInteruptEnabled = false,
-						.Callback = NULL, },
-				.Temp = {
-						.OffsetCorrection =	APP_TEMPERATURE_OFFSET_CORRECTION,
-						},
-				},
-		};/**< Sensor setup parameters */
-
 static SNTP_Setup_T SNTPSetupInfo = { .ServerUrl = SNTP_SERVER_URL,
 		.ServerPort = SNTP_SERVER_PORT, };/**< SNTP setup parameters */
-
-static MQTT_Setup_TZ MqttSetupInfo = { .IsSecure = APP_MQTT_SECURE_ENABLE, };/**< MQTT setup parameters */
-
-static MQTT_Connect_TZ MqttConnectInfo = { .ClientId = APP_MQTT_CLIENT_ID,
-		.BrokerURL = MQTT_BROKER_HOST_NAME, .BrokerPort =
-		MQTT_BROKER_HOST_PORT, .CleanSession = true, .KeepAliveInterval =
-				100, };/**< MQTT connect parameters */
-
-static MQTT_Credentials_TZ MqttCredentials = { .Username = APP_MQTT_USERNAME,
-		.Password = APP_MQTT_PASSWORD, .Anonymous = false,
-
-};/**< MQTT connect parameters */
-
-static Storage_Setup_T StorageSetup =
-        {
-                .SDCard = true,
-                .WiFiFileSystem = true,
-        };/**< Storage setup parameters */
 
 static CmdProcessor_T * AppCmdProcessor;/**< Handle to store the main Command processor handle to be used by run-time event driven threads */
 
@@ -126,13 +77,23 @@ static void AppController_SetClientId(void);
 static void AppController_StartLEDBlinkTimer(int);
 
 static char clientId[] = WIFI_DEFAULT_MAC_CLIENTID;
-char deviceId[] = DEVICE_ID;
 
-xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application controller to be used by run-time blocking threads */
 
 /* global variables ********************************************************* */
 APP_STATUS app_status;
 APP_STATUS cmd_status;
+char deviceId[] = DEVICE_ID;
+uint16_t connectAttemps = 0UL;
+SensorDataBuffer sensorStreamBuffer;
+AssetDataBuffer assetStreamBuffer;
+
+xTaskHandle AppControllerHandle = NULL;/**< OS thread handle for Application controller to be used by run-time blocking threads */
+MQTT_Setup_TZ MqttSetupInfo;
+MQTT_Connect_TZ MqttConnectInfo;
+MQTT_Credentials_TZ MqttCredentials;
+Storage_Setup_T	StorageSetup;
+Sensor_Setup_T SensorSetup;
+
 /* inline functions ********************************************************* */
 
 /* local functions ********************************************************** */
@@ -321,12 +282,19 @@ static void AppController_Fire(void* pvParameters)
 	MqttConnectInfo.KeepAliveInterval = 100;
 
 	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
-		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
-		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
-		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
-		MQTTOperation_Init(MqttSetupInfo, MqttConnectInfo, MqttCredentials, SensorSetup);
+		MqttCredentials = (MQTT_Credentials_TZ) {
+			.Username = MQTTCfgParser_GetMqttUser(),
+			.Password = MQTTCfgParser_GetMqttPassword(),
+			.Anonymous = MQTTCfgParser_IsMqttAnonymous()
+		};
+		MQTTOperation_Init();
 	} else {
-		MQTTRegistration_Init(MqttSetupInfo, MqttConnectInfo);
+		MqttCredentials = (MQTT_Credentials_TZ) {
+			.Username = MQTT_REGISTRATION_USERNAME,
+			.Password = MQTT_REGISTRATION_PASSWORD,
+			.Anonymous = FALSE
+		};
+		MQTTRegistration_Init();
 	}
 }
 
@@ -461,6 +429,60 @@ Retcode_T AppController_SyncTime() {
 
 /** Refer interface header for description */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
+
+	/*
+	 * Initialialze global variables
+	 */
+
+	MqttSetupInfo = (MQTT_Setup_TZ) { .IsSecure = APP_MQTT_SECURE_ENABLE, };/**< MQTT setup parameters */
+
+	MqttConnectInfo =  (MQTT_Connect_TZ) { .ClientId = APP_MQTT_CLIENT_ID,
+			.BrokerURL = MQTT_BROKER_HOST_NAME, .BrokerPort =
+			MQTT_BROKER_HOST_PORT, .CleanSession = true, .KeepAliveInterval =
+					100, };/**< MQTT connect parameters */
+
+	MqttCredentials = (MQTT_Credentials_TZ) { .Username = APP_MQTT_USERNAME,
+			.Password = APP_MQTT_PASSWORD, .Anonymous = false,
+
+	};/**< MQTT connect parameters */
+
+	StorageSetup =
+	        (Storage_Setup_T) {
+	                .SDCard = true,
+	                .WiFiFileSystem = true,
+	        };/**< Storage setup parameters */
+
+	SensorSetup = (Sensor_Setup_T) {
+			.CmdProcessorHandle = NULL,
+			.Enable = {
+					.Accel = false,
+					.Mag = false,
+					.Gyro = false,
+					.Humidity = false,
+					.Temp =	false,
+					.Pressure = false,
+					.Light = false,
+					.Noise = false, },
+			.Config = {
+					.Accel = {
+							.Type = SENSOR_ACCEL_BMA280,
+							.IsRawData = false,
+							.IsInteruptEnabled = false,
+							.Callback = NULL, },
+					.Gyro = {
+							.Type = SENSOR_GYRO_BMG160,
+							.IsRawData = false, },
+					.Mag = {
+							.IsRawData = false },
+					.Light = {
+							.IsInteruptEnabled = false,
+							.Callback = NULL, },
+					.Temp = {
+							.OffsetCorrection =	APP_TEMPERATURE_OFFSET_CORRECTION,
+							},
+					},
+			};/**< Sensor setup parameters */
+
 	Retcode_T retcode = RETCODE_OK;
 	BCDS_UNUSED(param2);
 

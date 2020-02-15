@@ -44,7 +44,7 @@
 
 
 /* global function prototype declarations */
-void MQTTOperation_Init(MQTT_Setup_TZ, MQTT_Connect_TZ, MQTT_Credentials_TZ, Sensor_Setup_T);
+void MQTTOperation_Init();
 void MQTTOperation_DeInit(void);
 void MQTTOperation_QueueCommand(void * param1, uint32_t param2);
 

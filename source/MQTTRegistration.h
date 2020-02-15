@@ -26,18 +26,13 @@
 #define TOPIC_REGISTRATION    	 "s/ucr"
 #define TOPIC_CREDENTIAL    	 "s/dcr"
 
-
-#define MQTT_REGISTRATION_PORT			8883
-#define MQTT_REGISTRATION_BROKERNAME	"mqtt.cumulocity.com"
-#define MQTT_REGISTRATION_USERNAME		"management/devicebootstrap"
-#define MQTT_REGISTRATION_PASSWORD		"Fhdt1bb1f"
 #define MQTT_REGISTRATION_TICKRATE		2000
 
 #define MILLISECONDS(x) ((portTickType) x / portTICK_RATE_MS)
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)
 
 /* global function prototype declarations */
-void MQTTRegistration_Init(MQTT_Setup_TZ, MQTT_Connect_TZ);
+void MQTTRegistration_Init();
 void MQTTRegistration_DeInit(void);
 void MQTTRegistration_StartTimer(void);
 void MQTTRegistration_StopTimer(void);

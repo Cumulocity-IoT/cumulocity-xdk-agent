@@ -53,8 +53,6 @@ static int tickRateMS;
 static APP_ASSET_UPDATE_STATUS assetUpdateProcess = APP_ASSET_INITIAL;
 static DEVICE_OPERATION commandProgress = DEVICE_OPERATION_WAITING;
 static C8Y_COMMAND command;
-static SensorDataBuffer sensorStreamBuffer;
-static AssetDataBuffer assetStreamBuffer;
 static uint16_t connectAttemps = 0UL;
 static xTimerHandle timerHandleSensor;
 static xTimerHandle timerHandleAsset;
@@ -63,11 +61,13 @@ SemaphoreHandle_t semaphoreSensorBuffer;
 QueueHandle_t commandQueue;
 
 /* global variables ********************************************************* */
-// Network and Client Configuration
-/* global variable declarations */
 extern char deviceId[];
-extern xTaskHandle AppControllerHandle;
-extern CmdProcessor_T MainCmdProcessor;
+extern SensorDataBuffer sensorStreamBuffer;
+extern AssetDataBuffer assetStreamBuffer;
+extern MQTT_Setup_TZ MqttSetupInfo;
+extern MQTT_Connect_TZ MqttConnectInfo;
+extern MQTT_Credentials_TZ MqttCredentials;
+extern Sensor_Setup_T SensorSetup;
 
 /* inline functions ********************************************************* */
 
@@ -99,12 +99,6 @@ static MQTT_Publish_TZ MqttPublishAssetInfo = { .Topic = TOPIC_ASSET_STREAM,
 
 static MQTT_Publish_TZ MqttPublishDataInfo = { .Topic = TOPIC_DATA_STREAM,
 		.QoS = MQTT_QOS_AT_MOST_ONE, .Payload = NULL, .PayloadLength = 0UL, };/**< MQTT publish parameters */
-
-static MQTT_Setup_TZ MqttSetupInfo;
-static MQTT_Connect_TZ MqttConnectInfo;
-static MQTT_Credentials_TZ MqttCredentials;
-static Sensor_Setup_T SensorSetup;
-
 
 /**
  * @brief callback function for subriptions
@@ -927,15 +921,8 @@ void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
  *
  * @return NONE
  */
-void MQTTOperation_Init(MQTT_Setup_TZ MqttSetupInfo_P,
-		MQTT_Connect_TZ MqttConnectInfo_P,
-		MQTT_Credentials_TZ MqttCredentials_P, Sensor_Setup_T SensorSetup_P) {
+void MQTTOperation_Init() {
 
-	/* Initialize Variables */
-	MqttSetupInfo = MqttSetupInfo_P;
-	MqttConnectInfo = MqttConnectInfo_P;
-	MqttCredentials = MqttCredentials_P;
-	SensorSetup = SensorSetup_P;
 
 	Retcode_T retcode = RETCODE_OK;
 	tickRateMS = (int) pdMS_TO_TICKS(MQTTCfgParser_GetStreamRate());
