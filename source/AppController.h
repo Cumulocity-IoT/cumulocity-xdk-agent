@@ -254,7 +254,7 @@ typedef enum {
 #define DEFAULT_LIGHT               true              /**< Ambient Light Data Enable */
 #define DEFAULT_NOISE               false             /**< Noise Data Enable */
 
-#define REBOOT_DELAY 		        5000			  /**< Delay reboot so that device can send back "reboot is in progress" */
+#define REBOOT_DELAY 		        3000			  /**< Delay reboot so that device can send back "reboot is in progress" */
 
 
 /* Sensor type and macro definitions */

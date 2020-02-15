@@ -31,7 +31,7 @@
 #define MQTT_REGISTRATION_BROKERNAME	"mqtt.cumulocity.com"
 #define MQTT_REGISTRATION_USERNAME		"management/devicebootstrap"
 #define MQTT_REGISTRATION_PASSWORD		"Fhdt1bb1f"
-#define MQTT_REGISTRATION_TICKRATE		10000
+#define MQTT_REGISTRATION_TICKRATE		2000
 
 #define MILLISECONDS(x) ((portTickType) x / portTICK_RATE_MS)
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)

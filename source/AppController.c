@@ -228,7 +228,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 #endif
 	}
 	//delay start
-	vTaskDelay(pdMS_TO_TICKS(4000));
+	vTaskDelay(pdMS_TO_TICKS(2000));
 
 
 	if (RETCODE_OK == retcode) {
@@ -440,7 +440,8 @@ Retcode_T AppController_SyncTime() {
 		vTaskDelay(pdMS_TO_TICKS(1500));
 	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 3 times
 	if (0UL == sntpTimeStampFromServer) {
-		sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
+		//sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
+		sntpTimeStampFromServer = 1580515200UL; // use default time 1. Feb 2020 00:00:00 UTC
 		SNTP_SetTime(sntpTimeStampFromServer);
 		LOG_AT_WARNING(
 				("MQTTOperation: Using fixed timestamp 1. Nov 2019 00:00:00 UTC, SNTP sync not possible\r\n"));
@@ -463,7 +464,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	Retcode_T retcode = RETCODE_OK;
 	BCDS_UNUSED(param2);
 
-	vTaskDelay(pdMS_TO_TICKS(2000));
+	vTaskDelay(pdMS_TO_TICKS(1000));
 	LOG_AT_INFO(("AppController_Init: XDK System Startup\r\n"));
 
 	// start status LED indicator

@@ -46,7 +46,7 @@ static xTimerHandle clientRegistrationTimerHandle = NULL; // timer handle for da
 // Subscribe topics variables
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
 static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
-
+static uint16_t connectAttemps = 0UL;
 static AssetDataBuffer assetStreamBuffer;
 
 /* global variables ********************************************************* */
@@ -144,7 +144,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		MQTTCfgParser_SetMqttUser(username);
 		MQTTCfgParser_SetMqttPassword(password);
 		MQTTCfgParser_FLWriteConfig();
-		MQTTRegistration_StartRestartTimer(REBOOT_DELAY);
+		MQTTRegistration_StartRestartTimer(2000);
 	}
 
 }
@@ -156,7 +156,7 @@ static void MQTTRegistration_StartRestartTimer(int period) {
 			NULL, // optional identifier
 			MQTTRegistration_RestartCallback // static callback function
 	);
-	xTimerStart(timerHandle, MILLISECONDS(10));
+	xTimerStart(timerHandle, MILLISECONDS(5));
 }
 
 static void MQTTRegistration_RestartCallback(xTimerHandle xTimer) {
@@ -242,11 +242,18 @@ void MQTTRegistration_Init(MQTT_Setup_TZ MqttSetupInfo_P,
 	}
 
 	if (RETCODE_OK == retcode) {
-		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-				MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
-		if (RETCODE_OK != retcode) {
-			LOG_AT_ERROR(("MQTTRegistration: MQTT connection to the broker failed \n\r"));
-		}
+		/*Connect to mqtt broker */
+		do {
+			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
+			MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
+			if (RETCODE_OK != retcode) {
+				LOG_AT_ERROR(
+						("MQTTRegistration: MQTT connection to the broker failed \n\r"));
+				connectAttemps++;
+			}
+		} while (RETCODE_OK != retcode && connectAttemps < 10);
+
+		connectAttemps = 0UL;
 	}
 
 	if (RETCODE_OK == retcode) {
@@ -303,6 +310,13 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
+
+		// increase connect attemps
+		connectAttemps = connectAttemps + 1;
+		// before resetting connection try to disconnect
+		// ignore return code
+		//retcode = Mqtt_DisconnectFromBroker_Z();
+		MQTTOperation_DeInit();
 		if (MqttSetupInfo.IsSecure == true) {
 			static bool isSntpDisabled = false;
 			if (false == isSntpDisabled) {
@@ -325,18 +339,27 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 		if (RETCODE_OK == retcode) {
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
-			if (RETCODE_OK != retcode) {
-				LOG_AT_ERROR(("MQTTRegistration: MQTT connection to the broker failed\n\r"));
-			}
+			if (RETCODE_OK == retcode) {
+				retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
+						MQTT_SUBSCRIBE_TIMEOUT_IN_MS);			}
 		}
 
-		if (RETCODE_OK == retcode) {
-			retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
-					MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
-			if (RETCODE_OK != retcode) {
-				LOG_AT_ERROR(("MQTTRegistration: MQTT subscribe command failed\n\r"));
-			}
+		if (RETCODE_OK != retcode) {
+			LOG_AT_ERROR(("MQTTRegistration: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps ));
+			vTaskDelay(pdMS_TO_TICKS(3000));
+		} else {
+			//reset connection counter
+			connectAttemps = 0L;
 		}
+	}
+
+	// test if we have to reboot
+	if (connectAttemps > 10) {
+		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
+		//MQTTOperation_DeInit();
+		// wait one minute before reboot
+		vTaskDelay(pdMS_TO_TICKS(30000));
+		BSP_Board_SoftReset();
 	}
 	return retcode;
 }

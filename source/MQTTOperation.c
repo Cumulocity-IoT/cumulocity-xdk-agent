@@ -566,6 +566,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 				retcode = MQTTOperation_SubscribeTopics();
 			}
 		}
+
 		if (RETCODE_OK != retcode) {
 			LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps ));
 			vTaskDelay(pdMS_TO_TICKS(3000));
@@ -573,7 +574,6 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 			//reset connection counter
 			connectAttemps = 0L;
 		}
-
 	}
 
 	// test if we have to reboot
