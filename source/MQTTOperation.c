@@ -29,6 +29,7 @@
 #include "BCDS_BSP_Board.h"
 #include "BCDS_WlanNetworkConfig.h"
 #include "BCDS_WlanNetworkConnect.h"
+#include "BCDS_Orientation.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timers.h"
@@ -40,19 +41,17 @@
 #include "XDK_WLAN.h"
 #include "BatteryMonitor.h"
 #include "XdkSensorHandle.h"
-#include "BCDS_Orientation.h"
 
 static const int MINIMAL_SPEED = 50;
 /* constant definitions ***************************************************** */
 const float aku340ConversionRatio = 0.01258925411794167210423954106396;  //pow(10,(-38/20));
 /* local variables ********************************************************** */
-// Buffers
 static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
 static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 static int tickRateMS;
 static APP_ASSET_UPDATE_STATUS assetUpdateProcess = APP_ASSET_INITIAL;
 static DEVICE_OPERATION commandProgress = DEVICE_OPERATION_WAITING;
-static C8Y_COMMAND command;
+static C8Y_COMMAND command = CMD_UNKNOWN;
 static uint16_t connectAttemps = 0UL;
 static xTimerHandle timerHandleSensor;
 static xTimerHandle timerHandleAsset;
@@ -377,7 +376,7 @@ static void MQTTOperation_ClientPublish(void) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					LOG_AT_INFO(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s",
-								assetStreamBuffer.length, assetStreamBuffer.data));
+							assetStreamBuffer.length, assetStreamBuffer.data));
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
 							assetStreamBuffer.length;
@@ -422,7 +421,7 @@ static void MQTTOperation_ClientPublish(void) {
 				if (pdPASS == semaphoreResult) {
 					measurementCounter++;
 					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s",
-								sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
+							sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
 					retcode = MQTT_PublishToTopic_Z(&MqttPublishDataInfo, MQTT_PUBLISH_TIMEOUT_IN_MS);
@@ -612,54 +611,55 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 	LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
 
+	// take semaphore to avoid publish thread to access the buffer
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
 
 		switch (assetUpdateProcess) {
-			case APP_ASSET_INITIAL:
-				assetUpdateProcess = APP_ASSET_PUBLISHED;
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
+		case APP_ASSET_INITIAL:
+			assetUpdateProcess = APP_ASSET_PUBLISHED;
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
 
-				char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
-				Utils_GetXdkVersionString((uint8_t *) readbuffer);
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"110,%s,XDK,%s\r\n", deviceId, readbuffer);
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
+			char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
+			Utils_GetXdkVersionString((uint8_t *) readbuffer);
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"110,%s,XDK,%s\r\n", deviceId, readbuffer);
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\r\n");
+			MQTTOperation_PrepareAssetUpdate();
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"400,xdk_StartEvent,\"XDK started!\"\r\n");
+			break;
+		case APP_ASSET_WAITING:
+			switch (command){
+			case CMD_FIRMWARE:
+				assetUpdateProcess = APP_ASSET_COMPLETED;
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 						"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
 				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "117,5\r\n");
+						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+						"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
+				break;
+			default:
+				assetUpdateProcess = APP_ASSET_COMPLETED;
 				MQTTOperation_PrepareAssetUpdate();
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"400,xdk_StartEvent,\"XDK started!\"\r\n");
+						"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
 				break;
-			case APP_ASSET_WAITING:
-					switch (command){
-					case CMD_FIRMWARE:
-							assetUpdateProcess = APP_ASSET_COMPLETED;
-							assetStreamBuffer.length += snprintf(
-									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-									"115,%s,%s,%s\r\n", MQTTCfgParser_GetFirmwareName(),MQTTCfgParser_GetFirmwareVersion(),MQTTCfgParser_GetFirmwareURL());
-							assetStreamBuffer.length += snprintf(
-									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-									"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
-							break;
-					default:
-							assetUpdateProcess = APP_ASSET_COMPLETED;
-							MQTTOperation_PrepareAssetUpdate();
-							assetStreamBuffer.length += snprintf(
-									assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-									"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
-							break;
-					}
-					break;
+			}
+			break;
 			default:
 				break;
 		}
@@ -669,7 +669,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 		case DEVICE_OPERATION_BEFORE_EXECUTING:
 			// if restart is triggered nothing else can be initiated
 			assetStreamBuffer.length += snprintf(
-				assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "501,%s\r\n", commands[command]);
 			if (command != CMD_RESTART) {
 				commandProgress = DEVICE_OPERATION_EXECUTING;
 			} else {
@@ -719,30 +719,30 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 				break;
 			}
 			break;
-		case DEVICE_OPERATION_IMMEDIATE_BUTTON:
-			commandProgress = DEVICE_OPERATION_WAITING;
+			case DEVICE_OPERATION_IMMEDIATE_BUTTON:
+				commandProgress = DEVICE_OPERATION_WAITING;
 
-			switch (command){
-			case CMD_START :
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");				break;
-			case CMD_STOP:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
+				switch (command){
+				case CMD_START :
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+							"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");				break;
+				case CMD_STOP:
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+							"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
+					break;
+				case CMD_REQUEST:
+					assetStreamBuffer.length += snprintf(
+							assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+							"500\r\n");
+					break;
+				default:
+					break;
+				}
 				break;
-			case CMD_REQUEST:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-						"500\r\n");
-				break;
-			default:
-				break;
-			}
-			break;
-		default:
-			break;
+				default:
+					break;
 		}
 
 		// send keep alive message every 60 seconds
@@ -780,7 +780,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 	}
 
-	// access exlusive Data
+	// release semaphore and let publish thread access the buffer
 	xSemaphoreGive(semaphoreAssetBuffer);
 
 	LOG_AT_TRACE(("MQTTOperation: Finished buffering device data\r\n"));
@@ -801,8 +801,8 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 #if ENABLE_SENSOR_TOOLBOX
 		// update inventory with latest measurements
-	   Orientation_EulerData_T eulerValueInDegree = {0.0F, 0.0F, 0.0F, 0.0F};
-	   retcode = Orientation_readEulerRadianVal(&eulerValueInDegree);
+		Orientation_EulerData_T eulerValueInDegree = {0.0F, 0.0F, 0.0F, 0.0F};
+		retcode = Orientation_readEulerRadianVal(&eulerValueInDegree);
 
 		if (retcode == RETCODE_SUCCESS) {
 
@@ -972,7 +972,7 @@ void MQTTOperation_Init() {
 }
 
 /**
- * @brief Disconnect from the MQTT Client
+ * @brief Disconnect client from the MQTT broker
  *
  * @return NONE
  */
