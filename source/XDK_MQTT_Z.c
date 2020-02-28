@@ -5,7 +5,7 @@
  **
  *******************************************************************************
  **
- **	OBJECT NAME:	MQTT_Z.c
+ **	OBJECT NAME:	XDK_MQTT_Z.c
  **
  **	DESCRIPTION:	Source Code for the Cumulocity MQTT Client for the Bosch XDK
  **
@@ -181,6 +181,7 @@ static retcode_t MqttEventHandler_Z(MqttSession_T* session, MqttEvent_t event, c
     case MQTT_PUBLISH_SEND_FAILED:
         case MQTT_PUBLISH_SEND_ACK_FAILED:
         case MQTT_PUBLISH_TIMEOUT:
+        LOG_AT_ERROR(("MqttEventHandler_Z: Received Publish failed Event\r\n"));
         MqttPublishStatus_Z = false;
         if (pdTRUE != xSemaphoreGive(MqttPublishHandle_Z))
         {
@@ -387,6 +388,7 @@ Retcode_T MQTT_ConnectToBroker_Z(MQTT_Connect_TZ * mqttConnect, uint32_t timeout
 				sprintf(mqttBrokerURL, MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, mqttConnect->BrokerPort);
 				MqttSession_Z.target.scheme = SERVAL_SCHEME_MQTT;
 			}
+			LOG_AT_TRACE(("MQTT_ConnectToBroker_Z: Broker URL: [%s]\r\n", mqttBrokerURL ));
 
 			if (RC_OK == SupportedUrl_fromString((const char *) mqttBrokerURL, (uint16_t) strlen((const char *) mqttBrokerURL), &MqttSession_Z.target))
 			{
@@ -554,5 +556,17 @@ Retcode_T MQTT_UnSubsribeFromTopic_Z(MQTT_Subscribe_TZ * subscribe, uint32_t tim
     }
     return retcode;
 }
+
+
+Retcode_T MQTT_IsConnected_Z(void)
+{
+	Retcode_T retcode = RETCODE_OK;
+	if (false == Mqtt_isConnected(&MqttSession_Z))
+	{
+		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_DISCONNECT);
+	}
+	return retcode;
+}
+
 
 #endif /* XDK_CONNECTIVITY_MQTT */

@@ -226,6 +226,16 @@ Retcode_T MQTT_PublishToTopic_Z(MQTT_Publish_TZ * publish, uint32_t timeout);
  */
 Retcode_T MQTT_UnSubsribeFromTopic_Z(MQTT_Subscribe_TZ * subscribe, uint32_t timeout);
 
+
+/**
+ * @brief This function will check the connection status with Mqtt broker.
+ * 	      If connection status in false, session must be started again,
+ * 	      by calling MQTT_ConnectToBroker followed by topic subscription/publish.
+ *
+ * @return  RETCODE_OK on success, or RETCODE_MQTT_DISCONNECT otherwise.
+ */
+Retcode_T MQTT_IsConnected_Z(void);
+
 #endif /* XDK_MQTT_Z_H_ */
 
 /**@} */

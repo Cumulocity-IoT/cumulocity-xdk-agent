@@ -1,6 +1,6 @@
 TENANT='your-tenant'
 URL="https://$TENANT.cumulocity.com/inventory/managedObjects"
-USER='your-user:your-password'
+USER="your-user:your-password"
 curl -X POST \
   "$URL" \
   -H 'Accept: application/json' \

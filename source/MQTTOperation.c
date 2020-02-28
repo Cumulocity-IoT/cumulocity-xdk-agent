@@ -41,13 +41,12 @@
 #include "XDK_WLAN.h"
 #include "BatteryMonitor.h"
 #include "XdkSensorHandle.h"
+#include "XdkCommonInfo.h"
 
 static const int MINIMAL_SPEED = 50;
 /* constant definitions ***************************************************** */
 const float aku340ConversionRatio = 0.01258925411794167210423954106396;  //pow(10,(-38/20));
 /* local variables ********************************************************** */
-static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
-static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
 static int tickRateMS;
 static APP_ASSET_UPDATE_STATUS assetUpdateProcess = APP_ASSET_INITIAL;
 static DEVICE_OPERATION commandProgress = DEVICE_OPERATION_WAITING;
@@ -55,6 +54,8 @@ static C8Y_COMMAND command = CMD_UNKNOWN;
 static uint16_t connectAttemps = 0UL;
 static xTimerHandle timerHandleSensor;
 static xTimerHandle timerHandleAsset;
+static int errorCountSemaphore = 0;
+static int errorCountPublish = 0;
 SemaphoreHandle_t semaphoreAssetBuffer;
 SemaphoreHandle_t semaphoreSensorBuffer;
 QueueHandle_t commandQueue;
@@ -79,7 +80,7 @@ static void MQTTOperation_StartRestartTimer(int period);
 static void MQTTOperation_StartTimer(void);
 static void MQTTOperation_StopTimer(void);
 static void MQTTOperation_RestartCallback(xTimerHandle xTimer);
-static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force);
+static Retcode_T MQTTOperation_ValidateWLANConnectivity(void);
 static void MQTTOperation_SensorUpdate(xTimerHandle xTimer);
 static float MQTTOperation_CalcSoundPressure(float acousticRawValue);
 static void MQTTOperation_ExecuteCommand(char * commandBuffer);
@@ -90,6 +91,10 @@ static MQTT_Subscribe_TZ MqttSubscribeCommandInfo = { .Topic = TOPIC_DOWNSTREAM_
 				MQTTOperation_ClientReceive, };/**< MQTT subscribe parameters */
 
 static MQTT_Subscribe_TZ MqttSubscribeRestartInfo = { .Topic = TOPIC_DOWNSTREAM_STANDARD,
+		.QoS = MQTT_QOS_AT_MOST_ONE, .IncomingPublishNotificationCB =
+				MQTTOperation_ClientReceive, };/**< MQTT subscribe parameters */
+
+static MQTT_Subscribe_TZ MqttSubscribeErrorInfo = { .Topic = TOPIC_DOWNSTREAM_ERROR,
 		.QoS = MQTT_QOS_AT_MOST_ONE, .IncomingPublishNotificationCB =
 				MQTTOperation_ClientReceive, };/**< MQTT subscribe parameters */
 
@@ -108,30 +113,43 @@ static MQTT_Publish_TZ MqttPublishDataInfo = { .Topic = TOPIC_DATA_STREAM,
  * @return NONE
  */
 static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
+
 	/* Initialize Variables */
+	static char appIncomingMsgTopicBuffer[SIZE_SMALL_BUF];/**< Incoming message topic buffer */
+	static char appIncomingMsgPayloadBuffer[SIZE_LARGE_BUF];/**< Incoming message payload buffer */
+
 	memset(appIncomingMsgTopicBuffer, 0, sizeof(appIncomingMsgTopicBuffer));
 	memset(appIncomingMsgPayloadBuffer, 0, sizeof(appIncomingMsgPayloadBuffer));
 
 	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
-	LOG_AT_INFO(("MQTTOperation: Topic: %.*s, Msg Received: %.*s\r\n",
-			(int) param.TopicLength, appIncomingMsgTopicBuffer,
-			(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
+	if (strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_ERROR, strlen(TOPIC_DOWNSTREAM_ERROR)) == 0) {
+		LOG_AT_ERROR(("MQTTOperation_ClientReceive: Error: %.*s, Error Msg : %.*s\r\n",
+				(int) param.TopicLength, appIncomingMsgTopicBuffer,
+				(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
+	} else {
+		LOG_AT_INFO(("MQTTOperation_ClientReceive: Topic: %.*s, Msg Received: %.*s\r\n",
+				(int) param.TopicLength, appIncomingMsgTopicBuffer,
+				(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
 
-	AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
-	// split batch of commands in single commands
-	char *token = strtok(appIncomingMsgPayloadBuffer, "\n");
-	while (token != NULL) {
-		LOG_AT_ERROR(("MQTTOperation: Try to place command [%s] in queue!\r\n", token));
-		if (xQueueSend(commandQueue,token, 0) != pdTRUE) {
-			LOG_AT_ERROR(("MQTTOperation: Could not buffer command!\r\n"));
-			break;
+		AppController_SetCmdStatus(APP_STATUS_COMMAND_RECEIVED);
+		// split batch of commands in single commands
+		char *token = strtok(appIncomingMsgPayloadBuffer, "\n");
+		while (token != NULL) {
+			LOG_AT_ERROR(("MQTTOperation_ClientReceive: Try to place command [%s] in queue!\r\n", token));
+			if (xQueueSend(commandQueue,token, 0) != pdTRUE) {
+				LOG_AT_ERROR(("MQTTOperation_ClientReceive: Could not buffer command!\r\n"));
+				break;
+			}
+			token = strtok(NULL, "\n");
 		}
-		token = strtok(NULL, "\n");
+
 	}
 
 }
+
+
 
 static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 	/* Initialize Variables */
@@ -335,6 +353,8 @@ static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
  */
 static void MQTTOperation_ClientPublish(void) {
 
+	LOG_AT_INFO(("MQTTOperation_ClientPublish: Start publishing ...\r\n"));
+
 	semaphoreAssetBuffer = xSemaphoreCreateBinary();
 	xSemaphoreGive(semaphoreAssetBuffer);
 	semaphoreSensorBuffer = xSemaphoreCreateBinary();
@@ -370,12 +390,12 @@ static void MQTTOperation_ClientPublish(void) {
 	while (1) {
 
 		/* Check whether the WLAN network connection is available */
-		retcode = MQTTOperation_ValidateWLANConnectivity(false);
+		retcode = MQTTOperation_ValidateWLANConnectivity();
 		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
-					LOG_AT_INFO(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s",
+					LOG_AT_DEBUG(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s",
 							assetStreamBuffer.length, assetStreamBuffer.data));
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
@@ -391,7 +411,10 @@ static void MQTTOperation_ClientPublish(void) {
 				if (RETCODE_OK != retcode) {
 					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
 					Retcode_RaiseError(retcode);
-					retcode = MQTTOperation_ValidateWLANConnectivity(true);
+					errorCountPublish ++;
+					//retcode = MQTTOperation_ValidateWLANConnectivity(true);
+				} else {
+					errorCountPublish = 0;
 				}
 
 				if (assetUpdateProcess == APP_ASSET_PUBLISHED && RETCODE_OK == retcode) {
@@ -401,7 +424,7 @@ static void MQTTOperation_ClientPublish(void) {
 					retcode = MQTTOperation_SubscribeTopics();
 					if (RETCODE_OK != retcode) {
 						LOG_AT_ERROR(("MQTTOperation: MQTT subscription failed \r\n"));
-						retcode = MQTTOperation_ValidateWLANConnectivity(true);
+						retcode = MQTTOperation_ValidateWLANConnectivity();
 					} else {
 						assetUpdateProcess = APP_ASSET_COMPLETED;
 					}
@@ -420,7 +443,7 @@ static void MQTTOperation_ClientPublish(void) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					measurementCounter++;
-					LOG_AT_INFO(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s",
+					LOG_AT_DEBUG(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s",
 							sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
@@ -428,13 +451,21 @@ static void MQTTOperation_ClientPublish(void) {
 					memset(sensorStreamBuffer.data, 0x00,
 							sensorStreamBuffer.length);
 					sensorStreamBuffer.length = NUMBER_UINT32_ZERO;
+					if (RETCODE_OK != retcode) {
+						LOG_AT_ERROR(("MQTTOperation: MQTT publish failed trying to ignore\r\n"));
+						retcode = RETCODE_OK;
+					}
+
 				}
 				xSemaphoreGive(semaphoreSensorBuffer);
 
 				if (RETCODE_OK != retcode) {
 					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
-					retcode = MQTTOperation_ValidateWLANConnectivity(true);
 					Retcode_RaiseError(retcode);
+					errorCountPublish++;
+					//retcode = MQTTOperation_ValidateWLANConnectivity(true);
+				} else {
+					errorCountPublish = 0;
 				}
 
 
@@ -499,6 +530,8 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
 
 		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeRestartInfo,
 				MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeErrorInfo,
+				MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 		if (RETCODE_OK != retcode) {
 			LOG_AT_ERROR(("MQTTOperation: MQTT subscribe restart topic failed \r\n"));
 		} else {
@@ -517,12 +550,83 @@ static Retcode_T MQTTOperation_SubscribeTopics(void) {
  *
  * @return  RETCODE_OK on success, or an error code otherwise.
  */
-static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
+
+
+static Retcode_T MQTTOperation_ValidateWLANConnectivity(void) {
 	Retcode_T retcode = RETCODE_OK;
 	WlanNetworkConnect_IpStatus_T nwStatus;
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
-	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
+	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus) {
+		AppController_SetStatus(APP_STATUS_ERROR);
+
+		// reset WLAN and connect to MQTT broker
+		if (MqttSetupInfo.IsSecure == true) {
+			static bool isSntpDisabled = false;
+			if (false == isSntpDisabled) {
+				retcode = SNTP_Disable();
+			}
+			if (RETCODE_OK == retcode) {
+				isSntpDisabled = true;
+				retcode = WLAN_Reconnect();
+			} else {
+				// reconnecting might have failed since the connection is still active try to continue anyway
+				retcode = RETCODE_OK;
+			}
+			if (RETCODE_OK == retcode) {
+				retcode = SNTP_Enable();
+			}
+		} else {
+			retcode = WLAN_Reconnect();
+		}
+	}
+
+    /* Check for MQTT broker connection */
+    retcode = MQTT_IsConnected_Z();
+	if (RETCODE_OK != retcode) {
+
+		AppController_SetStatus(APP_STATUS_ERROR);
+		// increase connect attemps
+		connectAttemps = connectAttemps + 1;
+
+		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
+				MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
+		if (RETCODE_OK == retcode) {
+			retcode = MQTTOperation_SubscribeTopics();
+		}
+
+		if (RETCODE_OK != retcode) {
+			LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps ));
+			vTaskDelay(pdMS_TO_TICKS(3000));
+		} else {
+			//reset connection counter
+			connectAttemps = 0L;
+		}
+	}
+
+	// test if we have to reboot
+	if (connectAttemps > 10) {
+		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
+		//MQTTOperation_DeInit();
+		// wait one minute before reboot
+		vTaskDelay(pdMS_TO_TICKS(30000));
+		BSP_Board_SoftReset();
+	}
+
+	return retcode;
+}
+
+
+
+/**
+static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
+	Retcode_T retcode = RETCODE_OK;
+	WlanNetworkConnect_IpStatus_T nwStatus;
+
+    // Check for MQTT broker connection
+    retcode = MQTT_IsConnected_Z();
+	nwStatus = WlanNetworkConnect_GetIpStatus();
+	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force || RETCODE_OK != retcode ) {
 		AppController_SetStatus(APP_STATUS_ERROR);
 
 		// increase connect attemps
@@ -581,6 +685,8 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
 	return retcode;
 }
 
+*/
+
 static void MQTTOperation_PrepareAssetUpdate() {
 	assetStreamBuffer.length += snprintf(
 			assetStreamBuffer.data + assetStreamBuffer.length,
@@ -612,7 +718,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
 
 	// take semaphore to avoid publish thread to access the buffer
-	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
+	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT_NULL));
 	if (pdPASS == semaphoreResult) {
 
 		switch (assetUpdateProcess) {
@@ -767,6 +873,10 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 			LOG_AT_TRACE(("MQTTOperation_SensorUpdate: current time: %s\r\n", timezoneISO8601format));
 
+			assetStreamBuffer.length += snprintf(
+					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
+					"400,xdk_ErrorCountEvent,\"Errors: %i!\"\r\n", errorCountSemaphore);
+
 #if INCLUDE_uxTaskGetStackHighWaterMark
 			uint32_t everFreeHeap = xPortGetMinimumEverFreeHeapSize();
 			uint32_t freeHeap = xPortGetFreeHeapSize();
@@ -790,10 +900,8 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 	(void) xTimer;
 
 	Sensor_Value_T sensorValue;
-	Retcode_T retcode = RETCODE_OK;
-	if (RETCODE_OK == retcode) {
-		retcode = Sensor_GetData(&sensorValue);
-	}
+	Retcode_T retcode = Sensor_GetData(&sensorValue);
+
 	//printf("MQTTOperation: Before Semi ... \r\n");
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 	if (pdPASS == semaphoreResult) {
@@ -887,7 +995,8 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "1998,%s,%.4f\r\n", deviceId, MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 		}
-	} // else
+	}  else
+		errorCountSemaphore++;
 	//	printf("MQTTOperation: Sorry Semi ... \r\n");
 	xSemaphoreGive(semaphoreSensorBuffer);
 
@@ -921,7 +1030,7 @@ void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
  *
  * @return NONE
  */
-void MQTTOperation_Init() {
+void MQTTOperation_Init(void) {
 
 
 	Retcode_T retcode = RETCODE_OK;
@@ -957,7 +1066,7 @@ void MQTTOperation_Init() {
 	}
 
 	if (RETCODE_OK == retcode) {
-		LOG_AT_DEBUG(("MQTTOperation: Successfully connected to [%s:%d]\r\n",
+		LOG_AT_INFO(("MQTTOperation: Successfully connected to [%s:%d]\r\n",
 				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
 		MQTTOperation_ClientPublish();
 	} else {
@@ -981,6 +1090,8 @@ void MQTTOperation_DeInit(void) {
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeCommandInfo,
 			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeRestartInfo,
+			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
+	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeErrorInfo,
 			MQTT_UNSUBSCRIBE_TIMEOUT_IN_MS);
 	//ignore return code
 	Retcode_T retcode = RETCODE_OK;

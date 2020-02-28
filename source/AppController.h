@@ -150,6 +150,7 @@
 #define MQTT_PUBLISH_TIMEOUT_IN_MS                  UINT32_C(20000)/**< Macro for MQTT publication timeout in milli-second */
 
 #define SEMAPHORE_TIMEOUT							UINT32_C(100)
+#define SEMAPHORE_TIMEOUT_NULL						UINT32_C(000)
 
 #define MQTT_DELAY_IN_MS        					UINT32_C(222)/**< Macro for MQTT publication timeout in milli-second */
 
@@ -174,7 +175,7 @@
 #define	LOG_INFO			3
 #define	LOG_WARNING			4
 #define	LOG_ERROR			5
-#define LOG_LEVEL 	LOG_DEBUG
+#define LOG_LEVEL 			LOG_DEBUG
 
 #if LOG_LEVEL <= LOG_TRACE
 #define LOG_AT_TRACE(args) printf args

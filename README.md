@@ -7,6 +7,7 @@
 > **1. The format of the configuration in `config.txt` changed. From now on all parameters don't have `ENABELED` in their name, e.g. `ACCELENABELED` becomes `ACCEL`**  
 > **2. The format of the device Id changed from `XDK_7C_7C_7C_7C_7C_7C` to `7C7C7C7C7C7C`. Where `7C7C7C7C7C7C` should be replaced by your MAC WLAN printed on the bottom sticker of your XDK**  
 > **Background: Since the memory of the XDK is limited changes were introduced to reduce the length of keys.**
+> **3. This version will only work with Workbench version 3.6.1. This version contains an improved error handling in case the MQTT connection is broken
 
 This project is a device agent to connect the [Bosch XDK](https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit) to Cumulocity (C8Y Agent for XDK). The XDK is a quick and professional prototyping platform for prototyping IoT use cases.
 
@@ -97,7 +98,7 @@ git clone https://github.com/SoftwareAG/cumulocity-xdk-agent.git
 
 NOTE: connect your XDK using USB cable to get debug messages.
  
-1. Flash project to XDK using the XDK Workbench 3.6.0
+1. Flash project to XDK using the XDK Workbench 3.6.1
 2. After starting the XDK the agent runs in "Registration Mode" and waits until the registration is accepted in your cumulocity tenant. So you have to accept the registration in your C8Y tenant. See as well step 2.1.
 3. After accepting the registration in C8Y the XDK agent receives device credentials and stores these on the SD card.
 4. The XDK restarts and runs now in "Operation Mode". After this you should see measurements in C8Y.

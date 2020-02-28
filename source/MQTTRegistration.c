@@ -225,7 +225,7 @@ void MQTTRegistration_StartTimer(void){
  *
  * @return NONE
  */
-void MQTTRegistration_Init() {
+void MQTTRegistration_Init(void) {
 
 	Retcode_T retcode = RETCODE_OK;
 

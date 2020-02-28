@@ -327,7 +327,7 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 	switch(app_status) {
 		case APP_STATUS_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			LOG_AT_TRACE(("STATUS APP_STATUS_STARTED\n"));
+			//LOG_AT_TRACE(("STATUS APP_STATUS_STARTED\n"));
 			break;
 		case APP_STATUS_OPERATING_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
@@ -412,7 +412,7 @@ Retcode_T AppController_SyncTime() {
 		sntpTimeStampFromServer = 1580515200UL; // use default time 1. Feb 2020 00:00:00 UTC
 		SNTP_SetTime(sntpTimeStampFromServer);
 		LOG_AT_WARNING(
-				("MQTTOperation: Using fixed timestamp 1. Nov 2019 00:00:00 UTC, SNTP sync not possible\r\n"));
+				("MQTTOperation: Using fixed timestamp 1. Feb 2020 00:00:00 UTC, SNTP sync not possible\r\n"));
 		retcode = RETCODE_OK; // clear return code
 	}
 	//uint8_t * timeBuffer = (uint8_t *) &sntpTimeStampFromServer;

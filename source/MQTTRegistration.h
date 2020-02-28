@@ -32,7 +32,7 @@
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)
 
 /* global function prototype declarations */
-void MQTTRegistration_Init();
+void MQTTRegistration_Init(void);
 void MQTTRegistration_DeInit(void);
 void MQTTRegistration_StartTimer(void);
 void MQTTRegistration_StopTimer(void);

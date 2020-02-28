@@ -38,13 +38,14 @@
 //Topic for template data stream s/us/<xId>
 #define TOPIC_DOWNSTREAM_CUSTOM      "s/dc/XDK"
 #define TOPIC_DOWNSTREAM_STANDARD    "s/ds"
+#define TOPIC_DOWNSTREAM_ERROR       "s/e"
 
 #define MILLISECONDS(x) ((portTickType) x / portTICK_RATE_MS)
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)
 
 
 /* global function prototype declarations */
-void MQTTOperation_Init();
+void MQTTOperation_Init(void);
 void MQTTOperation_DeInit(void);
 void MQTTOperation_QueueCommand(void * param1, uint32_t param2);
 
