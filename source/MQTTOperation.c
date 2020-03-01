@@ -161,7 +161,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 	// split payload into tokens
 	int token_pos = 0;
 	int config_index = -1;
-	bool command_complete = false;
+	bool commandComplete = false;
 	char *token = strtok(commandBuffer, ",:");
 
 	while (token != NULL) {
@@ -174,7 +174,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 				AppController_SetStatus(APP_STATUS_REBOOT);
 				// set flag so that XDK acknowledges reboot command
 				command = CMD_RESTART;
-				command_complete = true;
+				commandComplete = true;
 				MQTTOperation_StartRestartTimer(REBOOT_DELAY);
 				LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
 			} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
@@ -198,33 +198,53 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 				} else if (strcmp(token, "toggle") == 0) {
 					BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 					command = CMD_TOGGLE;
-					command_complete = true;
+					commandComplete = true;
 					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 				} else if (strcmp(token, "start") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					command = CMD_START;
-					command_complete = true;
+					commandComplete = true;
 					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "startButton") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_START;
-					command_complete = true;
+					commandComplete = true;
 					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "stop") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 					command = CMD_STOP;
-					command_complete = true;
+					commandComplete = true;
 					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "stopButton") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_STOP;
-					command_complete = true;
+					commandComplete = true;
 					MQTTOperation_StopTimer();
+				} else if (strcmp(token, "printConfig") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					command = CMD_COMMAND;
+					commandComplete = true;
+
+					ConfigDataBuffer localbuffer;
+					localbuffer.length = NUMBER_UINT32_ZERO;
+					memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
+					MQTTFlash_FLReadConfig(&localbuffer);
+					LOG_AT_DEBUG(("MQTTButton: Current configuration in flash:\r\n%s\r\n", localbuffer.data));
+
+					localbuffer.length = NUMBER_UINT32_ZERO;
+					memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
+					MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
+					LOG_AT_DEBUG(("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data));
+				} else if (strcmp(token, "resetBootstatus") == 0) {
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					command = CMD_COMMAND;
+					commandComplete = true;
+					MQTTFlash_FLWriteBootStatus((uint8_t*) NO_BOOT_PENDING);
 				} else if (strcmp(token, "requestCommands") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_REQUEST;
-					command_complete = true;
+					commandComplete = true;
 				} else if (strcmp(token, "sensor") == 0) {
 					command = CMD_SENSOR;
 				} else if (strcmp(token, "config") == 0) {
@@ -239,7 +259,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 				MQTTCfgParser_SetFirmwareName(token);
 			} else if (command == CMD_MESSAGE) {
 				BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-				command_complete = true;
+				commandComplete = true;
 				// skip phase BEFORE_EXECUTING, because LED is switched on immediately
 				commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 			}
@@ -254,7 +274,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 				MQTTCfgParser_SetStreamRate(speed);
 				MQTTCfgParser_FLWriteConfig();
 				assetUpdateProcess = APP_ASSET_WAITING;
-				command_complete = true;
+				commandComplete = true;
 			} else if (command == CMD_SENSOR) {
 				LOG_AT_DEBUG(("MQTTOperation: Phase parse command sensor: token_pos: [%i]\r\n", token_pos));
 				for (int var = ATT_IDX_ACCEL; var <= ATT_IDX_NOISE; ++var) {
@@ -290,19 +310,19 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 				MQTTCfgParser_SetSensor(token, config_index);
 				MQTTCfgParser_FLWriteConfig();
 				assetUpdateProcess = APP_ASSET_WAITING;
-				command_complete = true;
+				commandComplete = true;
 			} else if (command == CMD_CONFIG){
 				LOG_AT_DEBUG(("MQTTOperation: Phase execute command config: token_pos: [%i]\r\n", token_pos));
 				MQTTCfgParser_SetConfig(token, config_index);
 				MQTTCfgParser_FLWriteConfig();
 				assetUpdateProcess = APP_ASSET_WAITING;
-				command_complete = true;
+				commandComplete = true;
 			} else if (command == CMD_FIRMWARE) {
 				LOG_AT_DEBUG(("MQTTOperation: Phase parse firmware url: token_pos: [%i]\r\n", token_pos));
 				MQTTCfgParser_SetFirmwareURL(token);
 				MQTTCfgParser_FLWriteConfig();
 				assetUpdateProcess = APP_ASSET_WAITING;
-				command_complete = true;
+				commandComplete = true;
 			}
 			break;
 		default:
@@ -313,7 +333,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 		token_pos++;
 	}
 	// test if command was complete
-	if ( command_complete == false) {
+	if ( commandComplete == false) {
 		commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 		LOG_AT_ERROR(("MQTTOperation: Incomplete command!\r\n"));
 	}
@@ -412,9 +432,6 @@ static void MQTTOperation_ClientPublish(void) {
 					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
 					Retcode_RaiseError(retcode);
 					errorCountPublish ++;
-					//retcode = MQTTOperation_ValidateWLANConnectivity(true);
-				} else {
-					errorCountPublish = 0;
 				}
 
 				if (assetUpdateProcess == APP_ASSET_PUBLISHED && RETCODE_OK == retcode) {
@@ -463,11 +480,7 @@ static void MQTTOperation_ClientPublish(void) {
 					LOG_AT_ERROR(("MQTTOperation: MQTT publish failed \r\n"));
 					Retcode_RaiseError(retcode);
 					errorCountPublish++;
-					//retcode = MQTTOperation_ValidateWLANConnectivity(true);
-				} else {
-					errorCountPublish = 0;
 				}
-
 
 			} else {
 				// ignore previous measurements in order to prevent buffer overrun
@@ -875,7 +888,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"400,xdk_ErrorCountEvent,\"Errors: %i!\"\r\n", errorCountSemaphore);
+					"400,xdk_ErrorCountEvent,\"Errors: Collision Semaphore/Error Publish:%i/%i!\"\r\n", errorCountSemaphore, errorCountPublish);
 
 #if INCLUDE_uxTaskGetStackHighWaterMark
 			uint32_t everFreeHeap = xPortGetMinimumEverFreeHeapSize();
@@ -1015,14 +1028,12 @@ static float MQTTOperation_CalcSoundPressure(float acousticRawValue){
  * @return NONE
  */
 void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
-	//BCDS_UNUSED(param1);
 	BCDS_UNUSED(param2);
 	if (xQueueSend(commandQueue,(char *) param1, 0) != pdTRUE) {
 		LOG_AT_ERROR(("MQTTOperation_QueueCommand: Could not buffer command!\r\n"));
 	}
 	return;
 }
-
 
 
 /**

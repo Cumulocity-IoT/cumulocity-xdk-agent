@@ -138,6 +138,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
 	}
 
+	//test if button 2 is pressed
 	if (BSP_Button_GetState((uint32_t) BSP_XDK_BUTTON_2) == 1) {
 		LOG_AT_INFO(("AppController_Setup: Button 2 was pressed at startup and delete config stored on WIFI chip!\r\n"));
 		MQTTFlash_FLDeleteConfig();
@@ -219,7 +220,6 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 static void AppController_Enable(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
 	BCDS_UNUSED(param2);
-
 
 	Retcode_T retcode = WLAN_Enable();
 	if (RETCODE_OK == retcode) {
@@ -502,7 +502,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 	} else if (RETCODE_OK == retcode) {
 		AppCmdProcessor = (CmdProcessor_T *) cmdProcessorHandle;
-		retcode = CmdProcessor_EnqueueFromIsr(AppCmdProcessor, AppController_Setup,NULL, UINT32_C(0));
+		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Setup, NULL, UINT32_C(0));
 	}
 
 	if (RETCODE_OK != retcode) {

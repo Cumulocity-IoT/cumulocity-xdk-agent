@@ -71,7 +71,7 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 Install the XDK Workbench: https://xdk.bosch-connectivity.com/software-downloads
 > NOTE: The installation path must not contains blanks. 
 
-> NOTE: The current version of the Workbench 3.6.0 defines a buffer size that is not sufficient for the certificate being used for Cumulocity. Therefore the buffer has to be increased.
+> NOTE: The current version of the Workbench 3.6.1 defines a buffer size that is not sufficient for the certificate being used for Cumulocity. Therefore the buffer has to be increased.
 
 In order to avoid a buffer overflow, as seen in the following error message:
 
