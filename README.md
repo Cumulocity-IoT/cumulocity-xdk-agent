@@ -4,10 +4,11 @@
 
 > **CHANGES**  
   
-> **1. The format of the configuration in `config.txt` changed. From now on all parameters don't have `ENABELED` in their name, e.g. `ACCELENABELED` becomes `ACCEL`**  
-> **2. The format of the device Id changed from `XDK_7C_7C_7C_7C_7C_7C` to `7C7C7C7C7C7C`. Where `7C7C7C7C7C7C` should be replaced by your MAC WLAN printed on the bottom sticker of your XDK**  
-> **Background: Since the memory of the XDK is limited changes were introduced to reduce the length of keys.**
-> **3. This version will only work with Workbench version 3.6.1. This version contains an improved error handling in case the MQTT connection is broken
+> 1. The format of the configuration in `config.txt` changed. From now on all parameters don't have `ENABELED` in their name, e.g. `ACCELENABELED` becomes `ACCEL`  
+> 2. This version will only work with Bosch XDK Workbench **version 3.6.1**. This version contains an improved error handling in case the MQTT connection get disconnected  
+> 3. The format of the device Id changed from `XDK_7C_7C_7C_7C_7C_7C` to `7C7C7C7C7C7C`. Where `7C7C7C7C7C7C` should be replaced by your MAC WLAN printed on the bottom sticker of your XDK  
+> Background: Since the memory of the XDK is limited changes were introduced to reduce the length of keys. 
+
 
 This project is a device agent to connect the [Bosch XDK](https://www.bosch-connectivity.com/de/produkte/cross-domain/cross-domain-developement-kit) to Cumulocity (C8Y Agent for XDK). The XDK is a quick and professional prototyping platform for prototyping IoT use cases.
 
