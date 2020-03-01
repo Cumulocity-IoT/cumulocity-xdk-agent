@@ -115,7 +115,7 @@
 /**
  * APP_MQTT_CLIENT_ID is the device name
  */
-#define APP_MQTT_CLIENT_ID				   "TBD"
+#define APP_MQTT_CLIENT_ID				   "000000000000"
 
 /**
  * APP_MQTT_USERNAME is the device name
@@ -138,9 +138,6 @@
 #define APP_MQTT_DATA_PUBLISH_PERIODICITY   UINT32_C(1000)
 
 /* public type and macro definitions */
-
-#define WIFI_DEFAULT_MAC_CLIENTID	"d:000000000000"
-#define DEVICE_ID					"000000000000"
 
 #define WIFI_MAC_ADDR_LEN 	   		UINT8_C(6)                  /**< Macro used to specify MAC address length*/
 

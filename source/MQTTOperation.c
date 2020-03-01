@@ -43,7 +43,7 @@
 #include "XdkSensorHandle.h"
 #include "XdkCommonInfo.h"
 
-static const int MINIMAL_SPEED = 50;
+static const int MINIMAL_SPEED = 25;
 /* constant definitions ***************************************************** */
 const float aku340ConversionRatio = 0.01258925411794167210423954106396;  //pow(10,(-38/20));
 /* local variables ********************************************************** */
@@ -61,7 +61,6 @@ SemaphoreHandle_t semaphoreSensorBuffer;
 QueueHandle_t commandQueue;
 
 /* global variables ********************************************************* */
-extern char deviceId[];
 extern SensorDataBuffer sensorStreamBuffer;
 extern AssetDataBuffer assetStreamBuffer;
 extern MQTT_Setup_TZ MqttSetupInfo;
@@ -267,7 +266,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 		case 3:
 			if (command == CMD_SPEED){
 				int speed = strtol(token, (char **) NULL, 10);
-				speed = (speed <= 2 * MINIMAL_SPEED) ? MINIMAL_SPEED : speed;
+				speed = (speed <= 2 * MINIMAL_SPEED) ? 2 * MINIMAL_SPEED : speed;
 				LOG_AT_DEBUG(("MQTTOperation: Phase execute command speed, new speed: [%i]\r\n", speed));
 				tickRateMS = (int) pdMS_TO_TICKS(speed);
 				xTimerChangePeriod(timerHandleSensor, tickRateMS,  UINT32_C(0xffff));
@@ -620,7 +619,6 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(void) {
 	// test if we have to reboot
 	if (connectAttemps > 10) {
 		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
-		//MQTTOperation_DeInit();
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();
@@ -630,75 +628,6 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(void) {
 }
 
 
-
-/**
-static Retcode_T MQTTOperation_ValidateWLANConnectivity(bool force) {
-	Retcode_T retcode = RETCODE_OK;
-	WlanNetworkConnect_IpStatus_T nwStatus;
-
-    // Check for MQTT broker connection
-    retcode = MQTT_IsConnected_Z();
-	nwStatus = WlanNetworkConnect_GetIpStatus();
-	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force || RETCODE_OK != retcode ) {
-		AppController_SetStatus(APP_STATUS_ERROR);
-
-		// increase connect attemps
-		connectAttemps = connectAttemps + 1;
-		// before resetting connection try to disconnect
-		// ignore return code
-		//retcode = Mqtt_DisconnectFromBroker_Z();
-		MQTTOperation_DeInit();
-
-		// reset WLAN and connect to MQTT broker
-		if (MqttSetupInfo.IsSecure == true) {
-			static bool isSntpDisabled = false;
-			if (false == isSntpDisabled) {
-				retcode = SNTP_Disable();
-			}
-			if (RETCODE_OK == retcode) {
-				isSntpDisabled = true;
-				retcode = WLAN_Reconnect();
-			} else {
-				// reconnecting might have failed since the connection is still active try to continue anyway
-				retcode = RETCODE_OK;
-			}
-			if (RETCODE_OK == retcode) {
-				retcode = SNTP_Enable();
-			}
-		} else {
-			retcode = WLAN_Reconnect();
-		}
-
-		if (RETCODE_OK == retcode) {
-			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
-			if (RETCODE_OK == retcode) {
-				retcode = MQTTOperation_SubscribeTopics();
-			}
-		}
-
-		if (RETCODE_OK != retcode) {
-			LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed, try again : [%hu] ... \r\n", connectAttemps ));
-			vTaskDelay(pdMS_TO_TICKS(3000));
-		} else {
-			//reset connection counter
-			connectAttemps = 0L;
-		}
-	}
-
-	// test if we have to reboot
-	if (connectAttemps > 10) {
-		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
-		//MQTTOperation_DeInit();
-		// wait one minute before reboot
-		vTaskDelay(pdMS_TO_TICKS(30000));
-		BSP_Board_SoftReset();
-	}
-
-	return retcode;
-}
-
-*/
 
 static void MQTTOperation_PrepareAssetUpdate() {
 	assetStreamBuffer.length += snprintf(
@@ -739,13 +668,13 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			assetUpdateProcess = APP_ASSET_PUBLISHED;
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"100,\"%s\",c8y_XDKDevice\r\n", deviceId);
+					"100,\"%s\",c8y_XDKDevice\r\n", MqttConnectInfo.ClientId);
 
 			char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
 			Utils_GetXdkVersionString((uint8_t *) readbuffer);
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
-					"110,%s,XDK,%s\r\n", deviceId, readbuffer);
+					"110,%s,XDK,%s\r\n", MqttConnectInfo.ClientId, readbuffer);
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
 					"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
@@ -930,7 +859,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update orientation
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1990,%s,%.3lf,%.3lf,%.3lf,%.3lf\r\n", deviceId, eulerValueInDegree.heading, eulerValueInDegree.pitch, eulerValueInDegree.roll, eulerValueInDegree.yaw );
+					"1990,%s,%.3lf,%.3lf,%.3lf,%.3lf\r\n", MqttConnectInfo.ClientId, eulerValueInDegree.heading, eulerValueInDegree.pitch, eulerValueInDegree.roll, eulerValueInDegree.yaw );
 		}
 #endif
 
@@ -941,7 +870,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1991,%s,%.3lf,%.3lf,%.3lf\r\n", deviceId, sensorValue.Accel.X / 1000.0 , sensorValue.Accel.Y / 1000.0 ,sensorValue.Accel.Z / 1000.0 );
+					"1991,%s,%.3lf,%.3lf,%.3lf\r\n", MqttConnectInfo.ClientId, sensorValue.Accel.X / 1000.0 , sensorValue.Accel.Y / 1000.0 ,sensorValue.Accel.Z / 1000.0 );
 		}
 		if (SensorSetup.Enable.Gyro) {
 			sensorStreamBuffer.length += snprintf(
@@ -951,7 +880,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1992,%s,%ld,%ld,%ld\r\n", deviceId, sensorValue.Gyro.X, sensorValue.Gyro.Y,
+					"1992,%s,%ld,%ld,%ld\r\n", MqttConnectInfo.ClientId, sensorValue.Gyro.X, sensorValue.Gyro.Y,
 					sensorValue.Gyro.Z);
 		}
 		if (SensorSetup.Enable.Mag) {
@@ -963,7 +892,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1993,%s,%ld,%ld,%ld\r\n", deviceId, sensorValue.Mag.X, sensorValue.Mag.Y,
+					"1993,%s,%ld,%ld,%ld\r\n", MqttConnectInfo.ClientId, sensorValue.Mag.X, sensorValue.Mag.Y,
 					sensorValue.Mag.Z);
 		}
 		if (SensorSetup.Enable.Light) {
@@ -973,7 +902,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 			// update inventory with latest measurements
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1994,%s,%.2lf\r\n", deviceId, sensorValue.Light / 1000.0);
+					"1994,%s,%.2lf\r\n", MqttConnectInfo.ClientId, sensorValue.Light / 1000.0);
 		}
 		// only all three at the same time can be enabled
 		if (SensorSetup.Enable.Temp) {
@@ -984,7 +913,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1995,%s,%ld\r\n",  deviceId, sensorValue.RH);
+					"1995,%s,%ld\r\n",  MqttConnectInfo.ClientId, sensorValue.RH);
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
@@ -992,7 +921,7 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1996,%s,%.2lf\r\n",  deviceId, sensorValue.Temp / 972.3);
+					"1996,%s,%.2lf\r\n",  MqttConnectInfo.ClientId, sensorValue.Temp / 972.3);
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
@@ -1000,13 +929,13 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length,
-					"1997,%s,%.2lf\r\n",  deviceId, sensorValue.Pressure/100.0);
+					"1997,%s,%.2lf\r\n",  MqttConnectInfo.ClientId, sensorValue.Pressure/100.0);
 		}
 
 		if (SensorSetup.Enable.Noise) {
 			sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "998,,%.4f\r\n", MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 			// update inventory with latest measurements
-			sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "1998,%s,%.4f\r\n", deviceId, MQTTOperation_CalcSoundPressure(sensorValue.Noise));
+			sensorStreamBuffer.length += snprintf(sensorStreamBuffer.data + sensorStreamBuffer.length, sizeof (sensorStreamBuffer.data) - sensorStreamBuffer.length, "1998,%s,%.4f\r\n", MqttConnectInfo.ClientId, MQTTOperation_CalcSoundPressure(sensorValue.Noise));
 		}
 	}  else
 		errorCountSemaphore++;
@@ -1086,7 +1015,7 @@ void MQTTOperation_Init(void) {
 		//MQTTOperation_DeInit();
 		AppController_SetStatus(APP_STATUS_ERROR);
 		// wait one minute before reboot
-		vTaskDelay(pdMS_TO_TICKS(60000));
+		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();
 	}
 }

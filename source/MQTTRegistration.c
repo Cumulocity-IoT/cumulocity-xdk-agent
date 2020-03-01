@@ -61,7 +61,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param);
 static void MQTTRegistration_ClientPublish(void );
 static void MQTTRegistration_StartRestartTimer(int period);
 static void MQTTRegistration_RestartCallback(xTimerHandle xTimer);
-static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force);
+static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void);
 static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer);
 
 static MQTT_Subscribe_TZ MqttSubscribeInfo = { .Topic = TOPIC_CREDENTIAL, .QoS =
@@ -175,10 +175,10 @@ static void MQTTRegistration_ClientPublish(void) {
 	LOG_AT_DEBUG(("MQTTRegistration: MQTTRegistration_ClientPublish starting \n\r"));
 	Retcode_T retcode = RETCODE_OK;
 	while (1) {
-		/* Resetting / clearing the necessary buffers / variables for re-use */
+		/* Check whether the WLAN network connection is available */
+		retcode = MQTTRegistration_ValidateWLANConnectivity();
 		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
-			/* Check whether the WLAN network connection is available */
-			retcode = MQTTRegistration_ValidateWLANConnectivity(false);
+
 			if (RETCODE_OK == retcode) {
 
 				MqttPublishInfo.Payload = assetStreamBuffer.data;
@@ -188,7 +188,6 @@ static void MQTTRegistration_ClientPublish(void) {
 						MQTT_PUBLISH_TIMEOUT_IN_MS);
 				if (RETCODE_OK != retcode) {
 					LOG_AT_ERROR(("MQTTRegistration: MQTT publish failed \n\r"));
-					retcode = MQTTRegistration_ValidateWLANConnectivity(true);
 					Retcode_RaiseError(retcode);
 				}
 			}
@@ -296,19 +295,15 @@ void MQTTRegistration_DeInit(void) {
  *
  * @return  RETCODE_OK on success, or an error code otherwise.
  */
-static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
+static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void) {
 	Retcode_T retcode = RETCODE_OK;
 	WlanNetworkConnect_IpStatus_T nwStatus;
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
-	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus || force) {
+	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus) {
+		AppController_SetStatus(APP_STATUS_ERROR);
 
-		// increase connect attemps
-		connectAttemps = connectAttemps + 1;
-		// before resetting connection try to disconnect
-		// ignore return code
-		//retcode = Mqtt_DisconnectFromBroker_Z();
-		MQTTOperation_DeInit();
+		// reset WLAN and connect to MQTT broker
 		if (MqttSetupInfo.IsSecure == true) {
 			static bool isSntpDisabled = false;
 			if (false == isSntpDisabled) {
@@ -327,13 +322,21 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 		} else {
 			retcode = WLAN_Reconnect();
 		}
+	}
 
+    /* Check for MQTT broker connection */
+    retcode = MQTT_IsConnected_Z();
+	if (RETCODE_OK != retcode) {
+
+		AppController_SetStatus(APP_STATUS_ERROR);
+		// increase connect attemps
+		connectAttemps = connectAttemps + 1;
+		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
+				MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 		if (RETCODE_OK == retcode) {
-			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
-			if (RETCODE_OK == retcode) {
-				retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
-						MQTT_SUBSCRIBE_TIMEOUT_IN_MS);			}
+			retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
+					MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+
 		}
 
 		if (RETCODE_OK != retcode) {
@@ -348,7 +351,6 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(bool force) {
 	// test if we have to reboot
 	if (connectAttemps > 10) {
 		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
-		//MQTTOperation_DeInit();
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();

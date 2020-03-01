@@ -75,14 +75,11 @@ static void AppController_Enable(void *, uint32_t);
 static void AppController_Fire(void *);
 static void AppController_SetClientId(void);
 static void AppController_StartLEDBlinkTimer(int);
-
-static char clientId[] = WIFI_DEFAULT_MAC_CLIENTID;
-
+static char clientId[12] = {};
 
 /* global variables ********************************************************* */
 APP_STATUS app_status;
 APP_STATUS cmd_status;
-char deviceId[] = DEVICE_ID;
 uint16_t connectAttemps = 0UL;
 SensorDataBuffer sensorStreamBuffer;
 AssetDataBuffer assetStreamBuffer;
@@ -189,9 +186,6 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = Orientation_init(xdkOrientationSensor_Handle);
 #endif
 	}
-	//delay start
-	vTaskDelay(pdMS_TO_TICKS(2000));
-
 
 	if (RETCODE_OK == retcode) {
 		retcode = CmdProcessor_Enqueue(AppCmdProcessor, AppController_Enable, NULL, UINT32_C(0));
@@ -275,7 +269,7 @@ static void AppController_Fire(void* pvParameters)
 
 	AppController_SetClientId();
 	LOG_AT_INFO(("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
-			deviceId));
+			MqttConnectInfo.ClientId));
 	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
 	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
 	MqttConnectInfo.CleanSession = true;
@@ -306,18 +300,9 @@ static void AppController_SetClientId(void) {
 	memset(_macVal, NUMBER_UINT8_ZERO, WIFI_MAC_ADDR_LEN);
 	sl_NetCfgGet(SL_MAC_ADDRESS_GET, NULL, &_macAddressLen, (uint8_t *) _macVal);
 
-	memset(clientId, NUMBER_UINT8_ZERO, strlen(clientId));
 	//changed
-	sprintf(clientId, "d:%02X%02X%02X%02X%02X%02X", _macVal[0],
+	sprintf(MqttConnectInfo.ClientId, "%02X%02X%02X%02X%02X%02X", _macVal[0],
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
-
-	memset(deviceId, NUMBER_UINT8_ZERO, strlen(deviceId));
-	//changed
-	sprintf(deviceId, "%02X%02X%02X%02X%02X%02X", _macVal[0],
-			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
-
-	MqttConnectInfo.ClientId = clientId;
-	LOG_AT_INFO( ("AppController: Client id of the device: %s \r\n", clientId));
 }
 
 static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
@@ -405,7 +390,7 @@ Retcode_T AppController_SyncTime() {
 					("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
 		}
 		sntpAttemps++;
-		vTaskDelay(pdMS_TO_TICKS(1500));
+		vTaskDelay(pdMS_TO_TICKS(1000));
 	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 3 times
 	if (0UL == sntpTimeStampFromServer) {
 		//sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
@@ -436,7 +421,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 
 	MqttSetupInfo = (MQTT_Setup_TZ) { .IsSecure = APP_MQTT_SECURE_ENABLE, };/**< MQTT setup parameters */
 
-	MqttConnectInfo =  (MQTT_Connect_TZ) { .ClientId = APP_MQTT_CLIENT_ID,
+	MqttConnectInfo =  (MQTT_Connect_TZ) { .ClientId = clientId,
 			.BrokerURL = MQTT_BROKER_HOST_NAME, .BrokerPort =
 			MQTT_BROKER_HOST_PORT, .CleanSession = true, .KeepAliveInterval =
 					100, };/**< MQTT connect parameters */
