@@ -50,7 +50,7 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 
 1. Prepare SD card
 2. Register XDK in Cumulocity & Upload SMART Rest Template
-3. Install XDK Workbench: https://xdk.bosch-connectivity.com/de/software-downloads
+3. Install XDK Workbench 3.6.1: https://developer.bosch.com/web/xdk/downloads
 4. Prepare project 
 5. Flash your C8Y Device Agent on your XDK
 6. Procedure when re-registering device in Cumulocity tenant
