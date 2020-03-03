@@ -153,7 +153,7 @@
 
 #define APP_TEMPERATURE_OFFSET_CORRECTION           (-1403)/**< Macro for static temperature offset correction. Self heating, temperature correction factor */
 
-#define APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT       UINT32_C(10000)/**< Timeout for SNTP server time sync */
+#define APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT       UINT32_C(5000)/**< Timeout for SNTP server time sync */
 
 /* public type and macro definitions */
 

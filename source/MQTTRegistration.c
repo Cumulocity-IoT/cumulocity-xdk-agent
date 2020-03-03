@@ -350,7 +350,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void) {
 
 	// test if we have to reboot
 	if (connectAttemps > 10) {
-		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
+		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset to recover\r\n"));
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();

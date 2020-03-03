@@ -151,7 +151,7 @@ APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer *configBuffer) {
 			retcode = Storage_Read(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &readCredentials);
 			if (retcode == RETCODE_OK) {
 				configBuffer->length =  strlen(configBuffer->data);
-				LOG_AT_DEBUG(("MQTTFlash: Read config from flash success: [%lu] \r\n", configBuffer->length));
+				LOG_AT_DEBUG(("MQTTFlash: Read config from flash: [%lu] \r\n", configBuffer->length));
 				return APP_RESULT_OPERATION_OK;
 			}
 		}

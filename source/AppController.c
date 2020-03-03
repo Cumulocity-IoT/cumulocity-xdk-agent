@@ -40,6 +40,7 @@
 #include "XDK_SNTP.h"
 #include "XDK_ServalPAL.h"
 #include "XDK_Storage.h"
+#include "XDK_TimeStamp.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timers.h"
@@ -58,13 +59,12 @@
 
 /* local variables ********************************************************** */
 
-static WLAN_Setup_T WLANSetupInfo = { .IsEnterprise = false, .IsHostPgmEnabled =
-false, .SSID = WLAN_SSID, .Username = WLAN_PSK, .Password = WLAN_PSK,
-		.IsStatic = WLAN_STATIC_IP, .IpAddr = WLAN_IP_ADDR, .GwAddr =
-		WLAN_GW_ADDR, .DnsAddr = WLAN_DNS_ADDR, .Mask = WLAN_MASK, };/**< WLAN setup parameters */
+static WLAN_Setup_T WLANSetupInfo = { .IsEnterprise = false, .IsHostPgmEnabled = false,
+		.SSID = WLAN_SSID, .Username = WLAN_PSK, .Password = WLAN_PSK,
+		.IsStatic = WLAN_STATIC_IP, .IpAddr = WLAN_IP_ADDR, .GwAddr = WLAN_GW_ADDR,
+		.DnsAddr = WLAN_DNS_ADDR, .Mask = WLAN_MASK, };
 
-static SNTP_Setup_T SNTPSetupInfo = { .ServerUrl = SNTP_SERVER_URL,
-		.ServerPort = SNTP_SERVER_PORT, };/**< SNTP setup parameters */
+static SNTP_Setup_T SNTPSetupInfo;/**< SNTP setup parameters */
 
 static CmdProcessor_T * AppCmdProcessor;/**< Handle to store the main Command processor handle to be used by run-time event driven threads */
 
@@ -119,7 +119,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
     if ((Retcode_T) RETCODE_STORAGE_SDCARD_NOT_AVAILABLE == Retcode_GetCode((retcode)))
     {
         /* This is only a warning error. So we will raise and proceed */
-    	LOG_AT_WARNING(("AppController_Setup: SD card missing trying to use config from WIFI chip!\r\n"));
+    	LOG_AT_WARNING(("AppController_Setup: SD card missing, using config from WIFI chip!\r\n"));
         //Retcode_RaiseError(retcode);
         retcode = RETCODE_OK; /* SD card was not inserted */
     }
@@ -137,7 +137,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 
 	//test if button 2 is pressed
 	if (BSP_Button_GetState((uint32_t) BSP_XDK_BUTTON_2) == 1) {
-		LOG_AT_INFO(("AppController_Setup: Button 2 was pressed at startup and delete config stored on WIFI chip!\r\n"));
+		LOG_AT_INFO(("AppController_Setup: Button 2 was pressed at startup, deleting config stored on WIFI chip!\r\n"));
 		MQTTFlash_FLDeleteConfig();
 		BSP_Board_SoftReset();
 	}
@@ -150,9 +150,9 @@ static void AppController_Setup(void * param1, uint32_t param2) {
     if (RETCODE_OK == retcode) {
 		// set cfg parameter for WIFI access
 		WLANSetupInfo.SSID = MQTTCfgParser_GetWlanSSID();
-		WLANSetupInfo.Username = MQTTCfgParser_GetWlanPassword(); // not realy used
+		WLANSetupInfo.Username = MQTTCfgParser_GetWlanPassword();
 		WLANSetupInfo.Password = MQTTCfgParser_GetWlanPassword();
-		MqttSetupInfo.IsSecure = MQTTCfgParser_IsMqttSecureEnabled();
+
 		retcode = WLAN_Setup(&WLANSetupInfo);
 		if (RETCODE_OK == retcode) {
 				retcode = ServalPAL_Setup(AppCmdProcessor);
@@ -160,17 +160,23 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 
 	}
 
+	MqttSetupInfo.IsSecure = MQTTCfgParser_IsMqttSecureEnabled();
 	if (MqttSetupInfo.IsSecure == true) {
 		if (RETCODE_OK == retcode) {
-			SNTPSetupInfo.ServerUrl = MQTTCfgParser_GetSntpName();
-			SNTPSetupInfo.ServerPort = MQTTCfgParser_GetSntpPort();
+			SNTPSetupInfo = (SNTP_Setup_T) {
+				.ServerUrl = MQTTCfgParser_GetSntpName(),
+				.ServerPort = MQTTCfgParser_GetSntpPort()
+			};
+
 			LOG_AT_INFO(("AppController_Setup: SNTP server: [%s:%d]\r\n", SNTPSetupInfo.ServerUrl, SNTPSetupInfo.ServerPort));
 			retcode = SNTP_Setup(&SNTPSetupInfo);
 		}
 	}
+
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_Setup_Z(&MqttSetupInfo);
 	}
+
 	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		SensorSetup.CmdProcessorHandle = AppCmdProcessor;
 		SensorSetup.Enable.Accel = MQTTCfgParser_IsAccelEnabled();
@@ -247,9 +253,6 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 }
 
 
-
-
-
 /**
  * @brief Responsible for controlling the send data over MQTT application control flow.
  *
@@ -267,27 +270,24 @@ static void AppController_Fire(void* pvParameters)
 {
     BCDS_UNUSED(pvParameters);
 
-	AppController_SetClientId();
-	LOG_AT_INFO(("AppController_Fire: Device id for registration in Cumulocity %s\r\n",
-			MqttConnectInfo.ClientId));
 	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
 	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
 	MqttConnectInfo.CleanSession = true;
 	MqttConnectInfo.KeepAliveInterval = 100;
+	AppController_SetClientId();
+
+	LOG_AT_INFO(("AppController_Fire: Device ID for registration in Cumulocity %s\r\n.",
+			MqttConnectInfo.ClientId));
 
 	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
-		MqttCredentials = (MQTT_Credentials_TZ) {
-			.Username = MQTTCfgParser_GetMqttUser(),
-			.Password = MQTTCfgParser_GetMqttPassword(),
-			.Anonymous = MQTTCfgParser_IsMqttAnonymous()
-		};
+		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
+		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
+		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
 		MQTTOperation_Init();
 	} else {
-		MqttCredentials = (MQTT_Credentials_TZ) {
-			.Username = MQTT_REGISTRATION_USERNAME,
-			.Password = MQTT_REGISTRATION_PASSWORD,
-			.Anonymous = FALSE
-		};
+		MqttCredentials.Username = MQTT_REGISTRATION_USERNAME;
+		MqttCredentials.Password = MQTT_REGISTRATION_PASSWORD;
+		MqttCredentials.Anonymous = FALSE;
 		MQTTRegistration_Init();
 	}
 }
@@ -380,6 +380,7 @@ Retcode_T AppController_SyncTime() {
 	uint64_t sntpTimeStampFromServer = 0UL;
 	uint16_t sntpAttemps = 0UL;
 	Retcode_T retcode = RETCODE_OK;
+
 	/* We Synchronize the node with the SNTP server for time-stamp.
 	 * Since there is no point in doing a HTTPS communication without a valid time */
 	do {
@@ -390,16 +391,17 @@ Retcode_T AppController_SyncTime() {
 					("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
 		}
 		sntpAttemps++;
-		vTaskDelay(pdMS_TO_TICKS(1000));
+		//vTaskDelay(pdMS_TO_TICKS(500));
 	} while (0UL == sntpTimeStampFromServer && sntpAttemps < 3); // only try to sync time 3 times
+
 	if (0UL == sntpTimeStampFromServer) {
-		//sntpTimeStampFromServer = 1572566400UL; // use default time 1. Nov 2019 00:00:00 UTC
 		sntpTimeStampFromServer = 1580515200UL; // use default time 1. Feb 2020 00:00:00 UTC
 		SNTP_SetTime(sntpTimeStampFromServer);
 		LOG_AT_WARNING(
 				("MQTTOperation: Using fixed timestamp 1. Feb 2020 00:00:00 UTC, SNTP sync not possible\r\n"));
 		retcode = RETCODE_OK; // clear return code
 	}
+
 	//uint8_t * timeBuffer = (uint8_t *) &sntpTimeStampFromServer;
 	//LOG_AT_TRACE(("MQTTOperation: SNTP time: %d,%d,%d,%d,%d,%d,%d,%d\r\n", timeBuffer[0], timeBuffer[1], timeBuffer[2], timeBuffer[3],timeBuffer[4],timeBuffer[5],timeBuffer[6],timeBuffer[7]));
 	struct tm time;
@@ -412,7 +414,9 @@ Retcode_T AppController_SyncTime() {
 
 /* global functions ********************************************************* */
 
-/** Refer interface header for description */
+/** Initialize Application
+ *
+ */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 
 	/*
@@ -472,7 +476,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	BCDS_UNUSED(param2);
 
 	vTaskDelay(pdMS_TO_TICKS(1000));
-	LOG_AT_INFO(("AppController_Init: XDK System Startup\r\n"));
+	LOG_AT_INFO(("AppController_Init: XDK Cumulocity Agent startup ...\r\n"));
 
 	// start status LED indicator
 	AppController_SetStatus(APP_STATUS_STARTED);
@@ -483,7 +487,6 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	BatteryMonitor_Init();
 
 	if (cmdProcessorHandle == NULL) {
-		LOG_AT_ERROR(("AppController_Init: Command processor handle is NULL \r\n"));
 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 	} else if (RETCODE_OK == retcode) {
 		AppCmdProcessor = (CmdProcessor_T *) cmdProcessorHandle;

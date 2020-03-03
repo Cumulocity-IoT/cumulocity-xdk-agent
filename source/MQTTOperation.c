@@ -169,13 +169,13 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 		switch (token_pos) {
 		case 0:
 			if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
-				LOG_AT_DEBUG(("MQTTOperation: Starting restart \r\n"));
+				LOG_AT_TRACE(("MQTTOperation: Starting restart \r\n"));
 				AppController_SetStatus(APP_STATUS_REBOOT);
 				// set flag so that XDK acknowledges reboot command
 				command = CMD_RESTART;
 				commandComplete = true;
 				MQTTOperation_StartRestartTimer(REBOOT_DELAY);
-				LOG_AT_DEBUG(("MQTTOperation: Ending restart\r\n"));
+				LOG_AT_TRACE(("MQTTOperation: Ending restart\r\n"));
 			} else if (strcmp(token, TEMPLATE_STD_COMMAND) == 0) {
 				command = CMD_COMMAND;
 			} else if (strcmp(token, TEMPLATE_STD_FIRMWARE) == 0) {
@@ -414,7 +414,7 @@ static void MQTTOperation_ClientPublish(void) {
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
-					LOG_AT_DEBUG(("MQTTOperation: Publishing asset data length [%ld] and content:\r\n%s",
+					LOG_AT_DEBUG(("MQTTOperation: Publishing asset data: length [%ld], content:\r\n%s",
 							assetStreamBuffer.length, assetStreamBuffer.data));
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
@@ -439,7 +439,7 @@ static void MQTTOperation_ClientPublish(void) {
 					vTaskDelay(pdMS_TO_TICKS(1000));
 					retcode = MQTTOperation_SubscribeTopics();
 					if (RETCODE_OK != retcode) {
-						LOG_AT_ERROR(("MQTTOperation: MQTT subscription failed \r\n"));
+						LOG_AT_ERROR(("MQTTOperation: MQTT subscription failed!\r\n"));
 						retcode = MQTTOperation_ValidateWLANConnectivity();
 					} else {
 						assetUpdateProcess = APP_ASSET_COMPLETED;
@@ -459,7 +459,7 @@ static void MQTTOperation_ClientPublish(void) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					measurementCounter++;
-					LOG_AT_DEBUG(("MQTTOperation: Publishing sensor data length [%ld], message [%lu] and content:\r\n%s",
+					LOG_AT_DEBUG(("MQTTOperation: Publishing sensor data: length [%ld], message [%lu], content:\r\n%s",
 							sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength = sensorStreamBuffer.length;
@@ -982,7 +982,6 @@ void MQTTOperation_Init(void) {
 	LOG_AT_DEBUG(("MQTTOperation_Init: Reading boot status: [%s]\r\n", readbuffer));
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
-		LOG_AT_DEBUG(("MQTTOperation_Init: Have to confirm successful reboot\r\n"));
 		command = CMD_RESTART;
 		commandProgress = DEVICE_OPERATION_PENDING;
 	}
@@ -997,7 +996,7 @@ void MQTTOperation_Init(void) {
 			retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
 					MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 			if (RETCODE_OK != retcode) {
-				LOG_AT_ERROR(("MQTTOperation: MQTT connection to the broker failed [%hu] time, try again ... \r\n", connectAttemps ));
+				LOG_AT_ERROR(("MQTTOperation: MQTT connection to broker failed [%hu] time, try again ... \r\n", connectAttemps ));
 				connectAttemps ++;
 			}
 		} while (RETCODE_OK != retcode && connectAttemps < 10 );

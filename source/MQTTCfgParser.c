@@ -427,7 +427,7 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 						fileReadBuffer.length, CFG_FALSE)) {
 			RetValFLash = APP_RESULT_OPERATION_OK;
 		}
-		MQTTCfgParser_List("MQTTCfgParser: Parsing content from config file [config.txt] on WIFI chip:", CFG_TRUE);
+		MQTTCfgParser_List("MQTTCfgParser: Parsing content from config.txt on WIFI chip:", CFG_TRUE);
 	}
 
 	// test if config on SDCard exists and overwrite setting from config on flash
@@ -444,9 +444,9 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 						fileReadBuffer.length, CFG_TRUE)) {
 			RetVal = APP_RESULT_OPERATION_OK;
 		}
-		MQTTCfgParser_List("MQTTCfgParser: Parsing content from config file [config.txt] on SD card (potentially merged):", CFG_TRUE);
+		MQTTCfgParser_List("MQTTCfgParser: Parsing content from config.txt on SD card, resulting config by merging:", CFG_TRUE);
 	} else {
-		LOG_AT_ERROR(("MQTTCfgParser: Config not read from SD card!\r\n"));
+		LOG_AT_WARNING(("MQTTCfgParser: Config not read from SD card!\r\n"));
 	}
 
 	// if any of the attemps to parse a config: Flash or SD was successful return OK
