@@ -421,7 +421,7 @@ Retcode_T MQTTCfgParser_ParseConfigFile(void) {
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XXLARGE_BUF);
 
-	returnVal = MQTTFlash_FLReadConfig(&fileReadBuffer);
+	returnVal = MQTTStorage_Flash_ReadConfig(&fileReadBuffer);
 	if (returnVal == RETCODE_OK ) {
 		//config on flash exists
 		if (CFG_TRUE
@@ -437,7 +437,7 @@ Retcode_T MQTTCfgParser_ParseConfigFile(void) {
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XXLARGE_BUF);
 
-	returnVal = MQTTFlash_SDReadConfig(&fileReadBuffer);
+	returnVal = MQTTStorage_SD_ReadConfig(&fileReadBuffer);
 	if (returnVal == RETCODE_OK ) {
 		// append \n , since parser only parses complete lines
 		fileReadBuffer.length += snprintf (fileReadBuffer.data + strlen(fileReadBuffer.data), sizeof (fileReadBuffer.data) - strlen(fileReadBuffer.data) , "\n");
@@ -591,7 +591,7 @@ void MQTTCfgParser_FLWriteConfig(void) {
 	localbuffer.length = NUMBER_UINT32_ZERO;
 	memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 	MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-	MQTTFlash_FLWriteConfig(&localbuffer);
+	MQTTStorage_Flash_WriteConfig(&localbuffer);
 }
 
 

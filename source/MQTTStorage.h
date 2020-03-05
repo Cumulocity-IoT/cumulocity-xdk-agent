@@ -54,14 +54,14 @@ typedef enum {
 #define REBOOT_FILENAME		"reboot.txt"	/**< Filename to open/write/read from SD-card */
 #define CONFIG_FILENAME  	"config.txt"	/**< Filename to open/write/read from SD-card */
 
-Retcode_T MQTTFlash_Init(void);
-Retcode_T MQTTFlash_FLReadBootStatus(uint8_t* status);
-Retcode_T MQTTFlash_FLWriteBootStatus(uint8_t* status);
-void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
-Retcode_T MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
-Retcode_T MQTTFlash_SDReadConfig(ConfigDataBuffer* configBuffer);
-void MQTTFlash_FLDeleteConfig(void);
-void MQTTFlash_SDAppendCredentials(char* stringBuffer);
+Retcode_T MQTTStorage_Init(void);
+Retcode_T MQTTStorage_Flash_ReadBootStatus(uint8_t* status);
+Retcode_T MQTTStorage_Flash_WriteBootStatus(uint8_t* status);
+void MQTTStorage_Flash_WriteConfig(ConfigDataBuffer *configBuffer);
+Retcode_T MQTTStorage_Flash_ReadConfig(ConfigDataBuffer* configBuffer);
+Retcode_T MQTTStorage_SD_ReadConfig(ConfigDataBuffer* configBuffer);
+void MQTTStorage_Flash_DeleteConfig(void);
+void MQTTStorage_SD_AppendCredentials(char* stringBuffer);
 
 /* local inline function definitions */
 

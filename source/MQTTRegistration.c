@@ -58,11 +58,11 @@ extern MQTT_Credentials_TZ MqttCredentials;
 
 /* local functions ********************************************************** */
 static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param);
-static void MQTTRegistration_ClientPublish(void );
+static void MQTTRegistration_ClientPublish(void);
 static void MQTTRegistration_StartRestartTimer(int period);
 static void MQTTRegistration_RestartCallback(xTimerHandle xTimer);
 static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void);
-static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer);
+static void MQTTRegistration_PrepareNextRegistrationMsg(xTimerHandle xTimer);
 
 static MQTT_Subscribe_TZ MqttSubscribeInfo = { .Topic = TOPIC_CREDENTIAL, .QoS =
 		1UL, .IncomingPublishNotificationCB = MQTTRegistration_ClientReceive, };/**< MQTT subscribe parameters */
@@ -70,11 +70,14 @@ static MQTT_Subscribe_TZ MqttSubscribeInfo = { .Topic = TOPIC_CREDENTIAL, .QoS =
 static MQTT_Publish_TZ MqttPublishInfo = { .Topic = TOPIC_REGISTRATION, .QoS =
 		1UL, .Payload = NULL, .PayloadLength = 0UL, };/**< MQTT publish parameters */
 
-static void MQTTRegistration_PrepareNextRegistrationMsg (xTimerHandle xTimer){
+static void MQTTRegistration_PrepareNextRegistrationMsg(xTimerHandle xTimer) {
 	(void) xTimer;
-	LOG_AT_DEBUG(("%s: requesting credentials ...\n\r", MQTTREGISTRATION_LOGPREFIX));
+	LOG_AT_DEBUG(
+			("%s: requesting credentials ...\n\r", MQTTREGISTRATION_LOGPREFIX));
 	// send empty message to Cumulocity to trigger acceptance of the regitration in WebUI
-	assetStreamBuffer.length += snprintf(assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length, "  \n");
+	assetStreamBuffer.length += snprintf(
+			assetStreamBuffer.data + assetStreamBuffer.length,
+			sizeof(assetStreamBuffer.data) - assetStreamBuffer.length, "  \n");
 }
 
 /**
@@ -92,17 +95,20 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	memset(appIncomingMsgPayloadBuffer, 0, sizeof(appIncomingMsgPayloadBuffer));
 	memset(appIncomingMsgTopicBuffer, 0, sizeof(appIncomingMsgTopicBuffer));
 
-	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic, fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
-	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
+	strncpy(appIncomingMsgTopicBuffer, (const char *) param.Topic,
+			fmin(param.TopicLength, (sizeof(appIncomingMsgTopicBuffer) - 1U)));
+	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload,
+			fmin(param.PayloadLength,
+					(sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
-	LOG_AT_DEBUG(("%s: Received new message on topic: %s from upstream: [%s]\n\r", MQTTREGISTRATION_LOGPREFIX,
-			appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer));
+	LOG_AT_DEBUG(
+			("%s: Received new message on topic: %s from upstream: [%s]\n\r", MQTTREGISTRATION_LOGPREFIX, appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer));
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
 		AppController_SetAppStatus(APP_STATUS_REGISTERED);
 
-		char username[SIZE_SMALL_BUF] = {0};
-		char tenant[SIZE_XSMALL_BUF] = {0};
-		char password[SIZE_XSMALL_BUF] = {0};
+		char username[SIZE_SMALL_BUF] = { 0 };
+		char tenant[SIZE_XSMALL_BUF] = { 0 };
+		char password[SIZE_XSMALL_BUF] = { 0 };
 
 		//extract password and  username
 		int token_pos = 0; //mark position of token
@@ -110,17 +116,18 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		char *token = strtok(appIncomingMsgPayloadBuffer, ",");
 		while (token != NULL) {
 			LOG_AT_TRACE(("%s: Parsed token: [%s], command_pos: %i token_pos: %i \n\r", MQTTREGISTRATION_LOGPREFIX,
-					token, command_pos, token_pos));
-			if (token_pos == 0 && strcmp(token, TEMPLATE_STD_CREDENTIALS) == 0) {
+							token, command_pos, token_pos));
+			if (token_pos == 0
+					&& strcmp(token, TEMPLATE_STD_CREDENTIALS) == 0) {
 				LOG_AT_TRACE(("%s: Correct message type \n\r", MQTTREGISTRATION_LOGPREFIX));
 				command_pos = 1; // mark that we are in a credential notification message
 			} else if (command_pos == 1 && token_pos == 1) {
 				// found tenant
-				snprintf(tenant,SIZE_XSMALL_BUF,token);
+				snprintf(tenant, SIZE_XSMALL_BUF, token);
 				LOG_AT_TRACE(("%s: Found tenant: [%s]\n\r", MQTTREGISTRATION_LOGPREFIX, token));
 			} else if (command_pos == 1 && token_pos == 2) {
 				// found username
-				snprintf(username, SIZE_XSMALL_BUF,"%s/%s", tenant, token);
+				snprintf(username, SIZE_XSMALL_BUF, "%s/%s", tenant, token);
 				LOG_AT_TRACE(("%s: Found username: [%s], [%s]\n\r", MQTTREGISTRATION_LOGPREFIX, token, username));
 			} else if (command_pos == 1 && token_pos == 3) {
 				snprintf(password, SIZE_XSMALL_BUF, token);
@@ -134,9 +141,10 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		}
 
 		// append credentials at the end of config.txt
-		char credentials[SIZE_SMALL_BUF] = {0};
-		snprintf(credentials,SIZE_SMALL_BUF,"\n%s=%s\n%s=%s\n", ATT_KEY_NAME[5], username, ATT_KEY_NAME[6], password );
-		MQTTFlash_SDAppendCredentials(credentials);
+		char credentials[SIZE_SMALL_BUF] = { 0 };
+		snprintf(credentials, SIZE_SMALL_BUF, "\n%s=%s\n%s=%s\n",
+				ATT_KEY_NAME[5], username, ATT_KEY_NAME[6], password);
+		MQTTStorage_SD_AppendCredentials(credentials);
 
 		MQTTCfgParser_SetMqttUser(username);
 		MQTTCfgParser_SetMqttPassword(password);
@@ -147,12 +155,13 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 }
 
 static void MQTTRegistration_StartRestartTimer(int period) {
-	xTimerHandle timerHandle = xTimerCreate((const char * const ) "Restart Timer", // used only for debugging purposes
+	xTimerHandle timerHandle = xTimerCreate(
+			(const char * const ) "Restart Timer", // used only for debugging purposes
 			MILLISECONDS(period), // timer period
 			pdFALSE, //Autoreload pdTRUE or pdFALSE - should the timer start again after it expired?
 			NULL, // optional identifier
 			MQTTRegistration_RestartCallback // static callback function
-	);
+			);
 	xTimerStart(timerHandle, MILLISECONDS(5));
 }
 
@@ -172,7 +181,8 @@ static void MQTTRegistration_RestartCallback(xTimerHandle xTimer) {
  */
 static void MQTTRegistration_ClientPublish(void) {
 
-	LOG_AT_DEBUG(("%s: MQTTRegistration_ClientPublish starting \n\r", MQTTREGISTRATION_LOGPREFIX));
+	LOG_AT_DEBUG(
+			("%s: MQTTRegistration_ClientPublish starting \n\r", MQTTREGISTRATION_LOGPREFIX));
 	Retcode_T retcode = RETCODE_OK;
 	while (1) {
 		/* Check whether the WLAN network connection is available */
@@ -185,9 +195,10 @@ static void MQTTRegistration_ClientPublish(void) {
 				MqttPublishInfo.PayloadLength = assetStreamBuffer.length;
 
 				retcode = MQTT_PublishToTopic_Z(&MqttPublishInfo,
-						MQTT_PUBLISH_TIMEOUT_IN_MS);
+				MQTT_PUBLISH_TIMEOUT_IN_MS);
 				if (RETCODE_OK != retcode) {
-					LOG_AT_ERROR(("%s: MQTT publish failed \n\r", MQTTREGISTRATION_LOGPREFIX));
+					LOG_AT_ERROR(
+							("%s: MQTT publish failed \n\r", MQTTREGISTRATION_LOGPREFIX));
 					Retcode_RaiseError(retcode);
 				}
 			}
@@ -208,7 +219,7 @@ static void MQTTRegistration_ClientPublish(void) {
  *
  * @return NONE
  */
-void MQTTRegistration_StartTimer(void){
+void MQTTRegistration_StartTimer(void) {
 
 	memset(assetStreamBuffer.data, 0x00, SIZE_SMALL_BUF);
 	assetStreamBuffer.length = NUMBER_UINT32_ZERO;
@@ -249,9 +260,10 @@ void MQTTRegistration_Init(void) {
 
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
-				MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+		MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 		if (RETCODE_OK != retcode) {
-			LOG_AT_ERROR(("%s: MQTT subscribe failed \n\r", MQTTREGISTRATION_LOGPREFIX));
+			LOG_AT_ERROR(
+					("%s: MQTT subscribe failed \n\r", MQTTREGISTRATION_LOGPREFIX));
 		}
 	}
 
@@ -261,15 +273,14 @@ void MQTTRegistration_Init(void) {
 		vTaskSuspend(NULL);
 	}
 
-	LOG_AT_INFO(("%s: Successfully connected to [%s:%d]\n\r", MQTTREGISTRATION_LOGPREFIX,
-				MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
+	LOG_AT_INFO(
+			("%s: Successfully connected to [%s:%d]\n\r", MQTTREGISTRATION_LOGPREFIX, MqttConnectInfo.BrokerURL, MqttConnectInfo.BrokerPort));
 
 	int tickRate = (int) pdMS_TO_TICKS(MQTT_REGISTRATION_TICKRATE);
 	clientRegistrationTimerHandle = xTimerCreate(
 			(const char * const ) "Data Stream", tickRate,
 			pdTRUE,
 			NULL, MQTTRegistration_PrepareNextRegistrationMsg);
-
 
 	MQTTRegistration_StartTimer();
 	MQTTRegistration_ClientPublish();
@@ -284,7 +295,7 @@ void MQTTRegistration_DeInit(void) {
 
 	LOG_AT_INFO(("%s: Calling DeInit\n\r", MQTTREGISTRATION_LOGPREFIX));
 	MQTT_UnSubsribeFromTopic_Z(&MqttSubscribeInfo,
-			MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+	MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 	Mqtt_DisconnectFromBroker_Z();
 }
 
@@ -324,23 +335,24 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void) {
 		}
 	}
 
-    /* Check for MQTT broker connection */
-    retcode = MQTT_IsConnected_Z();
+	/* Check for MQTT broker connection */
+	retcode = MQTT_IsConnected_Z();
 	if (RETCODE_OK != retcode) {
 
 		AppController_SetAppStatus(APP_STATUS_ERROR);
 		// increase connect attemps
 		connectAttemps = connectAttemps + 1;
 		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,
-				MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
+		MQTT_CONNECT_TIMEOUT_IN_MS, &MqttCredentials);
 		if (RETCODE_OK == retcode) {
 			retcode = MQTT_SubsribeToTopic_Z(&MqttSubscribeInfo,
-					MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
+			MQTT_SUBSCRIBE_TIMEOUT_IN_MS);
 
 		}
 
 		if (RETCODE_OK != retcode) {
-			LOG_AT_ERROR(("%s: MQTT connection to the broker failed, try again : [%hu] ... \r\n", MQTTREGISTRATION_LOGPREFIX, connectAttemps ));
+			LOG_AT_ERROR(
+					("%s: MQTT connection to the broker failed, try again : [%hu] ... \r\n", MQTTREGISTRATION_LOGPREFIX, connectAttemps ));
 			vTaskDelay(pdMS_TO_TICKS(3000));
 		} else {
 			//reset connection counter
@@ -350,7 +362,8 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void) {
 
 	// test if we have to reboot
 	if (connectAttemps > 10) {
-		LOG_AT_WARNING(("%s: Now calling SoftReset to recover\r\n", MQTTREGISTRATION_LOGPREFIX));
+		LOG_AT_WARNING(
+				("%s: Now calling SoftReset to recover\r\n", MQTTREGISTRATION_LOGPREFIX));
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();
