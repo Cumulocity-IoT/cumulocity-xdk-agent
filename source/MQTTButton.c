@@ -66,9 +66,9 @@ void button1Callback(uint32_t buttonstatus) {
 			LOG_AT_TRACE(("MQTTButton: Button1 pressed long: %lu\r\n", time_passed));
 		} else {
 			// only use button 1 when in operation mode
-			if (AppController_GetStatus() == APP_STATUS_OPERATING_STARTED ) {
+			if (AppController_GetAppStatus() == APP_STATUS_OPERATING_STARTED ) {
 				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_QueueCommand, "511,DUMMY,stopButton", UINT32_C(0));
-			} else if (AppController_GetStatus() == APP_STATUS_OPERATING_STOPPED) {
+			} else if (AppController_GetAppStatus() == APP_STATUS_OPERATING_STOPPED) {
 				CmdProcessor_EnqueueFromIsr(AppCmdProcessor, MQTTOperation_QueueCommand, "511,DUMMY,startButton", UINT32_C(0));
 			}
 		}
@@ -101,22 +101,22 @@ void button2Callback(uint32_t buttonstatus) {
  *
  * @return NONE
  */
-APP_RESULT MQTTButton_Init(void * CmdProcessorHandle)
+Retcode_T MQTTButton_Init(void * CmdProcessorHandle)
 {
 	AppCmdProcessor = (CmdProcessor_T *) CmdProcessorHandle;
 
 	Retcode_T returnVal = RETCODE_OK;
 	returnVal = BSP_Button_Connect();
 	if (RETCODE_OK != returnVal) {
-		return APP_RESULT_ERROR;
+		return returnVal;
 	}
 	returnVal = BSP_Button_Enable((uint32_t) BSP_XDK_BUTTON_1, button1Callback);
 	if (RETCODE_OK != returnVal) {
-		return APP_RESULT_ERROR;
+		return returnVal;
 	}
 	returnVal = BSP_Button_Enable((uint32_t) BSP_XDK_BUTTON_2, button2Callback);
 	if (RETCODE_OK != returnVal) {
-		return APP_RESULT_ERROR;
+		return returnVal;
 	}
-	return APP_RESULT_OK;
+	return RETCODE_OK;
 }

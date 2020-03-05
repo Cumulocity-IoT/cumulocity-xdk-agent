@@ -208,17 +208,6 @@
 #define NO_BOOT_PENDING   	"0"
 
 typedef enum {
-	APP_RESULT_FILE_MISSING = INT8_C(-4),
-	APP_RESULT_SDCARD_BUFFER_OVERFLOW_ERROR = INT8_C(-3),
-	APP_RESULT_SDCARD_ERROR = INT8_C(-2),
-	APP_RESULT_ERROR = INT8_C(-1),
-	APP_RESULT_OPERATION_MODE = INT8_C(0),
-	APP_RESULT_REGISTRATION_MODE = INT8_C(1),
-	APP_RESULT_OK = INT8_C(2),
-	APP_RESULT_OPERATION_OK = INT8_C(4),
-} APP_RESULT;
-
-typedef enum {
 	APP_STATUS_ERROR = INT8_C(0),
 	APP_STATUS_OPERATING_STARTED = INT8_C(1),
 	APP_STATUS_OPERATING_STOPPED = INT8_C(2),
@@ -228,6 +217,9 @@ typedef enum {
 	APP_STATUS_REGISTERED = INT8_C(6),
 	APP_STATUS_COMMAND_RECEIVED = INT8_C(7),
 	APP_STATUS_COMMAND_CONFIRMED = INT8_C(8),
+	APP_STATUS_OPERATION_MODE = INT8_C(9),
+	APP_STATUS_REGISTRATION_MODE = INT8_C(10),
+	APP_STATUS_UNKNOWN = INT8_C(11),
 
 } APP_STATUS;
 
@@ -242,6 +234,9 @@ static const char * const app_status_text[] = {
 		"APP_STATUS_REGISTERED",
 		"APP_STATUS_COMMAND_RECEIVED",
 		"APP_STATUS_COMMAND_CONFIRMED",
+		"APP_STATUS_OPERATION_MODE",
+		"APP_STATUS_REGISTRATION_MODE",
+		"APP_STATUS_UNKNOWN",
 };
 
 typedef enum {
@@ -305,8 +300,8 @@ typedef struct {
  * Unused
  */
 void AppController_Init(void * cmdProcessorHandle, uint32_t param2);
-void AppController_SetStatus(uint8_t status);
-uint8_t AppController_GetStatus(void);
+void AppController_SetAppStatus(uint8_t status);
+uint8_t AppController_GetAppStatus(void);
 void AppController_SetCmdStatus(uint8_t status);
 uint8_t AppController_GetCmdStatus(void);
 Retcode_T AppController_SyncTime(void);

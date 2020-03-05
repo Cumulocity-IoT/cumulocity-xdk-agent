@@ -20,7 +20,7 @@
 
 #include "AppController.h"
 #include "MQTTOperation.h"
-#include "MQTTFlash.h"
+#include "MQTTStorage.h"
 #include "MQTTCfgParser.h"
 
 /* additional interface header files */
@@ -170,7 +170,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 		case 0:
 			if (strcmp(token, TEMPLATE_STD_RESTART) == 0) {
 				LOG_AT_TRACE(("MQTTOperation: Starting restart \r\n"));
-				AppController_SetStatus(APP_STATUS_REBOOT);
+				AppController_SetAppStatus(APP_STATUS_REBOOT);
 				// set flag so that XDK acknowledges reboot command
 				command = CMD_RESTART;
 				commandComplete = true;
@@ -454,7 +454,7 @@ static void MQTTOperation_ClientPublish(void) {
 		}
 
 		if (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
-			AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
+			AppController_SetAppStatus(APP_STATUS_OPERATING_STARTED);
 			if (RETCODE_OK == retcode) {
 				BaseType_t semaphoreResult = xSemaphoreTake(semaphoreSensorBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
@@ -513,7 +513,7 @@ static void MQTTOperation_ClientPublish(void) {
 static void MQTTOperation_StartTimer(void) {
 	LOG_AT_INFO(("MQTTOperation: Start publishing: ...\r\n"));
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
-	AppController_SetStatus(APP_STATUS_OPERATING_STARTED);
+	AppController_SetAppStatus(APP_STATUS_OPERATING_STARTED);
 	return;
 }
 /**
@@ -524,7 +524,7 @@ static void MQTTOperation_StartTimer(void) {
 static void MQTTOperation_StopTimer(void) {
 	LOG_AT_INFO(("MQTTOperation: Stopped publishing!\r\n"));
 	xTimerStop(timerHandleSensor, UINT32_C(0xffff));
-	AppController_SetStatus(APP_STATUS_OPERATING_STOPPED);
+	AppController_SetAppStatus(APP_STATUS_OPERATING_STOPPED);
 	return;
 }
 
@@ -570,7 +570,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(void) {
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus) {
-		AppController_SetStatus(APP_STATUS_ERROR);
+		AppController_SetAppStatus(APP_STATUS_ERROR);
 
 		// reset WLAN and connect to MQTT broker
 		if (MqttSetupInfo.IsSecure == true) {
@@ -597,7 +597,7 @@ static Retcode_T MQTTOperation_ValidateWLANConnectivity(void) {
     retcode = MQTT_IsConnected_Z();
 	if (RETCODE_OK != retcode) {
 
-		AppController_SetStatus(APP_STATUS_ERROR);
+		AppController_SetAppStatus(APP_STATUS_ERROR);
 		// increase connect attemps
 		connectAttemps = connectAttemps + 1;
 
@@ -1012,7 +1012,7 @@ void MQTTOperation_Init(void) {
 		//reboot to recover
 		LOG_AT_WARNING(("MQTTOperation: Now calling SoftReset and reboot to recover\r\n"));
 		//MQTTOperation_DeInit();
-		AppController_SetStatus(APP_STATUS_ERROR);
+		AppController_SetAppStatus(APP_STATUS_ERROR);
 		// wait one minute before reboot
 		vTaskDelay(pdMS_TO_TICKS(30000));
 		BSP_Board_SoftReset();

@@ -64,7 +64,7 @@
 /* own header files */
 #include "AppController.h"
 #include "MQTTCfgParser.h"
-#include "MQTTFlash.h"
+#include "MQTTStorage.h"
 
 
 /* system header files */
@@ -412,20 +412,22 @@ void MQTTCfgParser_GetConfig(ConfigDataBuffer *configBuffer, uint8_t defaultsOnl
 
 
 /** @brief For description of the function please refer interface header MQTTCfgParser.h  */
-APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
-	APP_RESULT RetValFLash = APP_RESULT_ERROR;
-	APP_RESULT RetVal = APP_RESULT_ERROR;
+Retcode_T MQTTCfgParser_ParseConfigFile(void) {
+	Retcode_T returnVal = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+	Retcode_T returnValFlash = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+	Retcode_T returnValSD = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+	Retcode_T returnValTotal = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
 
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XXLARGE_BUF);
 
-	RetValFLash = MQTTFlash_FLReadConfig(&fileReadBuffer);
-	if (RetValFLash != APP_RESULT_FILE_MISSING) {
+	returnVal = MQTTFlash_FLReadConfig(&fileReadBuffer);
+	if (returnVal == RETCODE_OK ) {
 		//config on flash exists
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*) fileReadBuffer.data,
 						fileReadBuffer.length, CFG_FALSE)) {
-			RetValFLash = APP_RESULT_OPERATION_OK;
+			returnValFlash = RETCODE_OK;
 		}
 		MQTTCfgParser_List("MQTTCfgParser: Parsing content from config.txt on WIFI chip:", CFG_TRUE);
 	}
@@ -434,15 +436,15 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	LOG_AT_INFO(("MQTTCfgParser_ParseConfigFile: Trying to read config from SDCard ...\r\n"));
 	fileReadBuffer.length = NUMBER_UINT32_ZERO;
 	memset(fileReadBuffer.data, CFG_NUMBER_UINT8_ZERO, SIZE_XXLARGE_BUF);
-	RetVal = MQTTFlash_SDReadConfig(&fileReadBuffer);
 
-	if (RetVal == APP_RESULT_OPERATION_OK ) {
+	returnVal = MQTTFlash_SDReadConfig(&fileReadBuffer);
+	if (returnVal == RETCODE_OK ) {
 		// append \n , since parser only parses complete lines
 		fileReadBuffer.length += snprintf (fileReadBuffer.data + strlen(fileReadBuffer.data), sizeof (fileReadBuffer.data) - strlen(fileReadBuffer.data) , "\n");
 		if (CFG_TRUE
 				== MQTTCfgParser_Config((const char*)  fileReadBuffer.data,
 						fileReadBuffer.length, CFG_TRUE)) {
-			RetVal = APP_RESULT_OPERATION_OK;
+			returnValSD = RETCODE_OK;
 		}
 		MQTTCfgParser_List("MQTTCfgParser: Parsing content from config.txt on SD card, resulting config by merging:", CFG_TRUE);
 	} else {
@@ -450,10 +452,10 @@ APP_RESULT MQTTCfgParser_ParseConfigFile(void) {
 	}
 
 	// if any of the attemps to parse a config: Flash or SD was successful return OK
-	if (RetVal == APP_RESULT_OPERATION_OK || RetValFLash == APP_RESULT_OPERATION_OK) {
-		RetVal = APP_RESULT_OPERATION_OK;
+	if (returnValFlash == RETCODE_OK || returnValSD == RETCODE_OK) {
+		returnValTotal = RETCODE_OK;
 	}
-	return RetVal;
+	return returnValTotal;
 }
 
 /**
@@ -641,7 +643,7 @@ int32_t MQTTCfgParser_GetSntpPort(void) {
 	return (int32_t) atol(getAttValue(ATT_IDX_SNTPPORT));
 }
 
-APP_RESULT MQTTCfgParser_Init(void) {
+Retcode_T MQTTCfgParser_Init(void) {
 	/* Initialize the attribute values holders */
 	for (uint8_t i = UINT8_C(0); i < ATT_IDX_SIZE; i++) {
 		ConfigStructure[i].defined = CFG_FALSE;
@@ -652,18 +654,23 @@ APP_RESULT MQTTCfgParser_Init(void) {
 		}
 	}
 
-	if (APP_RESULT_OPERATION_OK != MQTTCfgParser_ParseConfigFile())
+	if (RETCODE_OK != MQTTCfgParser_ParseConfigFile())
 	{
 		LOG_AT_ERROR(("MQTTCfgParser: Config file is not correct. Please fix config file and reboot the device!\r\n"));
-		return APP_RESULT_ERROR;
+		return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_UNINITIALIZED);;
 	}
+	return RETCODE_OK;
 
+}
+
+APP_STATUS MQTTCfgParser_GetMode(void) {
 	if (strcmp(MQTTCfgParser_GetMqttUser(), DEFAULT_MQTTUSERNAME) == UINT8_C(0)) {
-		return APP_RESULT_REGISTRATION_MODE;
+		return APP_STATUS_REGISTRATION_MODE;
 	} else {
-		return APP_RESULT_OPERATION_MODE;
+		return APP_STATUS_OPERATION_MODE;
 	}
 }
+
 
 static char *itoa (int value, char *result, int base)
 {

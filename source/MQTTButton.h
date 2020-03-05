@@ -22,7 +22,7 @@
 #define CALLBACK_PARAMETER_PB2 UINT32_C(0x12)     /**< Macro represents callback parameter for Button2 */
 
 /* global function prototype declarations */
-APP_RESULT MQTTButton_Init(void * CmdProcessorHandle);
+Retcode_T MQTTButton_Init(void * CmdProcessorHandle);
 
 /* global variable declarations */
 

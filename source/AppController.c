@@ -46,7 +46,7 @@
 #include "timers.h"
 #include "Serval_Ip.h"
 #include "BatteryMonitor.h"
-#include "MQTTFlash.h"
+#include "MQTTStorage.h"
 #include "MQTTCfgParser.h"
 #include "MQTTRegistration.h"
 #include "MQTTOperation.h"
@@ -68,8 +68,6 @@ static SNTP_Setup_T SNTPSetupInfo;/**< SNTP setup parameters */
 
 static CmdProcessor_T * AppCmdProcessor;/**< Handle to store the main Command processor handle to be used by run-time event driven threads */
 
-/* initalize boot progress */
-static APP_RESULT rc_Boot_Mode = APP_RESULT_OPERATION_MODE;
 
 static void AppController_Enable(void *, uint32_t);
 static void AppController_Fire(void *);
@@ -78,8 +76,9 @@ static void AppController_StartLEDBlinkTimer(int);
 
 /* global variables ********************************************************* */
 char clientId[14] = {0};  // MAC address 6*2 + \0 'terminating'
-APP_STATUS app_status;
-APP_STATUS cmd_status;
+APP_STATUS app_status = APP_STATUS_UNKNOWN;
+APP_STATUS cmd_status = APP_STATUS_UNKNOWN;
+APP_STATUS boot_mode = APP_STATUS_UNKNOWN;
 uint16_t connectAttemps = 0UL;
 SensorDataBuffer sensorStreamBuffer;
 AssetDataBuffer assetStreamBuffer;
@@ -116,23 +115,23 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 	Retcode_T  retcode = Storage_Setup(&StorageSetup);
     retcode = Storage_Enable();
 
-    if ((Retcode_T) RETCODE_STORAGE_SDCARD_NOT_AVAILABLE == Retcode_GetCode((retcode)))
+    if ((Retcode_T) RETCODE_STORAGE_SDCARD_NOT_AVAILABLE == Retcode_GetCode(retcode))
     {
         /* This is only a warning error. So we will raise and proceed */
     	LOG_AT_WARNING(("AppController_Setup: SD card missing, using config from WIFI chip!\r\n"));
-        //Retcode_RaiseError(retcode);
         retcode = RETCODE_OK; /* SD card was not inserted */
     }
+
 	/* Initialize variables from flash */
-	if (MQTTFlash_Init() == APP_RESULT_ERROR) {
-		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
+	if (MQTTFlash_Init() != RETCODE_OK) {
+		assert(0);
 	}
 
 	/* Initialize Buttons */
-	rc_Boot_Mode = MQTTButton_Init(AppCmdProcessor);
-	if (rc_Boot_Mode == APP_RESULT_ERROR) {
-		LOG_AT_ERROR(("AppController_Setup: Boot error\r\n"));
-		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
+	retcode = MQTTButton_Init(AppCmdProcessor);
+	if (retcode != RETCODE_OK) {
+		LOG_AT_ERROR(("AppController_Setup: Boot error!\r\n"));
+		assert(0);
 	}
 
 	//test if button 2 is pressed
@@ -142,10 +141,14 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		BSP_Board_SoftReset();
 	}
 
-	rc_Boot_Mode = MQTTCfgParser_Init();
-	if (rc_Boot_Mode == APP_RESULT_ERROR) {
-		retcode = RETCODE(RETCODE_SEVERITY_ERROR,RETCODE_UNEXPECTED_BEHAVIOR);
+	retcode = MQTTCfgParser_Init();
+	// sett boot mode: operation or registration
+	boot_mode = MQTTCfgParser_GetMode();
+	if (retcode != RETCODE_OK) {
+		LOG_AT_ERROR(("AppController_Setup: Boot error. Inconsistent configuration!\r\n"));
+		assert(0);
 	}
+
 
     if (RETCODE_OK == retcode) {
 		// set cfg parameter for WIFI access
@@ -177,7 +180,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = MQTT_Setup_Z(&MqttSetupInfo);
 	}
 
-	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
+	if (RETCODE_OK == retcode && boot_mode == APP_STATUS_OPERATION_MODE) {
 		SensorSetup.CmdProcessorHandle = AppCmdProcessor;
 		SensorSetup.Enable.Accel = MQTTCfgParser_IsAccelEnabled();
 		SensorSetup.Enable.Gyro = MQTTCfgParser_IsGyroEnabled();
@@ -234,7 +237,7 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 	if (RETCODE_OK == retcode) {
 		retcode = MQTT_Enable_Z();
 	}
-	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
+	if (RETCODE_OK == retcode && boot_mode == APP_STATUS_OPERATION_MODE) {
 		retcode = Sensor_Enable();
 	}
 
@@ -281,7 +284,7 @@ static void AppController_Fire(void* pvParameters)
 {
     BCDS_UNUSED(pvParameters);
 
-	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
+	if (boot_mode == APP_STATUS_OPERATION_MODE) {
 		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
 		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
 		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
@@ -309,7 +312,6 @@ static void AppController_SetClientId(void) {
 
 static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 	(void) xTimer;
-	//APP_STATUS l_app_status;
 
 	switch(app_status) {
 		case APP_STATUS_STARTED:
@@ -386,7 +388,7 @@ Retcode_T AppController_SyncTime() {
 				APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT);
 		if ((RETCODE_OK != retcode) || (0UL == sntpTimeStampFromServer)) {
 			LOG_AT_WARNING(
-					("MQTTOperation: SNTP server time was not synchronized. Retrying...\r\n"));
+					("AppController: SNTP server time was not synchronized. Retrying...\r\n"));
 		}
 		sntpAttemps++;
 		//vTaskDelay(pdMS_TO_TICKS(500));
@@ -396,12 +398,12 @@ Retcode_T AppController_SyncTime() {
 		sntpTimeStampFromServer = 1580515200UL; // use default time 1. Feb 2020 00:00:00 UTC
 		SNTP_SetTime(sntpTimeStampFromServer);
 		LOG_AT_WARNING(
-				("MQTTOperation: Using fixed timestamp 1. Feb 2020 00:00:00 UTC, SNTP sync not possible\r\n"));
+				("AppController: Using fixed timestamp 1. Feb 2020 00:00:00 UTC, SNTP sync not possible\r\n"));
 		retcode = RETCODE_OK; // clear return code
 	}
 
 	//uint8_t * timeBuffer = (uint8_t *) &sntpTimeStampFromServer;
-	//LOG_AT_TRACE(("MQTTOperation: SNTP time: %d,%d,%d,%d,%d,%d,%d,%d\r\n", timeBuffer[0], timeBuffer[1], timeBuffer[2], timeBuffer[3],timeBuffer[4],timeBuffer[5],timeBuffer[6],timeBuffer[7]));
+	//LOG_AT_TRACE(("AppController: SNTP time: %d,%d,%d,%d,%d,%d,%d,%d\r\n", timeBuffer[0], timeBuffer[1], timeBuffer[2], timeBuffer[3],timeBuffer[4],timeBuffer[5],timeBuffer[6],timeBuffer[7]));
 	struct tm time;
 	char timezoneISO8601format[40];
 	TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
@@ -477,7 +479,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	LOG_AT_INFO(("AppController_Init: XDK Cumulocity Agent startup ...\r\n"));
 
 	// start status LED indicator
-	AppController_SetStatus(APP_STATUS_STARTED);
+	AppController_SetAppStatus(APP_STATUS_STARTED);
 	AppController_SetCmdStatus(APP_STATUS_STARTED);
 	AppController_StartLEDBlinkTimer (500);
 
@@ -497,13 +499,13 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	}
 }
 
-void AppController_SetStatus( uint8_t status) {
+void AppController_SetAppStatus( uint8_t status) {
 	if (app_status != APP_STATUS_REBOOT) {
 		app_status = status;
 	}
 }
 
-uint8_t AppController_GetStatus(void) {
+uint8_t AppController_GetAppStatus(void) {
 	return app_status;
 }
 

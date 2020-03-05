@@ -147,7 +147,12 @@ enum Retcode_CfgParser_E
 /**
  * @brief initialize configuration parser.
  */
-APP_RESULT MQTTCfgParser_Init(void);
+Retcode_T MQTTCfgParser_Init(void);
+
+/**
+ * @brief return boot status fo device
+ */
+APP_STATUS MQTTCfgParser_GetMode(void);
 
 /**
  * @brief   Print list of configured values.
@@ -173,7 +178,7 @@ void MQTTCfgParser_GetConfig(ConfigDataBuffer *config, uint8_t defaultsOnly);
  * and config.txt file is available
  */
 
-APP_RESULT MQTTCfgParser_ParseConfigFile(void);
+Retcode_T MQTTCfgParser_ParseConfigFile(void);
 
 /**
  * @brief returns the attribute value for the token SSID as defined at the configuration file

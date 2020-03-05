@@ -20,7 +20,7 @@
 #include "AppController.h"
 #include "MQTTRegistration.h"
 #include "MQTTOperation.h"
-#include "MQTTFlash.h"
+#include "MQTTStorage.h"
 #include "MQTTCfgParser.h"
 
 /* additional interface header files */
@@ -98,7 +98,7 @@ static void MQTTRegistration_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	LOG_AT_DEBUG(("%s: Received new message on topic: %s from upstream: [%s]\n\r", MQTTREGISTRATION_LOGPREFIX,
 			appIncomingMsgTopicBuffer, appIncomingMsgPayloadBuffer));
 	if ((strncmp(param.Topic, TOPIC_CREDENTIAL, param.TopicLength) == 0)) {
-		AppController_SetStatus(APP_STATUS_REGISTERED);
+		AppController_SetAppStatus(APP_STATUS_REGISTERED);
 
 		char username[SIZE_SMALL_BUF] = {0};
 		char tenant[SIZE_XSMALL_BUF] = {0};
@@ -215,7 +215,7 @@ void MQTTRegistration_StartTimer(void){
 	/* Start the timers */
 	LOG_AT_TRACE(("%s: Start publishing ...\n\r", MQTTREGISTRATION_LOGPREFIX));
 	xTimerStart(clientRegistrationTimerHandle, UINT32_MAX);
-	AppController_SetStatus(APP_STATUS_REGISTERING);
+	AppController_SetAppStatus(APP_STATUS_REGISTERING);
 	return;
 }
 
@@ -301,7 +301,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void) {
 
 	nwStatus = WlanNetworkConnect_GetIpStatus();
 	if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus) {
-		AppController_SetStatus(APP_STATUS_ERROR);
+		AppController_SetAppStatus(APP_STATUS_ERROR);
 
 		// reset WLAN and connect to MQTT broker
 		if (MqttSetupInfo.IsSecure == true) {
@@ -328,7 +328,7 @@ static Retcode_T MQTTRegistration_ValidateWLANConnectivity(void) {
     retcode = MQTT_IsConnected_Z();
 	if (RETCODE_OK != retcode) {
 
-		AppController_SetStatus(APP_STATUS_ERROR);
+		AppController_SetAppStatus(APP_STATUS_ERROR);
 		// increase connect attemps
 		connectAttemps = connectAttemps + 1;
 		retcode = MQTT_ConnectToBroker_Z(&MqttConnectInfo,

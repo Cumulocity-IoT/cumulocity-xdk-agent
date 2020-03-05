@@ -5,7 +5,7 @@
  **
  *******************************************************************************
  **
- **	OBJECT NAME:	MQTTFlash.h
+ **	OBJECT NAME:	MQTTStorage.h
  **
  **	DESCRIPTION:	Source Code for the Cumulocity MQTT Client for the Bosch XDK
  **
@@ -54,12 +54,12 @@ typedef enum {
 #define REBOOT_FILENAME		"reboot.txt"	/**< Filename to open/write/read from SD-card */
 #define CONFIG_FILENAME  	"config.txt"	/**< Filename to open/write/read from SD-card */
 
-APP_RESULT MQTTFlash_Init(void);
-APP_RESULT MQTTFlash_FLReadBootStatus(uint8_t* status);
-APP_RESULT MQTTFlash_FLWriteBootStatus(uint8_t* status);
+Retcode_T MQTTFlash_Init(void);
+Retcode_T MQTTFlash_FLReadBootStatus(uint8_t* status);
+Retcode_T MQTTFlash_FLWriteBootStatus(uint8_t* status);
 void MQTTFlash_FLWriteConfig(ConfigDataBuffer *configBuffer);
-APP_RESULT MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
-APP_RESULT MQTTFlash_SDReadConfig(ConfigDataBuffer* configBuffer);
+Retcode_T MQTTFlash_FLReadConfig(ConfigDataBuffer* configBuffer);
+Retcode_T MQTTFlash_SDReadConfig(ConfigDataBuffer* configBuffer);
 void MQTTFlash_FLDeleteConfig(void);
 void MQTTFlash_SDAppendCredentials(char* stringBuffer);
 
