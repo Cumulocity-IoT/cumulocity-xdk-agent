@@ -31,6 +31,8 @@
 #define MILLISECONDS(x) ((portTickType) x / portTICK_RATE_MS)
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)
 
+#define MQTTREGISTRATION_LOGPREFIX  "MQTTRegistration"
+
 /* global function prototype declarations */
 void MQTTRegistration_Init(void);
 void MQTTRegistration_DeInit(void);

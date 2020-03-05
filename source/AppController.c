@@ -75,9 +75,9 @@ static void AppController_Enable(void *, uint32_t);
 static void AppController_Fire(void *);
 static void AppController_SetClientId(void);
 static void AppController_StartLEDBlinkTimer(int);
-static char clientId[12] = {};
 
 /* global variables ********************************************************* */
+char clientId[14] = {0};  // MAC address 6*2 + \0 'terminating'
 APP_STATUS app_status;
 APP_STATUS cmd_status;
 uint16_t connectAttemps = 0UL;
@@ -237,12 +237,23 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 	if (RETCODE_OK == retcode && rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		retcode = Sensor_Enable();
 	}
+
+	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
+	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
+	MqttConnectInfo.CleanSession = true;
+	MqttConnectInfo.KeepAliveInterval = 100;
+	AppController_SetClientId();
+
+	LOG_AT_INFO(("AppController_Enable: Device ID for registration in Cumulocity %s.\r\n",
+			MqttConnectInfo.ClientId));
+
 	if (RETCODE_OK == retcode) {
         if (pdPASS != xTaskCreate(AppController_Fire, (const char * const ) "AppController", TASK_STACK_SIZE_APP_CONTROLLER, NULL, TASK_PRIO_APP_CONTROLLER, &AppControllerHandle))
         {
             retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
         }
 	}
+
 	if (RETCODE_OK != retcode) {
 		LOG_AT_ERROR(("AppController_Enable: Now calling SoftReset and reboot to recover\r\n"));
 		Retcode_RaiseError(retcode);
@@ -269,15 +280,6 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 static void AppController_Fire(void* pvParameters)
 {
     BCDS_UNUSED(pvParameters);
-
-	MqttConnectInfo.BrokerURL = MQTTCfgParser_GetMqttBrokerName();
-	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
-	MqttConnectInfo.CleanSession = true;
-	MqttConnectInfo.KeepAliveInterval = 100;
-	AppController_SetClientId();
-
-	LOG_AT_INFO(("AppController_Fire: Device ID for registration in Cumulocity %s\r\n.",
-			MqttConnectInfo.ClientId));
 
 	if (rc_Boot_Mode == APP_RESULT_OPERATION_MODE) {
 		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
@@ -312,42 +314,38 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 	switch(app_status) {
 		case APP_STATUS_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			//LOG_AT_TRACE(("STATUS APP_STATUS_STARTED\n"));
 			break;
 		case APP_STATUS_OPERATING_STARTED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			LOG_AT_TRACE(("STATUS APP_STATUS_RUNNING\n"));
 			break;
 		case APP_STATUS_OPERATING_STOPPED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
-			LOG_AT_TRACE(("STATUS APP_STATUS_STOPPED\n"));
 			break;
 		case APP_STATUS_ERROR:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_ON);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
-			LOG_AT_TRACE(("STATUS APP_STATUS_ERROR\n"));
 			break;
 		case APP_STATUS_REBOOT:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			LOG_AT_TRACE(("STATUS APP_STATUS_REBOOT\n"));
 			break;
 		case APP_STATUS_REGISTERED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_ON);
-			LOG_AT_TRACE(("STATUS APP_STATUS_REGISTERED\n"));
 			break;
 		case APP_STATUS_REGISTERING:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
-			LOG_AT_TRACE(("STATUS APP_STATUS_REGISTERING\n"));
+
 			break;
 		default:
-			LOG_AT_WARNING(("AppController: Unknown status\n"));
+			LOG_AT_WARNING(("AppController: Unknown app status\n"));
 			break;
 	}
+	LOG_AT_TRACE(("STATUS %s\r\n", app_status_text[app_status]));
+
 	switch(cmd_status) {
 		case APP_STATUS_COMMAND_RECEIVED:
 			BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
@@ -361,7 +359,7 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 			// do nothing
 			break;
 		default:
-			LOG_AT_WARNING(("AppController: Unknown status\n"));
+			LOG_AT_WARNING(("AppController: Unknown command status\n"));
 			break;
 	}
 }

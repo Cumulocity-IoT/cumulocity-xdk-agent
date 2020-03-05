@@ -43,6 +43,8 @@
 #define MILLISECONDS(x) ((portTickType) x / portTICK_RATE_MS)
 #define SECONDS(x) ((portTickType) (x * 1000) / portTICK_RATE_MS)
 
+#define MQTTOPERATION_LOGPREFIX 	 "MQTTOperation"
+
 
 /* global function prototype declarations */
 void MQTTOperation_Init(void);

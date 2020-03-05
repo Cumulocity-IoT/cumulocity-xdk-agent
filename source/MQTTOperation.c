@@ -124,11 +124,11 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 	strncpy(appIncomingMsgPayloadBuffer, (const char *) param.Payload, fmin(param.PayloadLength , (sizeof(appIncomingMsgPayloadBuffer) - 1U)));
 
 	if (strncmp(appIncomingMsgTopicBuffer, TOPIC_DOWNSTREAM_ERROR, strlen(TOPIC_DOWNSTREAM_ERROR)) == 0) {
-		LOG_AT_ERROR(("MQTTOperation_ClientReceive: Error: %.*s, Error Msg : %.*s\r\n",
+		LOG_AT_ERROR(("MQTTOperation: Error from upstream: %.*s, Error Msg : %.*s\r\n",
 				(int) param.TopicLength, appIncomingMsgTopicBuffer,
 				(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
 	} else {
-		LOG_AT_INFO(("MQTTOperation_ClientReceive: Topic: %.*s, Msg Received: %.*s\r\n",
+		LOG_AT_INFO(("MQTTOperation: Upstream msg: Topic: %.*s, Msg Received: %.*s\r\n",
 				(int) param.TopicLength, appIncomingMsgTopicBuffer,
 				(int) param.PayloadLength, appIncomingMsgPayloadBuffer));
 
@@ -136,7 +136,7 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 		// split batch of commands in single commands
 		char *token = strtok(appIncomingMsgPayloadBuffer, "\n");
 		while (token != NULL) {
-			LOG_AT_ERROR(("MQTTOperation_ClientReceive: Try to place command [%s] in queue!\r\n", token));
+			LOG_AT_ERROR(("MQTTOperation: Try to place command [%s] in queue!\r\n", token));
 			if (xQueueSend(commandQueue,token, 0) != pdTRUE) {
 				LOG_AT_ERROR(("MQTTOperation_ClientReceive: Could not buffer command!\r\n"));
 				break;
@@ -155,7 +155,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 
 	command = CMD_UNKNOWN;
 
-	LOG_AT_INFO(("MQTTOperation_ExecuteCommand: Processing command: [%s]\r\n", commandBuffer));
+	LOG_AT_INFO(("MQTTOperation: Execute command: [%s]\r\n", commandBuffer));
 
 	// split payload into tokens
 	int token_pos = 0;
@@ -229,12 +229,12 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					localbuffer.length = NUMBER_UINT32_ZERO;
 					memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 					MQTTFlash_FLReadConfig(&localbuffer);
-					LOG_AT_DEBUG(("MQTTButton: Current configuration in flash:\r\n%s\r\n", localbuffer.data));
+					LOG_AT_DEBUG(("MQTTOperation: Current configuration in flash:\r\n%s\r\n", localbuffer.data));
 
 					localbuffer.length = NUMBER_UINT32_ZERO;
 					memset(localbuffer.data, 0x00, SIZE_XXLARGE_BUF);
 					MQTTCfgParser_GetConfig(&localbuffer, CFG_FALSE);
-					LOG_AT_DEBUG(("MQTTButton: Currently used configuration:\r\n%s\r\n", localbuffer.data));
+					LOG_AT_DEBUG(("5s: Currently used configuration:\r\n%s\r\n", localbuffer.data));
 				} else if (strcmp(token, "resetBootstatus") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
 					command = CMD_COMMAND;
@@ -250,11 +250,11 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					command = CMD_CONFIG;
 				} else {
 					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-					LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
+					LOG_AT_WARNING(("5s: Unknown command: %s\r\n", token));
 				}
 				LOG_AT_DEBUG(("MQTTOperation: Token: [%s] recognized as command: [%i]\r\n", token, command));
 			} else if (command == CMD_FIRMWARE){
-				LOG_AT_DEBUG(("MQTTOperation: Phase parse command firmware name: token_pos: [%i]\r\n", token_pos));
+				LOG_AT_DEBUG(("MQTTOperation: Phase parse command firmware name: token_pos: [%i]\r\n",token_pos));
 				MQTTCfgParser_SetFirmwareName(token);
 			} else if (command == CMD_MESSAGE) {
 				BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
@@ -372,7 +372,7 @@ static void MQTTOperation_RestartCallback(xTimerHandle xTimer) {
  */
 static void MQTTOperation_ClientPublish(void) {
 
-	LOG_AT_INFO(("MQTTOperation_ClientPublish: Start publishing ...\r\n"));
+	LOG_AT_INFO(("MQTTOperation: Start publishing ...\r\n"));
 
 	semaphoreAssetBuffer = xSemaphoreCreateBinary();
 	xSemaphoreGive(semaphoreAssetBuffer);
@@ -657,7 +657,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	static uint32_t keepAlive = 0;
 	static uint32_t mvoltage = 0, battery = 0;
 
-	LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
+	//LOG_AT_TRACE(("MQTTOperation: Starting buffering device data ...\r\n"));
 
 	// take semaphore to avoid publish thread to access the buffer
 	BaseType_t semaphoreResult = xSemaphoreTake(semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT_NULL));
@@ -813,7 +813,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			TimeStamp_SecsToTm(sntpTimeStamp, &time);
 			TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
 
-			LOG_AT_TRACE(("MQTTOperation_SensorUpdate: current time: %s\r\n", timezoneISO8601format));
+			LOG_AT_TRACE(("MQTTOperation: current time: %s\r\n", timezoneISO8601format));
 
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length, sizeof (assetStreamBuffer.data) - assetStreamBuffer.length,
@@ -835,7 +835,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 	// release semaphore and let publish thread access the buffer
 	xSemaphoreGive(semaphoreAssetBuffer);
 
-	LOG_AT_TRACE(("MQTTOperation: Finished buffering device data\r\n"));
+	//LOG_AT_TRACE(("MQTTOperation: Finished buffering device data\r\n"));
 }
 
 static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
@@ -959,7 +959,7 @@ static float MQTTOperation_CalcSoundPressure(float acousticRawValue){
 void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param2);
 	if (xQueueSend(commandQueue,(char *) param1, 0) != pdTRUE) {
-		LOG_AT_ERROR(("MQTTOperation_QueueCommand: Could not buffer command!\r\n"));
+		LOG_AT_ERROR(("MQTTOperation: Could not buffer command!\r\n"));
 	}
 	return;
 }
@@ -979,7 +979,7 @@ void MQTTOperation_Init(void) {
 	// ckeck if reboot process is pending to be confirmed
 	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
 	MQTTFlash_FLReadBootStatus((uint8_t *) readbuffer);
-	LOG_AT_DEBUG(("MQTTOperation_Init: Reading boot status: [%s]\r\n", readbuffer));
+	LOG_AT_DEBUG(("MQTTOperation: Reading boot status: [%s]\r\n", readbuffer));
 
 	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
 		command = CMD_RESTART;
