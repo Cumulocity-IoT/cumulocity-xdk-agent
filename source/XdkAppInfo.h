@@ -51,9 +51,9 @@
 /**< Main command processor task priority */
 #define TASK_PRIO_MAIN_CMD_PROCESSOR                (UINT32_C(3))
 /**< Main command processor task stack size */
-#define TASK_STACK_SIZE_MAIN_CMD_PROCESSOR          (UINT32_C(1000))
+#define TASK_STACK_SIZE_MAIN_CMD_PROCESSOR          (UINT32_C(1200))
 /**< Main command processor task queue length */
-#define TASK_Q_LEN_MAIN_CMD_PROCESSOR               (UINT32_C(10))
+#define TASK_Q_LEN_MAIN_CMD_PROCESSOR               (UINT32_C(8))
 
 /**< Application controller task priority */
 #define TASK_PRIO_APP_CONTROLLER                    (UINT32_C(3))

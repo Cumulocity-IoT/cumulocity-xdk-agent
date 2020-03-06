@@ -260,10 +260,6 @@ static Retcode_T MQTTStorage_SD_Write(const uint8_t* fileName,
 	/* Open the file to write */
 	if (f_open(&fileObject, (const TCHAR*) fileName, FA_OPEN_ALWAYS | FA_WRITE)
 			!= FR_Z_OK) {
-		/* Error. Cannot create the file *
-		 LOG_AT_ERROR(("MQTTStorage: Error creating status"));
-		 return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
-		 }
 
 		 /* Set the file write pointer at th eend to append */
 		if (f_lseek(&fileObject, f_size(&fileObject)) != FR_Z_OK) {
@@ -295,6 +291,7 @@ static void MQTTStorage_Flash_DeleteFile(const uint8_t* fileName) {
 	Retcode_T retcode = RETCODE_OK;
 	bool status = false;
 	uint32_t bytesToRead = 0;
+
 	/* Validating if WIFI storage medium is available */
 	retcode = Storage_IsAvailable(STORAGE_MEDIUM_WIFI_FILE_SYSTEM, &status);
 	if ((RETCODE_OK == retcode) && (true == status)) {
@@ -310,7 +307,6 @@ static void MQTTStorage_Flash_DeleteFile(const uint8_t* fileName) {
 			} else {
 				LOG_AT_ERROR(
 						("MQTTStorage: Deleted file failed:[%lu] \r\n", Retcode_GetCode(retcode)));
-				//assert(0);
 			}
 		} else {
 			LOG_AT_ERROR(

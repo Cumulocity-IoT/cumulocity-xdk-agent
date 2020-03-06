@@ -64,14 +64,13 @@ static WLAN_Setup_T WLANSetupInfo = { .IsEnterprise = false, .IsHostPgmEnabled =
 		.IsStatic = WLAN_STATIC_IP, .IpAddr = WLAN_IP_ADDR, .GwAddr =
 				WLAN_GW_ADDR, .DnsAddr = WLAN_DNS_ADDR, .Mask = WLAN_MASK, };
 
-static SNTP_Setup_T SNTPSetupInfo;/**< SNTP setup parameters */
+static SNTP_Setup_T SNTPSetupInfo; /**< SNTP setup parameters */
 
-static CmdProcessor_T * AppCmdProcessor;/**< Handle to store the main Command processor handle to be used by run-time event driven threads */
+static CmdProcessor_T * AppCmdProcessor; /**< Handle to store the main Command processor handle to be used by run-time event driven threads */
 
-static void AppController_Enable(void *, uint32_t);
-static void AppController_Fire(void *);
-static void AppController_SetClientId(void);
-static void AppController_StartLEDBlinkTimer(int);
+static void AppController_Enable (void *, uint32_t);
+static void AppController_SetClientId (const char * clientId);
+static void AppController_StartLEDBlinkTimer (int);
 
 /* global variables ********************************************************* */
 char clientId[14] = { 0 };  // MAC address 6*2 + \0 'terminating'
@@ -143,12 +142,23 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 	}
 
 	retcode = MQTTCfgParser_Init();
-	// sett boot mode: operation or registration
+
+	// set boot mode: operation or registration
 	boot_mode = MQTTCfgParser_GetMode();
 	if (retcode != RETCODE_OK) {
 		LOG_AT_ERROR(
 				("AppController_Setup: Boot error. Inconsistent configuration!\r\n"));
 		assert(0);
+	}
+
+	if (boot_mode == APP_STATUS_OPERATION_MODE) {
+		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
+		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
+		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
+	} else {
+		MqttCredentials.Username = MQTT_REGISTRATION_USERNAME;
+		MqttCredentials.Password = MQTT_REGISTRATION_PASSWORD;
+		MqttCredentials.Anonymous = FALSE;
 	}
 
 	if (RETCODE_OK == retcode) {
@@ -247,71 +257,44 @@ static void AppController_Enable(void * param1, uint32_t param2) {
 	MqttConnectInfo.BrokerPort = MQTTCfgParser_GetMqttBrokerPort();
 	MqttConnectInfo.CleanSession = true;
 	MqttConnectInfo.KeepAliveInterval = 100;
-	AppController_SetClientId();
+	AppController_SetClientId(MqttConnectInfo.ClientId);
 
 	LOG_AT_INFO(
 			("AppController_Enable: Device ID for registration in Cumulocity %s.\r\n", MqttConnectInfo.ClientId));
 
 	if (RETCODE_OK == retcode) {
+		BaseType_t task_result;
+		if (boot_mode == APP_STATUS_OPERATION_MODE) {
+			task_result = xTaskCreate(MQTTOperation_Init,
+					(const char * const ) "AppController", TASK_STACK_SIZE_APP_CONTROLLER, NULL,
+					TASK_PRIO_APP_CONTROLLER, &AppControllerHandle);
+		} else {
+			task_result = xTaskCreate(MQTTRegistration_Init,
+					(const char * const ) "AppController", TASK_STACK_SIZE_APP_CONTROLLER, NULL,
+					TASK_PRIO_APP_CONTROLLER, &AppControllerHandle);
+		}
+
 		if (pdPASS
-				!= xTaskCreate(AppController_Fire,
-						(const char * const ) "AppController",
-						TASK_STACK_SIZE_APP_CONTROLLER, NULL,
-						TASK_PRIO_APP_CONTROLLER, &AppControllerHandle)) {
-			retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+				!= task_result) {
+			LOG_AT_ERROR(
+					("AppController_Enable: Now calling SoftReset and reboot to recover\r\n"));
+			Retcode_RaiseError(retcode);
+			BSP_Board_SoftReset();
 		}
 	}
 
-	if (RETCODE_OK != retcode) {
-		LOG_AT_ERROR(
-				("AppController_Enable: Now calling SoftReset and reboot to recover\r\n"));
-		Retcode_RaiseError(retcode);
-		BSP_Board_SoftReset();
-		// assert(0);
-	}
 	Utils_PrintResetCause();
 }
 
-/**
- * @brief Responsible for controlling the send data over MQTT application control flow.
- *
- * - Synchronize SNTP time stamp for the system if MQTT communication is secure
- * - Connect to MQTT broker
- * - Subscribe to MQTT topic
- * - Read environmental sensor data
- * - Publish data periodically for a MQTT topic
- *
- * @param[in] pvParameters
- * Unused
- */
-
-static void AppController_Fire(void* pvParameters) {
-	BCDS_UNUSED(pvParameters);
-
-	if (boot_mode == APP_STATUS_OPERATION_MODE) {
-		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
-		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
-		MqttCredentials.Anonymous = MQTTCfgParser_IsMqttAnonymous();
-		MQTTOperation_Init();
-	} else {
-		MqttCredentials.Username = MQTT_REGISTRATION_USERNAME;
-		MqttCredentials.Password = MQTT_REGISTRATION_PASSWORD;
-		MqttCredentials.Anonymous = FALSE;
-		MQTTRegistration_Init();
-	}
-}
-
-static void AppController_SetClientId(void) {
+static void AppController_SetClientId(const char * clientId) {
 	/* Initialize Variables */
-	uint8_t _macVal[WIFI_MAC_ADDR_LEN];
+	uint8_t _macVal[WIFI_MAC_ADDR_LEN + 1] = { 0 };
 	uint8_t _macAddressLen = WIFI_MAC_ADDR_LEN;
+
 	/* Get the MAC Address */
-	memset(_macVal, NUMBER_UINT8_ZERO, WIFI_MAC_ADDR_LEN);
 	sl_NetCfgGet(SL_MAC_ADDRESS_GET, NULL, &_macAddressLen,
 			(uint8_t *) _macVal);
-
-	//changed
-	sprintf(MqttConnectInfo.ClientId, "%02X%02X%02X%02X%02X%02X", _macVal[0],
+	sprintf(clientId, "%02X%02X%02X%02X%02X%02X", _macVal[0],
 			_macVal[1], _macVal[2], _macVal[3], _macVal[4], _macVal[5]);
 }
 
@@ -320,57 +303,46 @@ static void AppController_ToogleLEDCallback(xTimerHandle xTimer) {
 
 	switch (app_status) {
 	case APP_STATUS_STARTED:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 		break;
 	case APP_STATUS_OPERATING_STARTED:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_OFF);
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 		break;
 	case APP_STATUS_OPERATING_STOPPED:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_OFF);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_ON);
 		break;
 	case APP_STATUS_ERROR:
 		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_ON);
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O,
-				(uint32_t) BSP_LED_COMMAND_OFF);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_OFF);
 		break;
 	case APP_STATUS_REBOOT:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_O, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 		break;
 	case APP_STATUS_REGISTERED:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_OFF);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
 		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_ON);
 		break;
 	case APP_STATUS_REGISTERING:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_OFF);
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_OFF);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 
 		break;
 	default:
 		LOG_AT_WARNING(("AppController: Unknown app status\n"));
 		break;
-	} LOG_AT_TRACE(("STATUS %s\r\n", app_status_text[app_status]));
+	}
+	LOG_AT_TRACE(("STATUS %s\r\n", app_status_text[app_status]));
 
 	switch (cmd_status) {
 	case APP_STATUS_COMMAND_RECEIVED:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 		cmd_status = APP_STATUS_COMMAND_CONFIRMED;
 		break;
 	case APP_STATUS_COMMAND_CONFIRMED:
-		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R,
-				(uint32_t) BSP_LED_COMMAND_TOGGLE);
+		BSP_LED_Switch((uint32_t) BSP_XDK_LED_R, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 		cmd_status = APP_STATUS_STARTED;
 		break;
 	case APP_STATUS_STARTED:
@@ -439,20 +411,17 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 	 * Initialialze global variables
 	 */
 
-	MqttSetupInfo = (MQTT_Setup_TZ ) { .IsSecure = APP_MQTT_SECURE_ENABLE, };/**< MQTT setup parameters */
+	MqttSetupInfo = (MQTT_Setup_TZ ) { .IsSecure = APP_MQTT_SECURE_ENABLE, };
 
 	MqttConnectInfo = (MQTT_Connect_TZ ) { .ClientId = clientId, .BrokerURL =
-					MQTT_BROKER_HOST_NAME, .BrokerPort =
-			MQTT_BROKER_HOST_PORT, .CleanSession = true, .KeepAliveInterval =
-					100, };/**< MQTT connect parameters */
+					MQTT_BROKER_HOST_NAME, .BrokerPort =  MQTT_BROKER_HOST_PORT,
+					.CleanSession = true, .KeepAliveInterval = 100, };
 
 	MqttCredentials = (MQTT_Credentials_TZ ) { .Username = APP_MQTT_USERNAME,
-					.Password = APP_MQTT_PASSWORD, .Anonymous = false,
-
-			};/**< MQTT connect parameters */
+					.Password = APP_MQTT_PASSWORD, .Anonymous = false,};
 
 	StorageSetup =
-			(Storage_Setup_T ) { .SDCard = true, .WiFiFileSystem = true, };/**< Storage setup parameters */
+			(Storage_Setup_T ) { .SDCard = true, .WiFiFileSystem = true, };
 
 	SensorSetup = (Sensor_Setup_T ) { .CmdProcessorHandle = NULL, .Enable = {
 					.Accel = false, .Mag = false, .Gyro = false, .Humidity =
@@ -463,7 +432,7 @@ void AppController_Init(void * cmdProcessorHandle, uint32_t param2) {
 					.Type = SENSOR_GYRO_BMG160, .IsRawData = false, }, .Mag = {
 					.IsRawData = false }, .Light = { .IsInteruptEnabled = false,
 					.Callback = NULL, }, .Temp = { .OffsetCorrection =
-					APP_TEMPERATURE_OFFSET_CORRECTION, }, }, };/**< Sensor setup parameters */
+					APP_TEMPERATURE_OFFSET_CORRECTION, }, }, };
 
 	Retcode_T retcode = RETCODE_OK;
 	BCDS_UNUSED(param2);

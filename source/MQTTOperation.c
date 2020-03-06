@@ -67,6 +67,8 @@ extern MQTT_Setup_TZ MqttSetupInfo;
 extern MQTT_Connect_TZ MqttConnectInfo;
 extern MQTT_Credentials_TZ MqttCredentials;
 extern Sensor_Setup_T SensorSetup;
+extern xTaskHandle AppControllerHandle;
+extern CmdProcessor_T MainCmdProcessor;
 
 /* inline functions ********************************************************* */
 
@@ -1078,7 +1080,8 @@ void MQTTOperation_QueueCommand(void * param1, uint32_t param2) {
  *
  * @return NONE
  */
-void MQTTOperation_Init(void) {
+void MQTTOperation_Init(void* pvParameters) {
+	BCDS_UNUSED(pvParameters);
 
 	Retcode_T retcode = RETCODE_OK;
 	tickRateMS = (int) pdMS_TO_TICKS(MQTTCfgParser_GetStreamRate());

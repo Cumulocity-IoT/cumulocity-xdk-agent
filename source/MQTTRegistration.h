@@ -34,7 +34,7 @@
 #define MQTTREGISTRATION_LOGPREFIX  "MQTTRegistration"
 
 /* global function prototype declarations */
-void MQTTRegistration_Init(void);
+void MQTTRegistration_Init(void* pvParameters);
 void MQTTRegistration_DeInit(void);
 void MQTTRegistration_StartTimer(void);
 void MQTTRegistration_StopTimer(void);

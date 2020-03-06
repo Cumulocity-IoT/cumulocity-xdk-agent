@@ -235,7 +235,8 @@ void MQTTRegistration_StartTimer(void) {
  *
  * @return NONE
  */
-void MQTTRegistration_Init(void) {
+void MQTTRegistration_Init(void* pvParameters) {
+	BCDS_UNUSED(pvParameters);
 
 	Retcode_T retcode = RETCODE_OK;
 

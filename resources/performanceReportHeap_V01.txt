@@ -9,3 +9,22 @@ everFreeHeap, freeHeap, stackHighWaterMarkMain, stackHighWaterMarkApp, stackSize
 [7152], [9944], [??], [614], 0800, 1200, 70 * 1024
 [6352], [9144], [34], [804], 0800, 1000, 70 * 1024
 [6752],	[9544],[134], [596], 0900, 1000, 70 * 1024
+
+
+stackHighWaterMark
+   /* The minimum amount of stack space that has remained for the task since
+   the task was created.  The closer this value is to zero the closer the task
+   has come to overflowing its stack. */
+ 
+ #define TASK_STACK_SIZE_MAIN_CMD_PROCESSOR          (UINT32_C(1200))
+ INFO | XDK DEVICE 3: MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[5720], freeHeap:[8168], stackHighWaterMarkApp:[624],stackHighWaterMarkMain:[434]
+ 
+ #define TASK_STACK_SIZE_MAIN_CMD_PROCESSOR          (UINT32_C(1000))
+ INFO | XDK DEVICE 3: MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[6520], freeHeap:[8968], stackHighWaterMarkApp:[620],stackHighWaterMarkMain:[234]
+ 
+ #define TASK_STACK_SIZE_MAIN_CMD_PROCESSOR          (UINT32_C(900))
+ INFO | XDK DEVICE 3: MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[6920], freeHeap:[9368], stackHighWaterMarkApp:[612],stackHighWaterMarkMain:[134]
+ 
+ #define TASK_STACK_SIZE_MAIN_CMD_PROCESSOR          (UINT32_C(800))
+ INFO | XDK DEVICE 3: MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[7320], freeHeap:[9768], stackHighWaterMarkApp:[620],stackHighWaterMarkMain:[34]
+ 

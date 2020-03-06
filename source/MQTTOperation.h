@@ -47,7 +47,7 @@
 
 
 /* global function prototype declarations */
-void MQTTOperation_Init(void);
+void MQTTOperation_Init(void* pvParameters);
 void MQTTOperation_DeInit(void);
 void MQTTOperation_QueueCommand(void * param1, uint32_t param2);
 
