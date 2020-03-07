@@ -199,30 +199,29 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 				if (strcmp(token, "speed") == 0) {
 					command = CMD_SPEED;
 				} else if (strcmp(token, "toggle") == 0) {
-					BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y,
-							(uint32_t) BSP_LED_COMMAND_TOGGLE);
+					BSP_LED_Switch((uint32_t) BSP_XDK_LED_Y, (uint32_t) BSP_LED_COMMAND_TOGGLE);
 					command = CMD_TOGGLE;
 					commandComplete = true;
 					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
 				} else if (strcmp(token, "start") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
-					command = CMD_START;
+					command = CMD_PUBLISH_START;
 					commandComplete = true;
 					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "startButton") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
-					command = CMD_START;
+					command = CMD_PUBLISH_START;
 					commandComplete = true;
 					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "stop") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
-					command = CMD_STOP;
+					command = CMD_PUBLISH_STOP;
 					commandComplete = true;
 					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "stopButton") == 0) {
 					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
-					command = CMD_STOP;
+					command = CMD_PUBLISH_STOP;
 					commandComplete = true;
 					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "printConfig") == 0) {
@@ -256,9 +255,14 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					command = CMD_SENSOR;
 				} else if (strcmp(token, "config") == 0) {
 					command = CMD_CONFIG;
+				} else if (strcmp(token, "restartConfirm") == 0) {
+					command = CMD_RESTART;
+					commandComplete = true;
+					commandProgress = DEVICE_OPERATION_EXECUTING;
+					MQTTStorage_Flash_WriteBootStatus((uint8_t*) NO_BOOT_PENDING);
 				} else {
 					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
-					LOG_AT_WARNING(("5s: Unknown command: %s\r\n", token));
+					LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
 				}
 				LOG_AT_DEBUG(
 						("MQTTOperation: Token: [%s] recognized as command: [%i]\r\n", token, command));
@@ -424,6 +428,19 @@ static void MQTTOperation_ClientPublish(void) {
 			);
 	xTimerStart(timerHandleSensor, UINT32_C(0xffff));
 
+
+	// ckeck if reboot process is pending to be confirmed
+	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
+	MQTTStorage_Flash_ReadBootStatus((uint8_t *) readbuffer);
+	LOG_AT_DEBUG(("MQTTOperation: Reading boot status: [%s]\r\n", readbuffer));
+
+	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
+		if (xQueueSend(commandQueue,(char *) "511,DUMMY,restartConfirm", 0) != pdTRUE) {
+			LOG_AT_ERROR(("MQTTOperation: Could not buffer command!\r\n"));
+		}
+	}
+
+
 	uint32_t measurementCounter = 0;
 	/* A function that implements a task must not exit or attempt to return to
 	 its caller function as there is nothing to return to. */
@@ -468,12 +485,6 @@ static void MQTTOperation_ClientPublish(void) {
 					} else {
 						assetUpdateProcess = APP_ASSET_COMPLETED;
 					}
-				}
-
-				if (commandProgress == DEVICE_OPERATION_AFTER_PENDING) {
-					MQTTStorage_Flash_WriteBootStatus(
-							(uint8_t*) NO_BOOT_PENDING);
-					commandProgress = DEVICE_OPERATION_WAITING;
 				}
 			}
 		}
@@ -773,7 +784,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			if (command != CMD_RESTART) {
 				commandProgress = DEVICE_OPERATION_EXECUTING;
 			} else {
-				commandProgress = DEVICE_OPERATION_BEFORE_PENDING;
+				commandProgress = DEVICE_OPERATION_BLOCKING;
 			}
 			break;
 		case DEVICE_OPERATION_BEFORE_FAILED:
@@ -796,14 +807,6 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					assetStreamBuffer.data + assetStreamBuffer.length,
 					sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
 					"503,%s\r\n", commands[command]);
-
-			break;
-		case DEVICE_OPERATION_PENDING:
-			commandProgress = DEVICE_OPERATION_AFTER_PENDING;
-			assetStreamBuffer.length += snprintf(
-					assetStreamBuffer.data + assetStreamBuffer.length,
-					sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
-					"503,%s\r\n", commands[command]);
 			break;
 		case DEVICE_OPERATION_IMMEDIATE_CMD:
 			commandProgress = DEVICE_OPERATION_WAITING;
@@ -817,14 +820,14 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					"503,%s\r\n", commands[command]);
 
 			switch (command) {
-			case CMD_START:
+			case CMD_PUBLISH_START:
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length,
 						sizeof(assetStreamBuffer.data)
 								- assetStreamBuffer.length,
 						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
 				break;
-			case CMD_STOP:
+			case CMD_PUBLISH_STOP:
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length,
 						sizeof(assetStreamBuffer.data)
@@ -839,14 +842,14 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			commandProgress = DEVICE_OPERATION_WAITING;
 
 			switch (command) {
-			case CMD_START:
+			case CMD_PUBLISH_START:
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length,
 						sizeof(assetStreamBuffer.data)
 								- assetStreamBuffer.length,
 						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
 				break;
-			case CMD_STOP:
+			case CMD_PUBLISH_STOP:
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length,
 						sizeof(assetStreamBuffer.data)
@@ -1085,16 +1088,6 @@ void MQTTOperation_Init(void* pvParameters) {
 
 	Retcode_T retcode = RETCODE_OK;
 	tickRateMS = (int) pdMS_TO_TICKS(MQTTCfgParser_GetStreamRate());
-
-	// ckeck if reboot process is pending to be confirmed
-	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
-	MQTTStorage_Flash_ReadBootStatus((uint8_t *) readbuffer);
-	LOG_AT_DEBUG(("MQTTOperation: Reading boot status: [%s]\r\n", readbuffer));
-
-	if ((strncmp(readbuffer, BOOT_PENDING, strlen(BOOT_PENDING)) == 0)) {
-		command = CMD_RESTART;
-		commandProgress = DEVICE_OPERATION_PENDING;
-	}
 
 	if (MqttSetupInfo.IsSecure == true) {
 		retcode = AppController_SyncTime();
