@@ -203,29 +203,33 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					command = CMD_TOGGLE;
 					commandComplete = true;
 					// skip phase BEFORE_EXECUTING, because LED is switched on immediately
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_CMD;
 				} else if (strcmp(token, "start") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_CMD;
 					command = CMD_PUBLISH_START;
 					commandComplete = true;
+					assetUpdateProcess = APP_ASSET_WAITING;
 					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "startButton") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_BUTTON;
 					command = CMD_PUBLISH_START;
 					commandComplete = true;
+					assetUpdateProcess = APP_ASSET_WAITING;
 					MQTTOperation_StartTimer();
 				} else if (strcmp(token, "stop") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_CMD;
 					command = CMD_PUBLISH_STOP;
 					commandComplete = true;
+					assetUpdateProcess = APP_ASSET_WAITING;
 					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "stopButton") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_BUTTON;
 					command = CMD_PUBLISH_STOP;
 					commandComplete = true;
+					assetUpdateProcess = APP_ASSET_WAITING;
 					MQTTOperation_StopTimer();
 				} else if (strcmp(token, "printConfig") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_BUTTON;
 					command = CMD_COMMAND;
 					commandComplete = true;
 
@@ -242,13 +246,13 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					LOG_AT_DEBUG(
 							("5s: Currently used configuration:\r\n%s\r\n", localbuffer.data));
 				} else if (strcmp(token, "resetBootstatus") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_BUTTON;
 					command = CMD_COMMAND;
 					commandComplete = true;
 					MQTTStorage_Flash_WriteBootStatus(
 							(uint8_t*) NO_BOOT_PENDING);
 				} else if (strcmp(token, "requestCommands") == 0) {
-					commandProgress = DEVICE_OPERATION_IMMEDIATE_BUTTON;
+					commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_BUTTON;
 					command = CMD_REQUEST;
 					commandComplete = true;
 				} else if (strcmp(token, "sensor") == 0) {
@@ -275,7 +279,7 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 						(uint32_t) BSP_LED_COMMAND_TOGGLE);
 				commandComplete = true;
 				// skip phase BEFORE_EXECUTING, because LED is switched on immediately
-				commandProgress = DEVICE_OPERATION_IMMEDIATE_CMD;
+				commandProgress = DEVICE_OPERATION_IMMEDIATE_EXECUTE_CMD;
 			}
 			break;
 		case 3:
@@ -430,7 +434,7 @@ static void MQTTOperation_ClientPublish(void) {
 
 
 	// ckeck if reboot process is pending to be confirmed
-	char readbuffer[SIZE_SMALL_BUF]; /* Temporary buffer for write file */
+	char readbuffer[strlen(BOOT_PENDING)+1]; /* Temporary buffer for write file */
 	MQTTStorage_Flash_ReadBootStatus((uint8_t *) readbuffer);
 	LOG_AT_DEBUG(("MQTTOperation: Reading boot status: [%s]\r\n", readbuffer));
 
@@ -741,9 +745,9 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					"400,xdk_StartEvent,\"XDK started!\"\r\n");
 			break;
 		case APP_ASSET_WAITING:
+			assetUpdateProcess = APP_ASSET_COMPLETED;
 			switch (command) {
 			case CMD_FIRMWARE:
-				assetUpdateProcess = APP_ASSET_COMPLETED;
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length,
 						sizeof(assetStreamBuffer.data)
@@ -759,14 +763,36 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 										- assetStreamBuffer.length,
 								"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
 				break;
-			default:
-				assetUpdateProcess = APP_ASSET_COMPLETED;
+			case CMD_PUBLISH_START:
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length,
+						sizeof(assetStreamBuffer.data)
+								- assetStreamBuffer.length,
+						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
+				break;
+			case CMD_PUBLISH_STOP:
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length,
+						sizeof(assetStreamBuffer.data)
+								- assetStreamBuffer.length,
+						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
+				break;
+			case CMD_REQUEST:
+				assetStreamBuffer.length += snprintf(
+						assetStreamBuffer.data + assetStreamBuffer.length,
+						sizeof(assetStreamBuffer.data)
+								- assetStreamBuffer.length, "500\r\n");
+				break;
+			case CMD_SENSOR:
+			case CMD_SPEED:
 				MQTTOperation_PrepareAssetUpdate();
 				assetStreamBuffer.length += snprintf(
 						assetStreamBuffer.data + assetStreamBuffer.length,
 						sizeof(assetStreamBuffer.data)
 								- assetStreamBuffer.length,
 						"400,xdk_ConfigChangeEvent,\"Config changed!\"\r\n");
+				break;
+			default:
 				break;
 			}
 			break;
@@ -808,7 +834,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
 					"503,%s\r\n", commands[command]);
 			break;
-		case DEVICE_OPERATION_IMMEDIATE_CMD:
+		case DEVICE_OPERATION_IMMEDIATE_EXECUTE_CMD:
 			commandProgress = DEVICE_OPERATION_WAITING;
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length,
@@ -818,53 +844,9 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 					assetStreamBuffer.data + assetStreamBuffer.length,
 					sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
 					"503,%s\r\n", commands[command]);
-
-			switch (command) {
-			case CMD_PUBLISH_START:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length,
-						sizeof(assetStreamBuffer.data)
-								- assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
-				break;
-			case CMD_PUBLISH_STOP:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length,
-						sizeof(assetStreamBuffer.data)
-								- assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
-				break;
-			default:
-				break;
-			}
 			break;
-		case DEVICE_OPERATION_IMMEDIATE_BUTTON:
+		case DEVICE_OPERATION_IMMEDIATE_EXECUTE_BUTTON:
 			commandProgress = DEVICE_OPERATION_WAITING;
-
-			switch (command) {
-			case CMD_PUBLISH_START:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length,
-						sizeof(assetStreamBuffer.data)
-								- assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish started!\"\r\n");
-				break;
-			case CMD_PUBLISH_STOP:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length,
-						sizeof(assetStreamBuffer.data)
-								- assetStreamBuffer.length,
-						"400,xdk_StatusChangeEvent,\"Publish stopped!\"\r\n");
-				break;
-			case CMD_REQUEST:
-				assetStreamBuffer.length += snprintf(
-						assetStreamBuffer.data + assetStreamBuffer.length,
-						sizeof(assetStreamBuffer.data)
-								- assetStreamBuffer.length, "500\r\n");
-				break;
-			default:
-				break;
-			}
 			break;
 		default:
 			break;
