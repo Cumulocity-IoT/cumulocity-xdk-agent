@@ -110,9 +110,9 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 	BCDS_UNUSED(param1);
 	BCDS_UNUSED(param2);
 
+	// prepare storage
 	Retcode_T retcode = Storage_Setup(&StorageSetup);
 	retcode = Storage_Enable();
-
 	if ((Retcode_T) RETCODE_STORAGE_SDCARD_NOT_AVAILABLE
 			== Retcode_GetCode(retcode)) {
 		/* This is only a warning error. So we will raise and proceed */
@@ -121,19 +121,21 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = RETCODE_OK; /* SD card was not inserted */
 	}
 
-	/* Initialize variables from flash */
-	if (MQTTStorage_Init() != RETCODE_OK) {
-		assert(0);
-	}
 
-	/* Initialize Buttons */
+	// initialize Buttons
 	retcode = MQTTButton_Init(AppCmdProcessor);
 	if (retcode != RETCODE_OK) {
 		LOG_AT_ERROR(("AppController_Setup: Boot error!\r\n"));
 		assert(0);
 	}
 
-	//test if button 2 is pressed
+
+	// read boot status from flash. If boot status file does not exits create this file
+	if (MQTTStorage_Init() != RETCODE_OK) {
+		assert(0);
+	}
+
+	// in case button 2 is pressed delete the configuration files
 	if (BSP_Button_GetState((uint32_t) BSP_XDK_BUTTON_2) == 1) {
 		LOG_AT_INFO(
 				("AppController_Setup: Button 2 was pressed at startup, deleting config stored on WIFI chip!\r\n"));
@@ -141,16 +143,16 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		BSP_Board_SoftReset();
 	}
 
+	// initialize parameters from flash and inserted SD card
 	retcode = MQTTCfgParser_Init();
-
-	// set boot mode: operation or registration
-	boot_mode = MQTTCfgParser_GetMode();
 	if (retcode != RETCODE_OK) {
 		LOG_AT_ERROR(
 				("AppController_Setup: Boot error. Inconsistent configuration!\r\n"));
 		assert(0);
 	}
 
+	// set boot mode: operation or registration
+	boot_mode = MQTTCfgParser_GetMode();
 	if (boot_mode == APP_STATUS_OPERATION_MODE) {
 		MqttCredentials.Username = MQTTCfgParser_GetMqttUser();
 		MqttCredentials.Password = MQTTCfgParser_GetMqttPassword();
@@ -161,19 +163,17 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		MqttCredentials.Anonymous = FALSE;
 	}
 
+	// set cfg parameter for WIFI access
+	WLANSetupInfo.SSID = MQTTCfgParser_GetWlanSSID();
+	WLANSetupInfo.Username = MQTTCfgParser_GetWlanPassword();
+	WLANSetupInfo.Password = MQTTCfgParser_GetWlanPassword();
+
+	retcode = WLAN_Setup(&WLANSetupInfo);
 	if (RETCODE_OK == retcode) {
-		// set cfg parameter for WIFI access
-		WLANSetupInfo.SSID = MQTTCfgParser_GetWlanSSID();
-		WLANSetupInfo.Username = MQTTCfgParser_GetWlanPassword();
-		WLANSetupInfo.Password = MQTTCfgParser_GetWlanPassword();
-
-		retcode = WLAN_Setup(&WLANSetupInfo);
-		if (RETCODE_OK == retcode) {
-			retcode = ServalPAL_Setup(AppCmdProcessor);
-		}
-
+		retcode = ServalPAL_Setup(AppCmdProcessor);
 	}
 
+	// initialize time from SNTP server
 	MqttSetupInfo.IsSecure = MQTTCfgParser_IsMqttSecureEnabled();
 	if (MqttSetupInfo.IsSecure == true) {
 		if (RETCODE_OK == retcode) {
@@ -191,6 +191,7 @@ static void AppController_Setup(void * param1, uint32_t param2) {
 		retcode = MQTT_Setup_Z(&MqttSetupInfo);
 	}
 
+	// enable/disable relevant sensors
 	if (RETCODE_OK == retcode && boot_mode == APP_STATUS_OPERATION_MODE) {
 		SensorSetup.CmdProcessorHandle = AppCmdProcessor;
 		SensorSetup.Enable.Accel = MQTTCfgParser_IsAccelEnabled();

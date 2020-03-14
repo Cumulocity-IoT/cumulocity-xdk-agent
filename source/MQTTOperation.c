@@ -446,6 +446,8 @@ static void MQTTOperation_ClientPublish(void) {
 
 
 	uint32_t measurementCounter = 0;
+	char commandBuffer[SIZE_XSMALL_BUF] = { 0 };
+	BaseType_t semaphoreResult;
 	/* A function that implements a task must not exit or attempt to return to
 	 its caller function as there is nothing to return to. */
 	while (1) {
@@ -454,7 +456,7 @@ static void MQTTOperation_ClientPublish(void) {
 		retcode = MQTTOperation_ValidateWLANConnectivity();
 		if (assetStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			if (RETCODE_OK == retcode) {
-				BaseType_t semaphoreResult = xSemaphoreTake(
+				semaphoreResult = xSemaphoreTake(
 						semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					LOG_AT_DEBUG(
@@ -496,7 +498,7 @@ static void MQTTOperation_ClientPublish(void) {
 		if (sensorStreamBuffer.length > NUMBER_UINT32_ZERO) {
 			AppController_SetAppStatus(APP_STATUS_OPERATING_STARTED);
 			if (RETCODE_OK == retcode) {
-				BaseType_t semaphoreResult = xSemaphoreTake(
+				   semaphoreResult = xSemaphoreTake(
 						semaphoreSensorBuffer,
 						pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
@@ -534,10 +536,11 @@ static void MQTTOperation_ClientPublish(void) {
 			}
 		}
 
-		char commandBuffer[SIZE_XSMALL_BUF] = { 0 };
+
 		// test if some commands are pending
 		if (uxQueueMessagesWaiting(commandQueue) > 0
 				&& commandProgress == DEVICE_OPERATION_WAITING) {
+			memset(commandBuffer, 0x00, SIZE_XSMALL_BUF);
 			if (xQueueReceive(commandQueue, &commandBuffer, 0) != pdTRUE)
 				LOG_AT_ERROR(
 						("MQTTOperation: Could read command from buffer!\r\n"));
