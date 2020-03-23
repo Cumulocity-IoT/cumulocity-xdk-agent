@@ -758,13 +758,12 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 						MQTTCfgParser_GetFirmwareName(),
 						MQTTCfgParser_GetFirmwareVersion(),
 						MQTTCfgParser_GetFirmwareURL());
-				assetStreamBuffer.length +=
-						snprintf(
-								assetStreamBuffer.data
-										+ assetStreamBuffer.length,
-								sizeof(assetStreamBuffer.data)
-										- assetStreamBuffer.length,
-								"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
+				assetStreamBuffer.length +=	snprintf(
+						assetStreamBuffer.data
+								+ assetStreamBuffer.length,
+						sizeof(assetStreamBuffer.data)
+								- assetStreamBuffer.length,
+						"400,xdk_FirmwareChangeEvent,\"Firmware updated!\"\r\n");
 				break;
 			case CMD_PUBLISH_START:
 				assetStreamBuffer.length += snprintf(
@@ -891,7 +890,10 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			//UBaseType_t stackHighWaterMark = 0;
 			UBaseType_t stackHighWaterMarkApp = uxTaskGetStackHighWaterMark(AppControllerHandle);
 			UBaseType_t stackHighWaterMarkMain = uxTaskGetStackHighWaterMark(MainCmdProcessor.task);
-			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%lu], freeHeap:[%lu], stackHighWaterMarkApp:[%lu],stackHighWaterMarkMain:[%lu]\r\n", everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain);
+			UBaseType_t numberOfTasks = uxTaskGetNumberOfTasks();
+			printf("MQTTOperation_SensorUpdate: Memory stat: everFreeHeap:[%lu], freeHeap:[%lu], stackHighWaterMarkApp:[%lu],stackHighWaterMarkMain:[%lu], numberOfTasks[%lu]\r\n",
+					everFreeHeap, freeHeap, stackHighWaterMarkApp, stackHighWaterMarkMain, numberOfTasks);
+
 #endif
 
 		}
@@ -962,7 +964,6 @@ static void MQTTOperation_SensorUpdate(xTimerHandle xTimer) {
 					sensorValue.Gyro.X, sensorValue.Gyro.Y, sensorValue.Gyro.Z);
 		}
 		if (SensorSetup.Enable.Mag) {
-
 			sensorStreamBuffer.length += snprintf(
 					sensorStreamBuffer.data + sensorStreamBuffer.length,
 					sizeof(sensorStreamBuffer.data) - sensorStreamBuffer.length,

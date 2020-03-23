@@ -5,7 +5,7 @@
  **
  *******************************************************************************
  **
- **	OBJECT NAME:	XDK_MQTT_Z.c
+ **	OBJECT NAME:	MQTTClient.c
  **
  **	DESCRIPTION:	Source Code for the Cumulocity MQTT Client for the Bosch XDK
  **
@@ -30,8 +30,8 @@
 #define BCDS_MODULE_ID XDK_COMMON_ID_MQTT
 
 #if XDK_CONNECTIVITY_MQTT
-/* own header files */
-#include "XDK_MQTT_Z.h"
+
+#include "MQTTClient.h"
 
 /* system header files */
 #include <stdio.h>

@@ -5,7 +5,7 @@
  **
  *******************************************************************************
  **
- **	OBJECT NAME:	XDK_MQTT_Z.h
+ **	OBJECT NAME:	MQTTClient.h
  **
  **	DESCRIPTION:	Source Code for the Cumulocity MQTT Client for the Bosch XDK
  **

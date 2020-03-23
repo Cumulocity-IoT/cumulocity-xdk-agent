@@ -13,9 +13,9 @@
  **
  **
  *******************************************************************************/
-#include "XDK_MQTT_Z.h"
 #include "XDK_MQTT.h"
 #include "XDK_Sensor.h"
+#include "MQTTClient.h"
 
 /* header definition ******************************************************** */
 #ifndef _MQTT_OPERATION_H_
