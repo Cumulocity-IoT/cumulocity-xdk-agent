@@ -14,13 +14,20 @@ curl -X POST \
   --user "$USER" \
   -H 'Content-Type: application/json' \
   -d '{"type":"c8y_DeviceShellTemplate","c8y_Global":{},"deviceType":"c8y_XDKDevice","name":"enable/disable sensor ... TRUE/FALSE, possible sensors are ACCEL, GYRO, MAG, ENV, LIGHT, NOISE","command":"sensor NOISE TRUE","category":"sensor"}'
+ 
+curl -X POST \
+  "$URL" \
+  -H 'Accept: application/json' \
+  --user "$USER" \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"c8y_DeviceShellTemplate","c8y_Global":{},"deviceType":"c8y_XDKDevice","name":"enable/disable logging, log TRUE/FALSE","command":"log TRUE","category":"config"}'
   
 curl -X POST \
   "$URL" \
   -H 'Accept: application/json' \
   --user "$USER" \
   -H 'Content-Type: application/json' \
-  -d '{"type":"c8y_DeviceShellTemplate","c8y_Global":{},"deviceType":"c8y_XDKDevice","name":"change speed","command":"speed 2000","category":"operation"}'
+  -d '{"type":"c8y_DeviceShellTemplate","c8y_Global":{},"deviceType":"c8y_XDKDevice","name":"change speed","command":"speed 2000","category":"config"}'
   
 curl -X POST \
   "$URL" \
