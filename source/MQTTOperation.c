@@ -264,6 +264,8 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					commandComplete = true;
 					commandProgress = DEVICE_OPERATION_EXECUTING;
 					MQTTStorage_Flash_WriteBootStatus((uint8_t*) NO_BOOT_PENDING);
+				} else if (strcmp(token, "log") == 0) {
+					command = CMD_LOG;
 				} else {
 					commandProgress = DEVICE_OPERATION_BEFORE_FAILED;
 					LOG_AT_WARNING(("MQTTOperation: Unknown command: %s\r\n", token));
@@ -310,6 +312,16 @@ static void MQTTOperation_ExecuteCommand(char * commandBuffer) {
 					LOG_AT_WARNING(
 							("MQTTOperation: Sensor not supported: %s\r\n", token));
 				}
+			} else if (command == CMD_LOG) {
+				LOG_AT_DEBUG(
+						("MQTTOperation: Phase parse command log: token_pos: [%i]\r\n", token_pos));
+				if (strcmp(token,"TRUE") == 0 || strcmp(token,"1") == 0 )
+					logging_enabled = 1;
+				else
+					logging_enabled = 0;
+
+				assetUpdateProcess = APP_ASSET_WAITING;
+				commandComplete = true;
 			} else if (command == CMD_FIRMWARE) {
 				LOG_AT_DEBUG(
 						("MQTTOperation: Phase execute command firmware version: token_pos: [%i]\r\n", token_pos));
@@ -459,8 +471,11 @@ static void MQTTOperation_ClientPublish(void) {
 				semaphoreResult = xSemaphoreTake(
 						semaphoreAssetBuffer, pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
-					LOG_AT_DEBUG(
-							("MQTTOperation: Publishing asset data: length [%ld], content:\r\n%s", assetStreamBuffer.length, assetStreamBuffer.data));
+					// only log measurements when loggin is enabled
+					if (logging_enabled) {
+						LOG_AT_DEBUG(
+								("MQTTOperation: Publishing asset data: length [%ld], content:\r\n%s", assetStreamBuffer.length, assetStreamBuffer.data));
+					}
 					MqttPublishAssetInfo.Payload = assetStreamBuffer.data;
 					MqttPublishAssetInfo.PayloadLength =
 							assetStreamBuffer.length;
@@ -503,8 +518,10 @@ static void MQTTOperation_ClientPublish(void) {
 						pdMS_TO_TICKS(SEMAPHORE_TIMEOUT));
 				if (pdPASS == semaphoreResult) {
 					measurementCounter++;
-					LOG_AT_DEBUG(
-							("MQTTOperation: Publishing sensor data: length [%ld], message [%lu], content:\r\n%s", sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
+					if (logging_enabled) {
+						LOG_AT_DEBUG(
+								("MQTTOperation: Publishing sensor data: length [%ld], message [%lu], content:\r\n%s", sensorStreamBuffer.length, measurementCounter, sensorStreamBuffer.data));
+					}
 					MqttPublishDataInfo.Payload = sensorStreamBuffer.data;
 					MqttPublishDataInfo.PayloadLength =
 							sensorStreamBuffer.length;

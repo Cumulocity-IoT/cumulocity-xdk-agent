@@ -306,6 +306,8 @@ void AppController_SetCmdStatus(uint8_t status);
 uint8_t AppController_GetCmdStatus(void);
 Retcode_T AppController_SyncTime(void);
 
+extern uint16_t logging_enabled;
+
 #endif /* APPCONTROLLER_H_ */
 
 /** ************************************************************************* */

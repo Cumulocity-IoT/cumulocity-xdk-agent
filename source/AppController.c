@@ -77,7 +77,7 @@ char clientId[14] = { 0 };  // MAC address 6*2 + \0 'terminating'
 APP_STATUS app_status = APP_STATUS_UNKNOWN;
 APP_STATUS cmd_status = APP_STATUS_UNKNOWN;
 APP_STATUS boot_mode = APP_STATUS_UNKNOWN;
-uint16_t connectAttemps = 0UL;
+uint16_t logging_enabled = 0UL;
 SensorDataBuffer sensorStreamBuffer;
 AssetDataBuffer assetStreamBuffer;
 

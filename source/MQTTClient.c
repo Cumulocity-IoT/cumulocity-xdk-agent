@@ -125,7 +125,9 @@ static retcode_t MqttEventHandler_Z(MqttSession_T* session, MqttEvent_t event, c
 {
     BCDS_UNUSED(session);
     Retcode_T retcode = RETCODE_OK;
-    LOG_AT_DEBUG(("MqttEventHandler_Z: Event - %d\r\n", (int) event));
+	if (logging_enabled) {
+		LOG_AT_DEBUG(("MqttEventHandler_Z: Event - %d\r\n", (int) event));
+	}
     switch (event)
     {
     case MQTT_CONNECTION_ESTABLISHED:

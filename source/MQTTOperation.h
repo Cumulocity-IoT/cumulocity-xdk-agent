@@ -89,6 +89,7 @@ typedef enum
 	CMD_FIRMWARE,
 	CMD_UNKNOWN,
 	CMD_REQUEST,
+	CMD_LOG,
 	CMD_COMMAND,
 } C8Y_COMMAND;
 
@@ -103,6 +104,7 @@ static const char * const commands[] = {
 		"c8y_Command",
 		"c8y_Command",
 		"c8y_Firmware",
+		"c8y_Command",
 		"c8y_Command",
 		"c8y_Command",
 		"c8y_Command",
