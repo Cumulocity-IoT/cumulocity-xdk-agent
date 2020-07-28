@@ -132,6 +132,12 @@ static void MQTTOperation_ClientReceive(MQTT_SubscribeCBParam_TZ param) {
 			strlen(TOPIC_DOWNSTREAM_ERROR)) == 0) {
 		LOG_AT_ERROR(
 				("MQTTOperation: Error from upstream: %.*s, Error Msg : %.*s\r\n", (int) param.TopicLength, appIncomingMsgTopicBuffer, (int) param.PayloadLength, appIncomingMsgPayloadBuffer));
+		assetStreamBuffer.length +=
+				snprintf(assetStreamBuffer.data + assetStreamBuffer.length,
+						sizeof(assetStreamBuffer.data)
+								- assetStreamBuffer.length,
+						"400,xdk_ErrorCountEvent,\"Error Msg : %.*s\"\r\n",
+						(int) param.PayloadLength, appIncomingMsgPayloadBuffer);
 	} else {
 		LOG_AT_INFO(
 				("MQTTOperation: Upstream msg: Topic: %.*s, Msg Received: %.*s\r\n", (int) param.TopicLength, appIncomingMsgTopicBuffer, (int) param.PayloadLength, appIncomingMsgPayloadBuffer));
@@ -894,12 +900,14 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 
 			LOG_AT_TRACE(("MQTTOperation: current time: %s\r\n", timezoneISO8601format));
 
-			assetStreamBuffer.length +=
-					snprintf(assetStreamBuffer.data + assetStreamBuffer.length,
-							sizeof(assetStreamBuffer.data)
-									- assetStreamBuffer.length,
-							"400,xdk_ErrorCountEvent,\"Errors: Collision Semaphore/Error Publish:%i/%i!\"\r\n",
-							errorCountSemaphore, errorCountPublish);
+			// only send event when some error occurs
+			if (errorCountSemaphore != 0 || errorCountPublish != 0 )
+				assetStreamBuffer.length +=
+						snprintf(assetStreamBuffer.data + assetStreamBuffer.length,
+								sizeof(assetStreamBuffer.data)
+										- assetStreamBuffer.length,
+								"400,xdk_ErrorCountEvent,\"Errors: Collision Semaphore/Error Publish:%i/%i!\"\r\n",
+								errorCountSemaphore, errorCountPublish);
 
 #if INCLUDE_uxTaskGetStackHighWaterMark
 			uint32_t everFreeHeap = xPortGetMinimumEverFreeHeapSize();
