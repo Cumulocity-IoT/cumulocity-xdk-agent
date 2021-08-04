@@ -753,7 +753,7 @@ static void MQTTOperation_AssetUpdate(xTimerHandle xTimer) {
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length,
 					sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
-					"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware\r\n");
+					"114,c8y_Restart,c8y_Message,c8y_Command,c8y_Firmware,c8y_Configuration\r\n");
 			assetStreamBuffer.length += snprintf(
 					assetStreamBuffer.data + assetStreamBuffer.length,
 					sizeof(assetStreamBuffer.data) - assetStreamBuffer.length,
