@@ -59,6 +59,7 @@ Commands can be send from the Cumulocity App Devicemanagement to change the sens
 > NOTE: Make sure your SD card is smaller than 32GB, otherwise it can't be formatted in the FAT filesystem format		
 1. Format SD in FAT format
 2. Adapt settings in `config.txt` and copy to SD card. A template for config.txt exists in the project "cumulocity-xdk-agent/resources". Ideally you only need to change `WIFISSID` and `WIFIPASSWORD`.
+3. If your tenant is on an instance other than `cumulocity.com`, then you need to update:`MQTTBROKERNAME`, e.g. to `mqtt.eu-latest.cumulocity.com` if your tenant url looks like: `XXX.eu-latest.cumulocity.com`
 
 ### 2. Register XDK in Cumulocity & upload SMART Rest Template
 
