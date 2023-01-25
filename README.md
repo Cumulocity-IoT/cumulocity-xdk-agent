@@ -1,4 +1,6 @@
-# Cumulocity agent for Bosch XDK rapid prototype device
+# ⛔ DECRECATED ⛔️ Cumulocity agent for Bosch XDK rapid prototype device
+
+> **IMPORTANT NOTE: This agent is no longer maintained.**
 
 > **IMPORTANT NOTE: This release has changes that break funcionality in previous releases. You have to delete your device from Cumulocity, change your configuration in `config.txt` and register it again.** 
 
